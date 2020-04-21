@@ -16,11 +16,6 @@ import sqlite3
 
 #from shop import ShopLogin as sl
 
-
-
-
-
-
 class ProductManagement(tk.Tk):
 		
 	def __init__(self):
@@ -197,18 +192,7 @@ class ProductManagement(tk.Tk):
 			textlist4.insert(END, f'{row[3]}')
 			textlist4.insert(END, "----------------")
 
-		# x = []
-		# for product in products:
-		# 	x.append(product)
-
-	
 		
-		# for i in range(len(x)): 
-		# 	for y in x: 
-		# 		print(y)
-		# 	textlist.insert(END, y[i]) 
-		# 	print() 
-
 		clearbtn = Button(editframe, text="Back",font="Verdana 14 bold", command=self.clearbtn).place(x=600, y=320)
 		exitbtn = Button(editframe, font=self.font, command=self.maingui, text="Exit").place(x=750,y=320)
 				

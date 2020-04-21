@@ -54,6 +54,7 @@ from tkinter import ttk
 import time
 import concurrent.futures
 import sqlite3
+import datetime as dt
 from prod import ProductManagement as pm
 
 global cmb
@@ -127,9 +128,11 @@ class ShopLogin(tk.Tk):
 		self.turn = True
 		self.count = 0
 		self.txt = []
+		self.date = dt.datetime.now()
 		self.textinput = []
 		self.conn = sqlite3.connect('sales')
 		self.c = self.conn.cursor()
+		self.stitems = self.c.execute("SELECT * FROM AddProducts").fetchall()
 
 		self.box1 =  StringVar()
 		self.box2 =  StringVar()
@@ -192,9 +195,15 @@ class ShopLogin(tk.Tk):
 
 	def ShopItems(self):
 		#This Function Just Returns all products input by user and combobox displays them
-		stitems = ['A3', 'A4', 'A5', 'BRILLIANT', 'COMPASS', 'COPY', 'COVER', 'FILE', 'GLUE MAJI', 'GLUE STICK', 'LAMINATION', 'MANILLA', 'PENI', 'PENSELI', 'PRINT', 'QUIRE 1', 'QUIRE 2', 'QUIRE 3', 'QUIRE 4', 'RIM', 'RUBBER', 'SCAN', 'TAPE', 'TYPING']
+		stitems = self.stitems
+		
+		items = []
 
-		return stitems
+		for row in stitems:
+			for i in range(0, len(row)):
+				x = row[0]
+			items.append(x)
+		return items
 
 	def Sales(self):
 		#Top Header Arrangement
@@ -208,7 +217,7 @@ class ShopLogin(tk.Tk):
 
 		columnframe = Frame(bg="cadetblue", width=1920, height=360, pady=3).place(x=0,y=50)
 
-		buttonframe = Frame(bg="yellow", width=1000, height=360, pady=3).place(x=0,y=410)
+		buttonframe = Frame(bg="white", width=1000, height=360, pady=3).place(x=0,y=410)
 
 		salesframe = Frame(bg="white", width=1920/2, height=300, pady=3).place(x=1000, y=410)
 
@@ -398,64 +407,47 @@ class ShopLogin(tk.Tk):
 		#============================================================================================================
 		#Label to Display total
 		totallabel = tk.Label(columnframe,textvariable=self.lbtotal,
-			fg=None,font="time 12 bold",bg="cadetblue",padx=12,pady=0, bd=0,height=3, 
+			font="time 12 bold",bg="cadetblue",fg="white",padx=12,pady=0, bd=0,height=3, 
 			width=12, relief=None)
 		self.lbtotal.set("Jumlisha")
 		totallabel.place(x=1120, y=360)
 		#Grandtotal Button
 		grandtotal = tk.Button(buttonframe,text="Total"
-			,bg="cadetblue",font="time 12 bold",
+			,bg="cadetblue",fg="white",font="time 12 bold",
 			padx=12,pady=0, bd=0,height=3, width=12, 
 			relief=None,command=self.changelabel)
 		grandtotal.place(x=840, y=650)
 
 		#Clear Button
 		logout = tk.Button(buttonframe,text="Exit"
-			,bg="cadetblue",font="time 12 bold",
+			,bg="cadetblue",fg="white",font="time 12 bold",
 			padx=12,pady=0, bd=0,height=3, width=12, 
 			relief=None,command=self.logout)
 		logout.place(x=0, y=650)
 
+
 		#product management Button
-		prodmgmts = Button(columnframe,font="time 12 bold",text="Product Management",bg="cadetblue",command=self.prodmgmt,padx=12,pady=0, bd=0,height=3, width=16).place(x=840/2, y=650)
+		prodmgmts = Button(columnframe,font="time 12 bold",text="Product Management",bg="cadetblue",fg="white",command=self.prodmgmt,padx=12,pady=0, bd=0,height=3, width=16).place(x=840/2, y=650)
 
 		#============================================================================================================
 		
 
 	def changelabel(self):
 		#get combobox one test Check
-		stitems = self.ShopItems()
-
+		stitems = self.stitems
+		stprice = {}
 		#============================================================================================================
 		#This Dictionary Takes The Price of list items
-		stprice = {
-		stitems[0]:300,
-		stitems[1]:200,
-		stitems[2]:150,
-		stitems[3]:1000,
-		stitems[4]:2000,
-		stitems[5]:100,
-		stitems[6]:200,
-		stitems[7]:1500,
-		stitems[8]:1000,
-		stitems[9]:1000,
-		stitems[10]:1000,
-		stitems[11]:200,
-		stitems[12]:200,
-		stitems[13]:300,
-		stitems[14]:200,
-		stitems[15]:1500,
-		stitems[16]:2500,
-		stitems[17]:3000,
-		stitems[18]:3500,
-		stitems[19]:12000,
-		stitems[20]:500,
-		stitems[21]:1000,
-		stitems[22]:4000,
-		stitems[23]:1000,
-		}
+		for stitem in stitems:
+			#print(stitem)
+			j = [j for j in range(0, len(stitem))]
+			i = [i for i in range(0, len(stitem))]
+			
+			stprice.update({stitem[j[0]]:stitem[i[2]]})
+		
 		#============================================================================================================
-
+		
+		
 		#============================================================================================================
 		#Get combo box texts
 		f1 = self.box1.get()
@@ -474,9 +466,9 @@ class ShopLogin(tk.Tk):
 		#This logic performs the desired calculations.
 		#First Row
 		#=========================================================================
-		for i in range(0, 24):
-			if f1 == stitems[i]:
-				self.entryD1.set(stprice[stitems[i]])
+		for k,v in stprice.items():
+			if f1 == k:
+				self.entryD1.set(v)
 				x = self.entryD1.get()
 				y = self.entryq1.get()
 				e =  y * x
@@ -484,9 +476,9 @@ class ShopLogin(tk.Tk):
 				
 		#==========================================================================
 		#=========================================================================
-		for i in range(0, 24):
-			if f2 == stitems[i]:
-				self.entryD2.set(stprice[stitems[i]])
+		for k,v in stprice.items():
+			if f2 == k:
+				self.entryD2.set(v)
 				x = self.entryD2.get()
 				y = self.entryq2.get()
 				e =  y * x
@@ -494,9 +486,9 @@ class ShopLogin(tk.Tk):
 				
 		#==========================================================================
 		#=========================================================================
-		for i in range(0, 24):
-			if f3 == stitems[i]:
-				self.entryD3.set(stprice[stitems[i]])
+		for k,v in stprice.items():
+			if f3 == k:
+				self.entryD3.set(v)
 				x = self.entryD3.get()
 				y = self.entryq3.get()
 				e =  y * x
@@ -504,9 +496,9 @@ class ShopLogin(tk.Tk):
 				
 		#==========================================================================
 		#=========================================================================
-		for i in range(0, 24):
-			if f4 == stitems[i]:
-				self.entryD4.set(stprice[stitems[i]])
+		for k,v in stprice.items():
+			if f4 == k:
+				self.entryD4.set(v)
 				x = self.entryD4.get()
 				y = self.entryq4.get()
 				e =  y * x
@@ -514,9 +506,9 @@ class ShopLogin(tk.Tk):
 				
 		#==========================================================================
 		#=========================================================================
-		for i in range(0, 24):
-			if f5 == stitems[i]:
-				self.entryD5.set(stprice[stitems[i]])
+		for k,v in stprice.items():
+			if f5 == k:
+				self.entryD5.set(v)
 				x = self.entryD5.get()
 				y = self.entryq5.get()
 				e =  y * x
@@ -524,9 +516,9 @@ class ShopLogin(tk.Tk):
 				
 		#==========================================================================
 		#=========================================================================
-		for i in range(0, 24):
-			if f6 == stitems[i]:
-				self.entryD6.set(stprice[stitems[i]])
+		for k,v in stprice.items():
+			if f6 == k:
+				self.entryD6.set(v)
 				x = self.entryD6.get()
 				y = self.entryq6.get()
 				e =  y * x
@@ -534,9 +526,9 @@ class ShopLogin(tk.Tk):
 				
 		#==========================================================================
 		#=========================================================================
-		for i in range(0, 24):
-			if f7 == stitems[i]:
-				self.entryD7.set(stprice[stitems[i]])
+		for k,v in stprice.items():
+			if f7 == k:
+				self.entryD7.set(v)
 				x = self.entryD7.get()
 				y = self.entryq7.get()
 				e =  y * x
@@ -544,9 +536,9 @@ class ShopLogin(tk.Tk):
 				
 		#==========================================================================
 		#=========================================================================
-		for i in range(0, 24):
-			if f8 == stitems[i]:
-				self.entryD8.set(stprice[stitems[i]])
+		for k,v in stprice.items():
+			if f8 == k:
+				self.entryD8.set(v)
 				x = self.entryD8.get()
 				y = self.entryq8.get()
 				e =  y * x
@@ -554,9 +546,9 @@ class ShopLogin(tk.Tk):
 				
 		#==========================================================================
 		#=========================================================================
-		for i in range(0, 24):
-			if f9 == stitems[i]:
-				self.entryD9.set(stprice[stitems[i]])
+		for k,v in stprice.items():
+			if f9 == k:
+				self.entryD9.set(v)
 				x = self.entryD9.get()
 				y = self.entryq9.get()
 				e =  y * x
@@ -564,9 +556,9 @@ class ShopLogin(tk.Tk):
 				
 		#==========================================================================
 		#=========================================================================
-		for i in range(0, 24):
-			if f10 == stitems[i]:
-				self.entryD10.set(stprice[stitems[i]])
+		for k,v in stprice.items():
+			if f10 == k:
+				self.entryD10.set(v)
 				x = self.entryD10.get()
 				y = self.entryq10.get()
 				e =  y * x
@@ -574,9 +566,9 @@ class ShopLogin(tk.Tk):
 				
 		#==========================================================================
 		#=========================================================================
-		for i in range(0, 24):
-			if f11 == stitems[i]:
-				self.entryD11.set(stprice[stitems[i]])
+		for k,v in stprice.items():
+			if f11 == k:
+				self.entryD11.set(v)
 				x = self.entryD11.get()
 				y = self.entryq11.get()
 				e =  y * x
@@ -584,9 +576,9 @@ class ShopLogin(tk.Tk):
 				
 		#==========================================================================
 		#=========================================================================
-		for i in range(0, 24):
-			if f12 == stitems[i]:
-				self.entryD12.set(stprice[stitems[i]])
+		for k,v in stprice.items():
+			if f12 == k:
+				self.entryD12.set(v)
 				x = self.entryD12.get()
 				y = self.entryq12.get()
 				e =  y * x
@@ -641,7 +633,7 @@ class ShopLogin(tk.Tk):
 		#==========================================================================
 
 		#==========================================================================
-		valuestime = (time.asctime())
+		valuestime = f'{self.date.day}/{self.date.month}/{self.date.year}'
 
 		values1 = (valuestime,self.box1.get(), self.entryq1.get(), self.entryD1.get(), self.entryP1.get())
 		#print(values)
@@ -696,12 +688,14 @@ class ShopLogin(tk.Tk):
 		,values5,values6,values7,values8,
 			values9,values10,values11,values12)
 
-		# print(values)
-
 		self.c.executemany("INSERT INTO 'Daily Sales' VALUES (?,?,?,?,?)", values)
+		self.conn.commit()
 
 	def logout(self):
-		self.conn.commit()	
+		#self.conn.commit()	
+		var = "0"
+		self.c.executemany("DELETE FROM 'Daily Sales' WHERE Quantity=?", var)
+		self.conn.commit()
 		self.conn.close()
 		Tk.destroy(self)
 		return Admin().mainloop()
@@ -709,6 +703,9 @@ class ShopLogin(tk.Tk):
 	def prodmgmt(self):
 		Tk.destroy(self)
 		return pm().mainloop()
+
+	def showsales_time(self):
+		return None
 
 if __name__ == '__main__':
 	

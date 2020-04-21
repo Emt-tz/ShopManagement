@@ -83,29 +83,29 @@ class Admin(tk.Tk):
 		self.Interface()
 
 	def Interface(self):
-		heading = tk.Label(self, text="Login to Continue",fg="blue",font="time 12 bold", bd=0,height=3, width=18, relief=None,)
+		heading = tk.Label(text="Login to Continue",fg="blue",font="time 12 bold", bd=0,height=3, width=18, relief=None,)
 		heading.grid(row=0, column=0, columnspan=3) 
 		for i in range(1, 2):
 			col = []
 			for j in range(0, 1):
-				col.append(tk.Label(self, textvariable=self.lb,fg="white",font="time 12 bold", height=2, width=14, relief=RAISED))
+				col.append(tk.Label(textvariable=self.lb,fg="white",font="time 12 bold", height=2, width=14, relief=RAISED))
 				self.lb.set("User Data")
 				col[j].grid(row=i, column=j)
 			self.labels.append(col)
 		
 
-		username = tk.Entry(self, textvariable=self.un, bd=2,font="time 14 bold")
+		username = tk.Entry(textvariable=self.un, bd=2,font="time 14 bold")
 		username.grid(row=2, column=0)
 
-		password = tk.Entry(self, textvariable=self.pwd, bd=2,font="time 14 bold", show="*")
+		password = tk.Entry(textvariable=self.pwd, bd=2,font="time 14 bold", show="*")
 		password.grid(row=3, column=0)
 
-		loginbtn = tk.Button(self, text="Login",font="time 12 bold", command=self.Authenticate)
+		loginbtn = tk.Button(text="Login",font="time 12 bold", command=self.Authenticate)
 		loginbtn.grid(row=4, column=0)
 
 		
 
-		authtext = tk.Label(self, textvariable=self.txt,fg="cadetblue",font="time 12 bold", relief=RAISED)
+		authtext = tk.Label(textvariable=self.txt,fg="cadetblue",font="time 12 bold", relief=RAISED)
 		self.txt.set("Credential Check")
 		authtext.grid(row=6, column=0)
 
@@ -200,186 +200,194 @@ class ShopLogin(tk.Tk):
 		#Top Header Arrangement
 		#============================================================================================================
 		#Our main Heading Area
-		heading1 = tk.Label(self, text="Welcome to Emt Stationery Management",fg="blue",font="time 12 bold", bd=0,pady=3,height=3, width=20, relief=None,)
+		headingframe = Frame(bg="green",width=1920, height=200,pady=3).place(x=0,y=0)
+		heading1 = tk.Label(headingframe,text="Welcome",bg="green",fg="blue",font="time 12 bold", bd=0,pady=3,height=3, width=20, relief=None,)
 		heading1.grid(row=0, column=1)
 
 		#Handle all of the columns
-		Product = tk.Label(self, text="Product",bg="white",font="time 12 bold", height=2, width=34, relief=RAISED)
+
+		columnframe = Frame(bg="cadetblue", width=1920, height=360, pady=3).place(x=0,y=50)
+
+		buttonframe = Frame(bg="yellow", width=1000, height=360, pady=3).place(x=0,y=410)
+
+		salesframe = Frame(bg="white", width=1920/2, height=300, pady=3).place(x=1000, y=410)
+
+		Product = tk.Label(columnframe, text="Product",bg="white",font="time 12 bold", height=2, width=34, relief=RAISED)
 		Product.grid(row=1, column=0)
 
-		Quantity = tk.Label(self, text="Quantity",bg="white",font="time 12 bold", height=2, width=34, relief=RAISED)
+		Quantity = tk.Label(columnframe, text="Quantity",bg="white",font="time 12 bold", height=2, width=34, relief=RAISED)
 		Quantity.grid(row=1, column=1)
 
-		Discount = tk.Label(self, text="Sell Price",bg="white",font="time 12 bold", height=2, width=34, relief=RAISED)
+		Discount = tk.Label(columnframe, text="Sell Price",bg="white",font="time 12 bold", height=2, width=34, relief=RAISED)
 		Discount.grid(row=1, column=2)
 
-		Price = tk.Label(self, text="Price",bg="white",font="time 12 bold", height=2, width=34, relief=RAISED)
+		Price = tk.Label(columnframe, text="Price",bg="white",font="time 12 bold", height=2, width=34, relief=RAISED)
 		Price.grid(row=1, column=3)
 		#============================================================================================================
 
 
 		#============================================================================================================
 		#Deal with the combobox here start at row=2
-		box1 = ttk.Combobox(self, textvariable=self.box1,values=self.ShopItems(),font="Courier 14 bold")
+		box1 = ttk.Combobox(columnframe, textvariable=self.box1,values=self.ShopItems(),font="Courier 14 bold")
 		box1.grid(row=2, column=0)
 
-		box2 = ttk.Combobox(self, textvariable=self.box2,values=self.ShopItems(),font="Courier 14 bold")
+		box2 = ttk.Combobox(columnframe, textvariable=self.box2,values=self.ShopItems(),font="Courier 14 bold")
 		box2.grid(row=3, column=0)
 
-		box3 = ttk.Combobox(self, textvariable=self.box3,values=self.ShopItems(),font="Courier 14 bold")
+		box3 = ttk.Combobox(columnframe, textvariable=self.box3,values=self.ShopItems(),font="Courier 14 bold")
 		box3.grid(row=4, column=0)
 
-		box4 = ttk.Combobox(self, textvariable=self.box4,values=self.ShopItems(),font="Courier 14 bold")
+		box4 = ttk.Combobox(columnframe, textvariable=self.box4,values=self.ShopItems(),font="Courier 14 bold")
 		box4.grid(row=5, column=0)
 
-		box5 = ttk.Combobox(self, textvariable=self.box5,values=self.ShopItems(),font="Courier 14 bold")
+		box5 = ttk.Combobox(columnframe, textvariable=self.box5,values=self.ShopItems(),font="Courier 14 bold")
 		box5.grid(row=6, column=0)
 
-		box6 = ttk.Combobox(self, textvariable=self.box6,values=self.ShopItems(),font="Courier 14 bold")
+		box6 = ttk.Combobox(columnframe, textvariable=self.box6,values=self.ShopItems(),font="Courier 14 bold")
 		box6.grid(row=7, column=0)
 
-		box7 = ttk.Combobox(self,textvariable=self.box7, values=self.ShopItems(),font="Courier 14 bold")
+		box7 = ttk.Combobox(columnframe,textvariable=self.box7, values=self.ShopItems(),font="Courier 14 bold")
 		box7.grid(row=8, column=0)
 
-		box8 = ttk.Combobox(self, textvariable=self.box8,values=self.ShopItems(),font="Courier 14 bold")
+		box8 = ttk.Combobox(columnframe, textvariable=self.box8,values=self.ShopItems(),font="Courier 14 bold")
 		box8.grid(row=9, column=0)
 
-		box9 = ttk.Combobox(self, textvariable=self.box9,values=self.ShopItems(),font="Courier 14 bold")
+		box9 = ttk.Combobox(columnframe, textvariable=self.box9,values=self.ShopItems(),font="Courier 14 bold")
 		box9.grid(row=10, column=0)
 
-		box10 = ttk.Combobox(self, textvariable=self.box10,values=self.ShopItems(),font="Courier 14 bold")
+		box10 = ttk.Combobox(columnframe, textvariable=self.box10,values=self.ShopItems(),font="Courier 14 bold")
 		box10.grid(row=11, column=0)
 
-		box11 = ttk.Combobox(self, textvariable=self.box11,values=self.ShopItems(),font="Courier 14 bold")
+		box11 = ttk.Combobox(columnframe, textvariable=self.box11,values=self.ShopItems(),font="Courier 14 bold")
 		box11.grid(row=12, column=0)
 
-		box12 = ttk.Combobox(self, textvariable=self.box12,values=self.ShopItems(),font="Courier 14 bold")
+		box12 = ttk.Combobox(columnframe, textvariable=self.box12,values=self.ShopItems(),font="Courier 14 bold")
 		box12.grid(row=13, column=0)
 		#============================================================================================================
 
 		#============================================================================================================
 		#Quantity Entry Boxes
-		entryq1 = tk.Entry(self,bg="white",textvariable=self.entryq1,font="time 12 bold")
+		entryq1 = tk.Entry(columnframe,bg="white",textvariable=self.entryq1,font="time 12 bold")
 		entryq1.grid(row=2, column=1)
 
-		entryq2 = tk.Entry(self,bg="white",textvariable=self.entryq2,font="time 12 bold")
+		entryq2 = tk.Entry(columnframe,bg="white",textvariable=self.entryq2,font="time 12 bold")
 		entryq2.grid(row=3, column=1)
 
-		entryq3 = tk.Entry(self,bg="white",textvariable=self.entryq3,font="time 12 bold")
+		entryq3 = tk.Entry(columnframe,bg="white",textvariable=self.entryq3,font="time 12 bold")
 		entryq3.grid(row=4, column=1)
 
-		entryq4 = tk.Entry(self,bg="white",textvariable=self.entryq4,font="time 12 bold")
+		entryq4 = tk.Entry(columnframe,bg="white",textvariable=self.entryq4,font="time 12 bold")
 		entryq4.grid(row=5, column=1)
 
-		entryq5 = tk.Entry(self,bg="white",textvariable=self.entryq5,font="time 12 bold")
+		entryq5 = tk.Entry(columnframe,bg="white",textvariable=self.entryq5,font="time 12 bold")
 		entryq5.grid(row=6, column=1)
 
-		entryq6 = tk.Entry(self,bg="white",textvariable=self.entryq6,font="time 12 bold")
+		entryq6 = tk.Entry(columnframe,bg="white",textvariable=self.entryq6,font="time 12 bold")
 		entryq6.grid(row=7, column=1)
 
-		entryq7 = tk.Entry(self,bg="white",textvariable=self.entryq7,font="time 12 bold")
+		entryq7 = tk.Entry(columnframe,bg="white",textvariable=self.entryq7,font="time 12 bold")
 		entryq7.grid(row=8, column=1)
 
-		entryq8 = tk.Entry(self,bg="white",textvariable=self.entryq8,font="time 12 bold")
+		entryq8 = tk.Entry(columnframe,bg="white",textvariable=self.entryq8,font="time 12 bold")
 		entryq8.grid(row=9, column=1)
 
-		entryq9 = tk.Entry(self,bg="white",textvariable=self.entryq9,font="time 12 bold")
+		entryq9 = tk.Entry(columnframe,bg="white",textvariable=self.entryq9,font="time 12 bold")
 		entryq9.grid(row=10, column=1)
 
-		entryq10 = tk.Entry(self,bg="white",textvariable=self.entryq10,font="time 12 bold")
+		entryq10 = tk.Entry(columnframe,bg="white",textvariable=self.entryq10,font="time 12 bold")
 		entryq10.grid(row=11, column=1)
 
-		entryq11 = tk.Entry(self,bg="white",textvariable=self.entryq11,font="time 12 bold")
+		entryq11 = tk.Entry(columnframe,bg="white",textvariable=self.entryq11,font="time 12 bold")
 		entryq11.grid(row=12, column=1)
 
-		entryq12 = tk.Entry(self,bg="white",textvariable=self.entryq12,font="time 12 bold")
+		entryq12 = tk.Entry(columnframe,bg="white",textvariable=self.entryq12,font="time 12 bold")
 		entryq12.grid(row=13, column=1)
 		#============================================================================================================
 
 		#============================================================================================================
 		#Discount entries.
-		entryD1 = tk.Entry(self,bg="white",state=
+		entryD1 = tk.Entry(columnframe,bg="white",state=
 			'disabled',textvariable=self.entryD1,font="time 12 bold")
 		entryD1.grid(row=2, column=2)
 
-		entryD2 = tk.Entry(self,bg="white",state=
+		entryD2 = tk.Entry(columnframe,bg="white",state=
 			'disabled',textvariable=self.entryD2,font="time 12 bold")
 		entryD2.grid(row=3, column=2)
 
-		entryD3 = tk.Entry(self,bg="white",state=
+		entryD3 = tk.Entry(columnframe,bg="white",state=
 			'disabled',textvariable=self.entryD3,font="time 12 bold")
 		entryD3.grid(row=4, column=2)
 
-		entryD4 = tk.Entry(self,bg="white",state=
+		entryD4 = tk.Entry(columnframe,bg="white",state=
 			'disabled',textvariable=self.entryD4,font="time 12 bold")
 		entryD4.grid(row=5, column=2)
 
-		entryD5 = tk.Entry(self,bg="white",state=
+		entryD5 = tk.Entry(columnframe,bg="white",state=
 			'disabled',textvariable=self.entryD5,font="time 12 bold")
 		entryD5.grid(row=6, column=2)
 
-		entryD6 = tk.Entry(self,bg="white",state=
+		entryD6 = tk.Entry(columnframe,bg="white",state=
 			'disabled',textvariable=self.entryD6,font="time 12 bold")
 		entryD6.grid(row=7, column=2)
 
-		entryD7 = tk.Entry(self,bg="white",state=
+		entryD7 = tk.Entry(columnframe,bg="white",state=
 			'disabled',textvariable=self.entryD7,font="time 12 bold")
 		entryD7.grid(row=8, column=2)
 
-		entryD8 = tk.Entry(self,bg="white",state=
+		entryD8 = tk.Entry(columnframe,bg="white",state=
 			'disabled',textvariable=self.entryD8,font="time 12 bold")
 		entryD8.grid(row=9, column=2)
 
-		entryD9 = tk.Entry(self,bg="white",state=
+		entryD9 = tk.Entry(columnframe,bg="white",state=
 			'disabled',textvariable=self.entryD9,font="time 12 bold")
 		entryD9.grid(row=10, column=2)
 
-		entryD10 = tk.Entry(self,bg="white",state=
+		entryD10 = tk.Entry(columnframe,bg="white",state=
 			'disabled',textvariable=self.entryD10,font="time 12 bold")
 		entryD10.grid(row=11, column=2)
 
-		entryD11 = tk.Entry(self,bg="white",state=
+		entryD11 = tk.Entry(columnframe,bg="white",state=
 			'disabled',textvariable=self.entryD11,font="time 12 bold")
 		entryD11.grid(row=12, column=2)
 
-		entryD12 = tk.Entry(self,bg="white",state=
+		entryD12 = tk.Entry(columnframe,bg="white",state=
 			'disabled',textvariable=self.entryD12,font="time 12 bold")
 		entryD12.grid(row=13, column=2)
 		#============================================================================================================
 
 		#============================================================================================================
 		#Total Price Entries
-		entryP1 = tk.Entry(self,bg="white",textvariable=self.entryP1,font="time 12 bold", state='disabled')
+		entryP1 = tk.Entry(columnframe,bg="white",textvariable=self.entryP1,font="time 12 bold", state='disabled')
 		entryP1.grid(row=2, column=3)
 
-		entryP2 = tk.Entry(self,bg="white",textvariable=self.entryP2,font="time 12 bold", state='disabled')
+		entryP2 = tk.Entry(columnframe,bg="white",textvariable=self.entryP2,font="time 12 bold", state='disabled')
 		entryP2.grid(row=3, column=3)
 
-		entryP3 = tk.Entry(self,bg="white",textvariable=self.entryP3,font="time 12 bold", state='disabled')
+		entryP3 = tk.Entry(columnframe,bg="white",textvariable=self.entryP3,font="time 12 bold", state='disabled')
 		entryP3.grid(row=4, column=3)
 
-		entryP4 = tk.Entry(self,bg="white",textvariable=self.entryP4,font="time 12 bold", state='disabled')
+		entryP4 = tk.Entry(columnframe,bg="white",textvariable=self.entryP4,font="time 12 bold", state='disabled')
 		entryP4.grid(row=5, column=3)
 
-		entryP5 = tk.Entry(self,bg="white",textvariable=self.entryP5,font="time 12 bold", state='disabled')
+		entryP5 = tk.Entry(columnframe,bg="white",textvariable=self.entryP5,font="time 12 bold", state='disabled')
 		entryP5.grid(row=6, column=3)
 
-		entryP6 = tk.Entry(self,bg="white",textvariable=self.entryP6,font="time 12 bold", state='disabled')
+		entryP6 = tk.Entry(columnframe,bg="white",textvariable=self.entryP6,font="time 12 bold", state='disabled')
 		entryP6.grid(row=7, column=3)
 
-		entryP7 = tk.Entry(self,bg="white",textvariable=self.entryP7,font="time 12 bold", state='disabled')
+		entryP7 = tk.Entry(columnframe,bg="white",textvariable=self.entryP7,font="time 12 bold", state='disabled')
 		entryP7.grid(row=8, column=3)
 
-		entryP8 = tk.Entry(self,bg="white",textvariable=self.entryP8,font="time 12 bold", state='disabled')
+		entryP8 = tk.Entry(columnframe,bg="white",textvariable=self.entryP8,font="time 12 bold", state='disabled')
 		entryP8.grid(row=9, column=3)
 
-		entryP9 = tk.Entry(self,bg="white",textvariable=self.entryP9,font="time 12 bold", state='disabled')
+		entryP9 = tk.Entry(columnframe,bg="white",textvariable=self.entryP9,font="time 12 bold", state='disabled')
 		entryP9.grid(row=10, column=3)
 
-		entryP10 = tk.Entry(self,bg="white",textvariable=self.entryP10,font="time 12 bold", state='disabled')
+		entryP10 = tk.Entry(columnframe,bg="white",textvariable=self.entryP10,font="time 12 bold", state='disabled')
 		entryP10.grid(row=11, column=3)
 
-		entryP11 = tk.Entry(self,bg="white",textvariable=self.entryP11,font="time 12 bold", state='disabled')
+		entryP11 = tk.Entry(columnframe,bg="white",textvariable=self.entryP11,font="time 12 bold", state='disabled')
 		entryP11.grid(row=12, column=3)
 
 		entryP12 = tk.Entry(bg="white",textvariable=self.entryP12,font="time 12 bold", state='disabled')
@@ -389,27 +397,27 @@ class ShopLogin(tk.Tk):
 
 		#============================================================================================================
 		#Label to Display total
-		totallabel = tk.Label(self,textvariable=self.lbtotal,
-			fg="green",font="time 12 bold",padx=12,pady=0, bd=0,height=3, 
-			width=34, relief=None)
+		totallabel = tk.Label(columnframe,textvariable=self.lbtotal,
+			fg=None,font="time 12 bold",bg="cadetblue",padx=12,pady=0, bd=0,height=3, 
+			width=12, relief=None)
 		self.lbtotal.set("Jumlisha")
-		totallabel.grid(row=28, column=3)
+		totallabel.place(x=1120, y=360)
 		#Grandtotal Button
-		grandtotal = tk.Button(self,text="Total"
+		grandtotal = tk.Button(buttonframe,text="Total"
 			,bg="cadetblue",font="time 12 bold",
 			padx=12,pady=0, bd=0,height=3, width=12, 
 			relief=None,command=self.changelabel)
-		grandtotal.grid(row=28, column=2, columnspan=1)
+		grandtotal.place(x=840, y=650)
 
 		#Clear Button
-		logout = tk.Button(self,text="Logout"
+		logout = tk.Button(buttonframe,text="Exit"
 			,bg="cadetblue",font="time 12 bold",
 			padx=12,pady=0, bd=0,height=3, width=12, 
 			relief=None,command=self.logout)
-		logout.grid(row=30, column=3, columnspan=1)
+		logout.place(x=0, y=650)
 
 		#product management Button
-		prodmgmts = Button(self, text="Product Management",bg="cadetblue",command=self.prodmgmt).grid(row=32, column=3)
+		prodmgmts = Button(columnframe,font="time 12 bold",text="Product Management",bg="cadetblue",command=self.prodmgmt,padx=12,pady=0, bd=0,height=3, width=16).place(x=840/2, y=650)
 
 		#============================================================================================================
 		
@@ -700,11 +708,11 @@ class ShopLogin(tk.Tk):
 
 	def prodmgmt(self):
 		Tk.destroy(self)
-		pm().mainloop()
+		return pm().mainloop()
 
 if __name__ == '__main__':
 	
-	Admin().mainloop()
+	ShopLogin().mainloop()
 
 
 

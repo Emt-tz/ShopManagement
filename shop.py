@@ -123,7 +123,7 @@ class Admin(tk.Tk):
 class ShopLogin(tk.Tk):
 	def __init__(self):
 		super().__init__()
-		self.title("Stationery Shop Management System")
+		self.title("Emt Management System")
 		self.labels = []
 		self.turn = True
 		self.count = 0
@@ -133,6 +133,7 @@ class ShopLogin(tk.Tk):
 		self.conn = sqlite3.connect('sales')
 		self.c = self.conn.cursor()
 		self.stitems = self.c.execute("SELECT * FROM AddProducts").fetchall()
+		
 
 		self.box1 =  StringVar()
 		self.box2 =  StringVar()
@@ -186,6 +187,14 @@ class ShopLogin(tk.Tk):
 		self.entryP11 = IntVar()
 		self.entryP12 = IntVar()
 
+		self.salesframe = Frame(bg="white", width=804, height=360, pady=3).place(x=0,y=410)
+		self.daily = tk.Text(self.salesframe,width=40, height=25.4, font="time 10",relief=RAISED)
+		self.daily.place(x=2, y=412)
+		self.nl = "\t\t\t\t\t"
+		self.daily.insert(END,f'Product\t\tQuantity\t\tTotal\n')
+		self.daily.insert(END, "========================================\n")
+		# self.daily.insert(END, f'\t\t\t\t\t{self.nl.join(20*"|")}\n')
+
 		self.lb = StringVar()
 		self.lbtotal = StringVar()
 		self.geometry('1920x1080')
@@ -202,75 +211,79 @@ class ShopLogin(tk.Tk):
 		for row in stitems:
 			for i in range(0, len(row)):
 				x = row[0]
-			items.append(x)
+			items.append(x.upper())
 		return items
 
 	def Sales(self):
 		#Top Header Arrangement
 		#============================================================================================================
 		#Our main Heading Area
-		headingframe = Frame(bg="green",width=1920, height=200,pady=3).place(x=0,y=0)
-		heading1 = tk.Label(headingframe,text="Welcome",bg="green",fg="blue",font="time 12 bold", bd=0,pady=3,height=3, width=20, relief=None,)
+		headingframe = Frame(bg="lightgrey",width=1920, height=200,pady=3).place(x=0,y=0)
+		heading1 = tk.Label(headingframe,text="Welcome",bg="lightgrey",fg="blue",font="time 12 bold", bd=0,pady=3,height=3, width=20, relief=None,)
 		heading1.grid(row=0, column=1)
 
 		#Handle all of the columns
 
 		columnframe = Frame(bg="cadetblue", width=1920, height=360, pady=3).place(x=0,y=50)
 
-		buttonframe = Frame(bg="white", width=1000, height=360, pady=3).place(x=0,y=410)
+		
 
-		salesframe = Frame(bg="white", width=1920/2, height=300, pady=3).place(x=1000, y=410)
+		buttonframe = Frame(bg="lightgrey", width=1920/2, height=300, pady=3).place(x=800, y=413)
 
-		Product = tk.Label(columnframe, text="Product",bg="white",font="time 12 bold", height=2, width=34, relief=RAISED)
+		#Label to Warn user to not conflict with database
+
+		warning = Label(columnframe, bg="cadetblue",fg="white", text="*Please Dont Select Same Product Twice Just Change The Quantity", font="time 11").place(x=2,y=370)
+	
+		Product = tk.Label(columnframe, text="Product".upper(),bg="white",font="time 12 bold", height=2, width=34, relief=RAISED)
 		Product.grid(row=1, column=0)
 
-		Quantity = tk.Label(columnframe, text="Quantity",bg="white",font="time 12 bold", height=2, width=34, relief=RAISED)
+		Quantity = tk.Label(columnframe, text="Quantity".upper(),bg="white",font="time 12 bold", height=2, width=34, relief=RAISED)
 		Quantity.grid(row=1, column=1)
 
-		Discount = tk.Label(columnframe, text="Sell Price",bg="white",font="time 12 bold", height=2, width=34, relief=RAISED)
+		Discount = tk.Label(columnframe, text="Sell Price".upper(),bg="white",font="time 12 bold", height=2, width=34, relief=RAISED)
 		Discount.grid(row=1, column=2)
 
-		Price = tk.Label(columnframe, text="Price",bg="white",font="time 12 bold", height=2, width=34, relief=RAISED)
+		Price = tk.Label(columnframe, text="Price".upper(),bg="white",font="time 12 bold", height=2, width=34, relief=RAISED)
 		Price.grid(row=1, column=3)
 		#============================================================================================================
 
 
 		#============================================================================================================
 		#Deal with the combobox here start at row=2
-		box1 = ttk.Combobox(columnframe, textvariable=self.box1,values=self.ShopItems(),font="Courier 14 bold")
+		box1 = ttk.Combobox(columnframe, textvariable=self.box1,values=self.ShopItems(),font="Time 14 bold ")
 		box1.grid(row=2, column=0)
 
-		box2 = ttk.Combobox(columnframe, textvariable=self.box2,values=self.ShopItems(),font="Courier 14 bold")
+		box2 = ttk.Combobox(columnframe, textvariable=self.box2,values=self.ShopItems(),font="Time 14 bold ")
 		box2.grid(row=3, column=0)
 
-		box3 = ttk.Combobox(columnframe, textvariable=self.box3,values=self.ShopItems(),font="Courier 14 bold")
+		box3 = ttk.Combobox(columnframe, textvariable=self.box3,values=self.ShopItems(),font="Time 14 bold ")
 		box3.grid(row=4, column=0)
 
-		box4 = ttk.Combobox(columnframe, textvariable=self.box4,values=self.ShopItems(),font="Courier 14 bold")
+		box4 = ttk.Combobox(columnframe, textvariable=self.box4,values=self.ShopItems(),font="Time 14 bold ")
 		box4.grid(row=5, column=0)
 
-		box5 = ttk.Combobox(columnframe, textvariable=self.box5,values=self.ShopItems(),font="Courier 14 bold")
+		box5 = ttk.Combobox(columnframe, textvariable=self.box5,values=self.ShopItems(),font="Time 14 bold ")
 		box5.grid(row=6, column=0)
 
-		box6 = ttk.Combobox(columnframe, textvariable=self.box6,values=self.ShopItems(),font="Courier 14 bold")
+		box6 = ttk.Combobox(columnframe, textvariable=self.box6,values=self.ShopItems(),font="Time 14 bold ")
 		box6.grid(row=7, column=0)
 
-		box7 = ttk.Combobox(columnframe,textvariable=self.box7, values=self.ShopItems(),font="Courier 14 bold")
+		box7 = ttk.Combobox(columnframe,textvariable=self.box7, values=self.ShopItems(),font="Time 14 bold ")
 		box7.grid(row=8, column=0)
 
-		box8 = ttk.Combobox(columnframe, textvariable=self.box8,values=self.ShopItems(),font="Courier 14 bold")
+		box8 = ttk.Combobox(columnframe, textvariable=self.box8,values=self.ShopItems(),font="Time 14 bold ")
 		box8.grid(row=9, column=0)
 
-		box9 = ttk.Combobox(columnframe, textvariable=self.box9,values=self.ShopItems(),font="Courier 14 bold")
+		box9 = ttk.Combobox(columnframe, textvariable=self.box9,values=self.ShopItems(),font="Time 14 bold ")
 		box9.grid(row=10, column=0)
 
-		box10 = ttk.Combobox(columnframe, textvariable=self.box10,values=self.ShopItems(),font="Courier 14 bold")
+		box10 = ttk.Combobox(columnframe, textvariable=self.box10,values=self.ShopItems(),font="Time 14 bold ")
 		box10.grid(row=11, column=0)
 
-		box11 = ttk.Combobox(columnframe, textvariable=self.box11,values=self.ShopItems(),font="Courier 14 bold")
+		box11 = ttk.Combobox(columnframe, textvariable=self.box11,values=self.ShopItems(),font="Time 14 bold ")
 		box11.grid(row=12, column=0)
 
-		box12 = ttk.Combobox(columnframe, textvariable=self.box12,values=self.ShopItems(),font="Courier 14 bold")
+		box12 = ttk.Combobox(columnframe, textvariable=self.box12,values=self.ShopItems(),font="Time 14 bold ")
 		box12.grid(row=13, column=0)
 		#============================================================================================================
 
@@ -412,23 +425,25 @@ class ShopLogin(tk.Tk):
 		self.lbtotal.set("Jumlisha")
 		totallabel.place(x=1120, y=360)
 		#Grandtotal Button
-		grandtotal = tk.Button(buttonframe,text="Total"
-			,bg="cadetblue",fg="white",font="time 12 bold",
+		grandtotal = tk.Button(buttonframe,text="Total".upper()
+			,bg="cadetblue",fg="white",font="time 10 bold",
 			padx=12,pady=0, bd=0,height=3, width=12, 
 			relief=None,command=self.changelabel)
 		grandtotal.place(x=840, y=650)
 
 		#Clear Button
-		logout = tk.Button(buttonframe,text="Exit"
-			,bg="cadetblue",fg="white",font="time 12 bold",
+		logout = tk.Button(buttonframe,text="Exit".upper()
+			,bg="cadetblue",fg="white",font="time 10 bold",
 			padx=12,pady=0, bd=0,height=3, width=12, 
 			relief=None,command=self.logout)
-		logout.place(x=0, y=650)
+		logout.place(x=1000, y=650)
 
 
 		#product management Button
-		prodmgmts = Button(columnframe,font="time 12 bold",text="Product Management",bg="cadetblue",fg="white",command=self.prodmgmt,padx=12,pady=0, bd=0,height=3, width=16).place(x=840/2, y=650)
+		prodmgmts = Button(buttonframe,font="time 10 bold",text="Product Management".upper(),bg="cadetblue",fg="white",command=self.prodmgmt,padx=12,pady=0, bd=0,height=3, width=16).place(x=1160, y=650)
 
+		self.Salesbtn = Button(buttonframe,font="time 10 bold",text="Today Sales".upper(),bg="cadetblue",fg="white",command=self.todayssales,padx=12,pady=0, bd=0,height=3, width=16, state=DISABLED)
+		self.Salesbtn.place(x=1160, y=500)
 		#============================================================================================================
 		
 
@@ -684,6 +699,8 @@ class ShopLogin(tk.Tk):
 
 		self.lbtotal.set(f'Jumla={grandfinal}')
 
+		
+
 		values = (values1,values2,values3,values4
 		,values5,values6,values7,values8,
 			values9,values10,values11,values12)
@@ -691,10 +708,54 @@ class ShopLogin(tk.Tk):
 		self.c.executemany("INSERT INTO 'Daily Sales' VALUES (?,?,?,?,?)", values)
 		self.conn.commit()
 
-	def logout(self):
-		#self.conn.commit()	
+		#Write data to the textbox
+		self.Salesbtn.config(state=NORMAL)
+
+
+	def todayssales(self):
+		self.Salesbtn.config(state=DISABLED)
+
+		self.daily.delete(1.0, END)
+
+		self.daily.insert(END,"Product\t\tQuantity\t\tTotal\n")
+		self.daily.insert(END, "=====================================\n")
+
+		valuestime = f'{self.date.day}/{self.date.month}/{self.date.year}' 
+
 		var = "0"
 		self.c.executemany("DELETE FROM 'Daily Sales' WHERE Quantity=?", var)
+		self.conn.commit()
+
+		self.stsales = self.c.execute("SELECT * FROM 'Daily Sales' WHERE Timed=?", (str(valuestime),)).fetchall()
+
+		dtsales = {}
+
+		for row in self.stsales:
+
+			i = [i for i in range(0, len(row))]
+			j = [j for j in range(0, len(row))]
+
+			x = row[i[1]]
+			x2 = row[j[2]]
+			x3 = row[j[4]]
+
+			dtsales.update({x:(x2,x3)})
+
+		for k,v in dtsales.items():
+			newv = str(v).replace("(","")
+			newv = newv.replace(")", "")
+
+			q,p = newv.split(",")
+			self.daily.insert(END, f'{k.upper()}\t\t{q}\t\t{p}\n')
+
+		# print(dtsales)
+
+		
+
+	def logout(self):
+		#self.conn.commit()	
+		
+		
 		self.conn.commit()
 		self.conn.close()
 		Tk.destroy(self)

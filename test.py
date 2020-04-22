@@ -63,10 +63,15 @@
 # outline='black', fill='SkyBlue2')
 # root.mainloop()
 
-values = ""
-var2 = ""
+# values = ""
+# var2 = ""
 
-if values or var2 == "":
-	print("var")
-else:
-	print("va")
+# if values or var2 == "":
+# 	print("var")
+# else:
+# 	print("va")
+
+
+nl = "\t"
+
+print(nl.join(28*"=\n"))

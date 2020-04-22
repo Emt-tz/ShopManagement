@@ -34,10 +34,10 @@ class ProductManagement(tk.Tk):
 		self.sellpricevar = IntVar()
 		self.quantityvar = IntVar()
 
-		self.namevaredit = StringVar()
-		self.buypricevaredit = IntVar()
-		self.sellpricevaredit = IntVar()
-		self.quantityvaredit = IntVar()
+		self.namevayellowgreenit = StringVar()
+		self.buypricevayellowgreenit = IntVar()
+		self.sellpricevayellowgreenit = IntVar()
+		self.quantityvayellowgreenit = IntVar()
 
 		self.btncommands = []
 		self.btnstate = [None,None,None,None]
@@ -50,9 +50,9 @@ class ProductManagement(tk.Tk):
 	def Load(self):
 		#=============================================================================================
 		#Create Main Containers
-		top_frame = Frame(bg='cadetblue', width=450, height=50, pady=3)
-		center_frame = Frame(bg='yellowgreen', width=450, height=175, padx=3, pady=3)
-		bottom_frame = Frame(bg='cadetblue', width=450, height=100, pady=3)
+		top_frame = Frame(bg='yellowgreen', width=450, height=50, pady=3)
+		center_frame = Frame(bg='grey', width=450, height=175, padx=3, pady=3)
+		bottom_frame = Frame(bg='yellowgreen', width=450, height=100, pady=3)
 		#Layout the Main Containers
 		top_frame.grid(row=0, sticky="ew")
 		center_frame.grid(row=1, sticky="nsew")
@@ -90,7 +90,7 @@ class ProductManagement(tk.Tk):
 	
 		#Main Layout:
 		self.geometry('850x360+300+200')
-		editframe = Frame(bg="red", width=450, height=360, pady=3).place(x=450,y=0)
+		editframe = Frame(bg="yellowgreen", width=450, height=360, pady=3).place(x=450,y=0)
 		name = Label(editframe,text="Name", font=self.font).place(x=450,y=50)
 		buy_price = Label(editframe,text="Buy_Price", font=self.font).place(x=450,y=100)
 		sell_price = Label(editframe,text="Sell_Price", font=self.font).place(x=450,y=150)
@@ -122,7 +122,7 @@ class ProductManagement(tk.Tk):
 		values3 = self.sellpricevar.get()
 		values4 = self.quantityvar.get()
 
-		values = (values1, values2, values3, values4)
+		values = (values1.upper(), values2, values3, values4)
 
 		#print(values)
 
@@ -161,22 +161,22 @@ class ProductManagement(tk.Tk):
 		products = self.c.execute("SELECT * FROM AddProducts").fetchall()
 
 		#Cerate 4 List Boxes to view the products 
-		textlist1 = Listbox(editframe, height=25,width=14, fg="red")
+		textlist1 = Listbox(editframe, height=25,width=14, fg="yellowgreen")
 		textlist1.place(x=452)
 		textlist1.insert(END, "PRODUCTS")
 		textlist1.insert(END,"")
 
-		textlist2 = Listbox(editframe, height=25,width=14, fg="red")
+		textlist2 = Listbox(editframe, height=25,width=14, fg="yellowgreen")
 		textlist2.place(x=550)
 		textlist2.insert(END, "BUYPRICE")
 		textlist2.insert(END,"")
 
-		textlist3 = Listbox(editframe, height=25,width=14, fg="red")
+		textlist3 = Listbox(editframe, height=25,width=14, fg="yellowgreen")
 		textlist3.place(x=650)
 		textlist3.insert(END, "SELLPRICE")
 		textlist3.insert(END,"")
 
-		textlist4 = Listbox(editframe, height=25,width=13, fg="red")
+		textlist4 = Listbox(editframe, height=25,width=13, fg="yellowgreen")
 		textlist4.place(x=750)
 		textlist4.insert(END, "QUANTITY")
 		textlist4.insert(END,"")
@@ -221,7 +221,7 @@ class ProductManagement(tk.Tk):
 		def combo():
 			return [x for x in prod]
 
-		name_entry = ttk.Combobox(font=self.font,textvariable=self.namevaredit,values=combo(), width=19,height=19).place(x=590,y=150)
+		name_entry = ttk.Combobox(font=self.font,textvariable=self.namevayellowgreenit,values=combo(), width=19,height=19).place(x=590,y=150)
 
 		delbtn = Button(editframe, text="Delete",font="Verdana 14 bold",command=self.delcombo).place(x=455, y=320)
 		clearbtn = Button(editframe, text="Back",font="Verdana 14 bold", command=self.clearbtn).place(x=600, y=320)
@@ -237,7 +237,7 @@ class ProductManagement(tk.Tk):
 
 		#Main UI
 
-		editframe = Frame(bg="red", width=450, height=360, pady=3).place(x=450,y=0)
+		editframe = Frame(bg="yellowgreen", width=450, height=360, pady=3).place(x=450,y=0)
 
 		name = Label(editframe,text="Name", font=self.font).place(x=450,y=50)
 		buy_price = Label(editframe,text="Buy_Price", font=self.font).place(x=450,y=100)
@@ -260,10 +260,10 @@ class ProductManagement(tk.Tk):
 		def combo():
 			return [x for x in prod]
 
-		name_entry = ttk.Combobox(font=self.font,textvariable=self.namevaredit,values=combo(), width=19,height=19).place(x=590,y=50)
-		buy_price_entry = Entry(font=self.font,textvariable=self.buypricevaredit).place(x=590, y=100)
-		sell_price_entry = Entry(font=self.font,textvariable=self.sellpricevaredit).place(x=590, y=150)
-		quantity_entry = Entry(font=self.font,textvariable=self.quantityvaredit).place(x=590, y=200)
+		name_entry = ttk.Combobox(font=self.font,textvariable=self.namevayellowgreenit,values=combo(), width=19,height=19).place(x=590,y=50)
+		buy_price_entry = Entry(font=self.font,textvariable=self.buypricevayellowgreenit).place(x=590, y=100)
+		sell_price_entry = Entry(font=self.font,textvariable=self.sellpricevayellowgreenit).place(x=590, y=150)
+		quantity_entry = Entry(font=self.font,textvariable=self.quantityvayellowgreenit).place(x=590, y=200)
 
 	
 		#Algorithm to Update Value
@@ -280,10 +280,10 @@ class ProductManagement(tk.Tk):
 		
 	def checkcombo(self):
 
-		x = self.namevaredit.get()
-		x2 = self.buypricevaredit.get()
-		x3 = self.sellpricevaredit.get()
-		x4 = self.quantityvaredit.get()
+		x = self.namevayellowgreenit.get()
+		x2 = self.buypricevayellowgreenit.get()
+		x3 = self.sellpricevayellowgreenit.get()
+		x4 = self.quantityvayellowgreenit.get()
 
 		products = self.c.execute("SELECT * FROM AddProducts").fetchall()
 
@@ -307,7 +307,7 @@ class ProductManagement(tk.Tk):
 	def delcombo(self):
 		#=============================================================================================
 
-		x = self.namevaredit.get()
+		x = self.namevayellowgreenit.get()
 
 		products = self.c.execute("SELECT * FROM AddProducts").fetchall()
 

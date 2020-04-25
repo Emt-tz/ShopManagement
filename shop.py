@@ -55,72 +55,160 @@ import time
 import concurrent.futures
 import sqlite3
 import datetime as dt
+import sys
+from time import strftime
 from prod import ProductManagement as pm
 
-global cmb
-global stitems
-global txtinput
-
-#initiate connection to database
-
-# conn = sqlite3.connect('sales')
-
-# c = conn.cursor()
-
-
 class Admin(tk.Tk):
-	
+	#=================================================================================================================#
 	def __init__(self):
 		super().__init__()
-		self.title("Emt Stationery Login")
+		self.title("Emt Mgmt Login")
 		self.turn = True
 		self.labels = []
 		self.txt = StringVar()
 		self.lb = StringVar()
 		self.un = StringVar()
 		self.pwd = StringVar()
-		self.geometry('250x250+500+300')
+		self.unnew = StringVar()
+		self.pwdnew = StringVar()
+		self.pwdnewchk = StringVar()
+		self.geometry('250x300+500+300')
 		self.resizable(False, False)
 		self.Interface()
+	#=================================================================================================================#
 
 	def Interface(self):
-		heading = tk.Label(text="Login to Continue",fg="blue",font="time 12 bold", bd=0,height=3, width=18, relief=None,)
+	#=================================================================================================================#
+		heading = tk.Label(text="Login to Continue",fg="blue",font="time 13 bold", bd=0,height=3, width=18, relief=None,)
 		heading.grid(row=0, column=0, columnspan=3) 
 		for i in range(1, 2):
 			col = []
 			for j in range(0, 1):
-				col.append(tk.Label(textvariable=self.lb,fg="white",font="time 12 bold", height=2, width=14, relief=RAISED))
+				col.append(tk.Label(textvariable=self.lb,fg="white",font="time 13 bold", height=2, width=14, relief=RAISED))
 				self.lb.set("User Data")
 				col[j].grid(row=i, column=j)
 			self.labels.append(col)
 		
 
-		username = tk.Entry(textvariable=self.un, bd=2,font="time 14 bold")
+		username = tk.Entry(textvariable=self.un, bd=2,font="time 13 bold")
 		username.grid(row=2, column=0)
 
-		password = tk.Entry(textvariable=self.pwd, bd=2,font="time 14 bold", show="*")
+		password = tk.Entry(textvariable=self.pwd, bd=2,font="time 13 bold", show="*")
 		password.grid(row=3, column=0)
 
-		loginbtn = tk.Button(text="Login",font="time 12 bold", command=self.Authenticate)
+		loginbtn = tk.Button(text="Login",font="time 13 bold", command=self.Authenticate)
 		loginbtn.grid(row=4, column=0)
 
-		
-
-		authtext = tk.Label(textvariable=self.txt,fg="cadetblue",font="time 12 bold", relief=RAISED)
+		authtext = tk.Label(textvariable=self.txt,fg="cadetblue",font="time 12", relief=RAISED)
 		self.txt.set("Credential Check")
-		authtext.grid(row=6, column=0)
+		authtext.grid(row=5, column=0)
 
-	def Authenticate(self):
+		newuserbtn = tk.Button(text="Add User",font="time 13 bold", command=self.CallAdmin1)
+		newuserbtn.grid(row=6, column=0)
+
+		self.bind('<Return>',self.Authenticate)
+	#=================================================================================================================#
+
+	def Authenticate(self, event=None):
 		un = self.un.get()
 		pwd = self.pwd.get()
 
-		if un == 'admin' and pwd == 'admin':
+		#===========================Connect to the Database and Authenticate=========================================#
+		conn = sqlite3.connect('sales')
+		c = conn.cursor()
+
+		cred = c.execute("SELECT * FROM 'login'").fetchall()
+
+		#loop through the database and check for user if exists
+
+		#user one is when [0][0] and pass [0][1]
+		#user two is when [1][0] and pass[1][1]
+		userdict = {}
+		for i in range(0, len(cred)):
+			user = cred[1-i][0]
+			password = cred[1-i][1]
+
+			userdict.update({user:password})
+
+		for k,v in userdict.items():
+			if un == k and pwd ==v:
+				try:
+					Tk.destroy(self)
+					ShopLogin().mainloop()
+				except:
+					tk.messagebox.showinfo("Error","Please Check Credentials")
+				#ShopLogin().mainloop()
+
+	def CallAdmin1(self):
+		Tk.destroy(self)
+		return Admin1().mainloop()
+
+class Admin1(tk.Tk):
+	#=================================================================================================================#
+	def __init__(self):
+		super().__init__()
+		self.title("Emt Mgmt Login")
+		self.turn = True
+		self.labels = []
+		self.txt = StringVar()
+		self.lb = StringVar()
+		self.un = StringVar()
+		self.pwd = StringVar()
+		self.unnew = StringVar()
+		self.pwdnew = StringVar()
+		self.pwdnewchk = StringVar()
+		self.geometry('250x300+500+300')
+		self.resizable(False, False)
+		self.CreateUser()
+
+	def CreateUser(self):
+		heading = tk.Label(text="New User SignUp",fg="blue",font="time 13 bold", bd=0,height=3, width=18, relief=None,)
+		heading.grid(row=0, column=0, columnspan=3) 
+		for i in range(1, 2):
+			col = []
+			for j in range(0, 1):
+				col.append(tk.Label(textvariable=self.lb,fg="cadetblue",font="time 13 bold", height=2, width=14, relief=RAISED))
+				self.lb.set("User Info")
+				col[j].grid(row=i, column=j)
+			self.labels.append(col)
+		
+
+		username = tk.Entry(textvariable=self.unnew, bd=2,font="time 13 bold")
+		username.grid(row=2, column=0)
+
+		password = tk.Entry(textvariable=self.pwdnew, bd=2,font="time 13 bold", show="*")
+		password.grid(row=3, column=0)
+
+		passwordconfirm = tk.Entry(textvariable=self.pwdnewchk, bd=2,font="time 13 bold", show="*")
+		passwordconfirm.grid(row=4, column=0)
+
+		createuserbtn = tk.Button(text="CreateUser",font="time 13 bold", command=self.AddUser)
+		createuserbtn.grid(row=5, column=0)
+
+		authtext = tk.Label(textvariable=self.txt,fg="cadetblue",font="time 12", relief=RAISED)
+		self.txt.set("Add New Credentials")
+		authtext.grid(row=6, column=0)
+
+	def AddUser(self):
+		conn = sqlite3.connect('sales')
+		c = conn.cursor()
+
+		if self.pwdnew.get() == self.pwdnewchk.get():
+
+			c.execute("INSERT INTO 'login' VALUES (?,?) ", (self.unnew.get(),self.pwdnew.get()))
+			conn.commit()
+
+			tk.messagebox.showinfo("Succes", "User Added Successfully Press ok to Login")
 			Tk.destroy(self)
-			ShopLogin().mainloop()
+			Admin().mainloop()
 		else:
-			exit()
+			tk.messagebox.showinfo("Check Passwords","Passwords Dont Match Please Check")
+		
+
 
 class ShopLogin(tk.Tk):
+	#=================================================================================================================#
 	def __init__(self):
 		super().__init__()
 		self.title("Emt Management System")
@@ -132,8 +220,7 @@ class ShopLogin(tk.Tk):
 		self.textinput = []
 		self.conn = sqlite3.connect('sales')
 		self.c = self.conn.cursor()
-		self.stitems = self.c.execute("SELECT * FROM AddProducts").fetchall()
-		
+		self.stitems = self.c.execute("SELECT * FROM AddProducts").fetchall() 
 
 		self.box1 =  StringVar()
 		self.box2 =  StringVar()
@@ -187,22 +274,28 @@ class ShopLogin(tk.Tk):
 		self.entryP11 = IntVar()
 		self.entryP12 = IntVar()
 
-		self.salesframe = Frame(bg="white", width=804, height=360, pady=3).place(x=0,y=410)
-		self.daily = tk.Text(self.salesframe,width=40, height=25.4, font="time 10",relief=RAISED)
-		self.daily.place(x=2, y=412)
+		self.sale_date_entry = StringVar()
+
+		self.salesframe = Frame(bg="white", width=400, height=900, pady=3).place(x=1034,y=410)
+		self.daily = tk.Text(self.salesframe,width=40, height=20, font="time 10",relief=RAISED)
+		self.daily.place(x=1037, y=412)
 		self.nl = "\t\t\t\t\t"
 		self.daily.insert(END,f'Product\t\tQuantity\t\tTotal\n')
-		self.daily.insert(END, "========================================\n")
+		self.daily.insert(END, f'{45*"_"}')
 		# self.daily.insert(END, f'\t\t\t\t\t{self.nl.join(20*"|")}\n')
 
 		self.lb = StringVar()
 		self.lbtotal = StringVar()
-		self.geometry('1920x1080')
-		self.resizable(True, True)
 
+		self.geometry('1350x1080+10+0')
+		self.resizable(False, True)
+
+		
 		self.Sales()
+	#=================================================================================================================#
 
 	def ShopItems(self):
+	#=================================================================================================================#
 		#This Function Just Returns all products input by user and combobox displays them
 		stitems = self.stitems
 		
@@ -212,243 +305,298 @@ class ShopLogin(tk.Tk):
 			for i in range(0, len(row)):
 				x = row[0]
 			items.append(x.upper())
-		return items
+		return sorted(items)
+	#=================================================================================================================#
 
 	def Sales(self):
 		#Top Header Arrangement
-		#============================================================================================================
-		#Our main Heading Area
-		headingframe = Frame(bg="lightgrey",width=1920, height=200,pady=3).place(x=0,y=0)
-		heading1 = tk.Label(headingframe,text="Welcome",bg="lightgrey",fg="blue",font="time 12 bold", bd=0,pady=3,height=3, width=20, relief=None,)
-		heading1.grid(row=0, column=1)
+	#===========================All Frames to Control The Main GUI are Placed Here ========================================#
+		headingframe = Frame(bg="lightgrey",width=1920, height=200).place(x=0,y=0)
 
-		#Handle all of the columns
+		Shop_title = Label(headingframe,text="Welcome to Emt Shop Management System".upper(),bg="lightgrey",fg="green",font="time 14", bd=0,height=2,relief=None)
+		Shop_title.place(y=0, x=500)
+
+		heading1 = tk.Label(headingframe,text="",bg="lightgrey",fg="blue",font="time 10", bd=0,pady=3,height=3, width=20, relief=None,)
+		heading1.grid(row=0, column=0)
 
 		columnframe = Frame(bg="cadetblue", width=1920, height=360, pady=3).place(x=0,y=50)
 
-		
-
-		buttonframe = Frame(bg="lightgrey", width=1920/2, height=300, pady=3).place(x=800, y=413)
-
+		buttonframe = Frame(bg="lightgrey", width=1030, height=300, pady=3).place(x=2, y=413)
 		#Label to Warn user to not conflict with database
-
-		warning = Label(columnframe, bg="cadetblue",fg="white", text="*Please Dont Select Same Product Twice Just Change The Quantity", font="time 11").place(x=2,y=370)
+		warning = Label(columnframe, bg="cadetblue",fg="green", text="*To Check Product Price Put Quantity 0 and Press Total", font="time 11").place(x=400,y=380)
 	
-		Product = tk.Label(columnframe, text="Product".upper(),bg="white",font="time 12 bold", height=2, width=34, relief=RAISED)
+		Product = tk.Label(columnframe, text="Product".upper(),bg="white",font="time 11 bold", height=2, width=34, relief=RAISED)
 		Product.grid(row=1, column=0)
 
-		Quantity = tk.Label(columnframe, text="Quantity".upper(),bg="white",font="time 12 bold", height=2, width=34, relief=RAISED)
+		Quantity = tk.Label(columnframe, text="Quantity".upper(),bg="white",font="time 11 bold", height=2, width=34, relief=RAISED)
 		Quantity.grid(row=1, column=1)
 
-		Discount = tk.Label(columnframe, text="Sell Price".upper(),bg="white",font="time 12 bold", height=2, width=34, relief=RAISED)
+		Discount = tk.Label(columnframe, text="Sell Price".upper(),bg="white",font="time 11 bold", height=2, width=34, relief=RAISED)
 		Discount.grid(row=1, column=2)
 
-		Price = tk.Label(columnframe, text="Price".upper(),bg="white",font="time 12 bold", height=2, width=34, relief=RAISED)
+		Price = tk.Label(columnframe, text="Price".upper(),bg="white",font="time 11 bold", height=2, width=34, relief=RAISED)
 		Price.grid(row=1, column=3)
-		#============================================================================================================
 
-
-		#============================================================================================================
+		
+		
+		# lbl = Label(font = ('calibri', 40, 'bold'), 
+		# 	background = 'purple', 
+		# 	foreground = 'white',width=300).place(y=0,x=600) 
+		# lbl.config(clock)
+		# #lbl.after(1000, time)  
+	#=================================================================================================================#
+	#============================Combobox,Entry Defined Here==========================================================#
 		#Deal with the combobox here start at row=2
-		box1 = ttk.Combobox(columnframe, textvariable=self.box1,values=self.ShopItems(),font="Time 14 bold ")
+		box1 = ttk.Combobox(columnframe, textvariable=self.box1,values=self.ShopItems(),font="time 12")
 		box1.grid(row=2, column=0)
-
-		box2 = ttk.Combobox(columnframe, textvariable=self.box2,values=self.ShopItems(),font="Time 14 bold ")
+		box2 = ttk.Combobox(columnframe, textvariable=self.box2,values=self.ShopItems(),font="time 12")
 		box2.grid(row=3, column=0)
-
-		box3 = ttk.Combobox(columnframe, textvariable=self.box3,values=self.ShopItems(),font="Time 14 bold ")
+		box3 = ttk.Combobox(columnframe, textvariable=self.box3,values=self.ShopItems(),font="time 12")
 		box3.grid(row=4, column=0)
-
-		box4 = ttk.Combobox(columnframe, textvariable=self.box4,values=self.ShopItems(),font="Time 14 bold ")
+		box4 = ttk.Combobox(columnframe, textvariable=self.box4,values=self.ShopItems(),font="time 12")
 		box4.grid(row=5, column=0)
-
-		box5 = ttk.Combobox(columnframe, textvariable=self.box5,values=self.ShopItems(),font="Time 14 bold ")
+		box5 = ttk.Combobox(columnframe, textvariable=self.box5,values=self.ShopItems(),font="time 12")
 		box5.grid(row=6, column=0)
-
-		box6 = ttk.Combobox(columnframe, textvariable=self.box6,values=self.ShopItems(),font="Time 14 bold ")
+		box6 = ttk.Combobox(columnframe, textvariable=self.box6,values=self.ShopItems(),font="time 12")
 		box6.grid(row=7, column=0)
-
-		box7 = ttk.Combobox(columnframe,textvariable=self.box7, values=self.ShopItems(),font="Time 14 bold ")
+		box7 = ttk.Combobox(columnframe,textvariable=self.box7, values=self.ShopItems(),font="time 12")
 		box7.grid(row=8, column=0)
-
-		box8 = ttk.Combobox(columnframe, textvariable=self.box8,values=self.ShopItems(),font="Time 14 bold ")
+		box8 = ttk.Combobox(columnframe, textvariable=self.box8,values=self.ShopItems(),font="time 12")
 		box8.grid(row=9, column=0)
-
-		box9 = ttk.Combobox(columnframe, textvariable=self.box9,values=self.ShopItems(),font="Time 14 bold ")
+		box9 = ttk.Combobox(columnframe, textvariable=self.box9,values=self.ShopItems(),font="time 12")
 		box9.grid(row=10, column=0)
-
-		box10 = ttk.Combobox(columnframe, textvariable=self.box10,values=self.ShopItems(),font="Time 14 bold ")
+		box10 = ttk.Combobox(columnframe, textvariable=self.box10,values=self.ShopItems(),font="time 12")
 		box10.grid(row=11, column=0)
-
-		box11 = ttk.Combobox(columnframe, textvariable=self.box11,values=self.ShopItems(),font="Time 14 bold ")
+		box11 = ttk.Combobox(columnframe, textvariable=self.box11,values=self.ShopItems(),font="time 12")
 		box11.grid(row=12, column=0)
-
-		box12 = ttk.Combobox(columnframe, textvariable=self.box12,values=self.ShopItems(),font="Time 14 bold ")
+		box12 = ttk.Combobox(columnframe, textvariable=self.box12,values=self.ShopItems(),font="time 12")
 		box12.grid(row=13, column=0)
 		#============================================================================================================
 
 		#============================================================================================================
 		#Quantity Entry Boxes
-		entryq1 = tk.Entry(columnframe,bg="white",textvariable=self.entryq1,font="time 12 bold")
+		entryq1 = tk.Entry(columnframe,bg="white",textvariable=self.entryq1,font="time 10")
 		entryq1.grid(row=2, column=1)
-
-		entryq2 = tk.Entry(columnframe,bg="white",textvariable=self.entryq2,font="time 12 bold")
+		entryq2 = tk.Entry(columnframe,bg="white",textvariable=self.entryq2,font="time 10")
 		entryq2.grid(row=3, column=1)
-
-		entryq3 = tk.Entry(columnframe,bg="white",textvariable=self.entryq3,font="time 12 bold")
+		entryq3 = tk.Entry(columnframe,bg="white",textvariable=self.entryq3,font="time 10")
 		entryq3.grid(row=4, column=1)
-
-		entryq4 = tk.Entry(columnframe,bg="white",textvariable=self.entryq4,font="time 12 bold")
+		entryq4 = tk.Entry(columnframe,bg="white",textvariable=self.entryq4,font="time 10")
 		entryq4.grid(row=5, column=1)
-
-		entryq5 = tk.Entry(columnframe,bg="white",textvariable=self.entryq5,font="time 12 bold")
+		entryq5 = tk.Entry(columnframe,bg="white",textvariable=self.entryq5,font="time 10")
 		entryq5.grid(row=6, column=1)
-
-		entryq6 = tk.Entry(columnframe,bg="white",textvariable=self.entryq6,font="time 12 bold")
+		entryq6 = tk.Entry(columnframe,bg="white",textvariable=self.entryq6,font="time 10")
 		entryq6.grid(row=7, column=1)
-
-		entryq7 = tk.Entry(columnframe,bg="white",textvariable=self.entryq7,font="time 12 bold")
+		entryq7 = tk.Entry(columnframe,bg="white",textvariable=self.entryq7,font="time 10")
 		entryq7.grid(row=8, column=1)
-
-		entryq8 = tk.Entry(columnframe,bg="white",textvariable=self.entryq8,font="time 12 bold")
+		entryq8 = tk.Entry(columnframe,bg="white",textvariable=self.entryq8,font="time 10")
 		entryq8.grid(row=9, column=1)
-
-		entryq9 = tk.Entry(columnframe,bg="white",textvariable=self.entryq9,font="time 12 bold")
+		entryq9 = tk.Entry(columnframe,bg="white",textvariable=self.entryq9,font="time 10")
 		entryq9.grid(row=10, column=1)
-
-		entryq10 = tk.Entry(columnframe,bg="white",textvariable=self.entryq10,font="time 12 bold")
+		entryq10 = tk.Entry(columnframe,bg="white",textvariable=self.entryq10,font="time 10")
 		entryq10.grid(row=11, column=1)
-
-		entryq11 = tk.Entry(columnframe,bg="white",textvariable=self.entryq11,font="time 12 bold")
+		entryq11 = tk.Entry(columnframe,bg="white",textvariable=self.entryq11,font="time 10")
 		entryq11.grid(row=12, column=1)
-
-		entryq12 = tk.Entry(columnframe,bg="white",textvariable=self.entryq12,font="time 12 bold")
+		entryq12 = tk.Entry(columnframe,bg="white",textvariable=self.entryq12,font="time 10")
 		entryq12.grid(row=13, column=1)
+
+		#bind all q entries with the enter key
+		entryq1.bind("<Return>",self.todayssales)
+		entryq2.bind("<Return>",self.todayssales)
+		entryq3.bind("<Return>",self.todayssales)
+		entryq4.bind("<Return>",self.todayssales)
+		entryq5.bind("<Return>",self.todayssales)
+		entryq6.bind("<Return>",self.todayssales)
+		entryq7.bind("<Return>",self.todayssales)
+		entryq8.bind("<Return>",self.todayssales)
+		entryq9.bind("<Return>",self.todayssales)
+		entryq10.bind("<Return>",self.todayssales)
+		entryq11.bind("<Return>",self.todayssales)
+		entryq12.bind("<Return>",self.todayssales)
 		#============================================================================================================
 
 		#============================================================================================================
-		#Discount entries.
+		#Sell Price Entries D[i].
 		entryD1 = tk.Entry(columnframe,bg="white",state=
-			'disabled',textvariable=self.entryD1,font="time 12 bold")
+			'disabled',textvariable=self.entryD1,font="time 10")
 		entryD1.grid(row=2, column=2)
-
 		entryD2 = tk.Entry(columnframe,bg="white",state=
-			'disabled',textvariable=self.entryD2,font="time 12 bold")
+			'disabled',textvariable=self.entryD2,font="time 10")
 		entryD2.grid(row=3, column=2)
-
 		entryD3 = tk.Entry(columnframe,bg="white",state=
-			'disabled',textvariable=self.entryD3,font="time 12 bold")
+			'disabled',textvariable=self.entryD3,font="time 10")
 		entryD3.grid(row=4, column=2)
-
 		entryD4 = tk.Entry(columnframe,bg="white",state=
-			'disabled',textvariable=self.entryD4,font="time 12 bold")
+			'disabled',textvariable=self.entryD4,font="time 10")
 		entryD4.grid(row=5, column=2)
-
 		entryD5 = tk.Entry(columnframe,bg="white",state=
-			'disabled',textvariable=self.entryD5,font="time 12 bold")
+			'disabled',textvariable=self.entryD5,font="time 10")
 		entryD5.grid(row=6, column=2)
-
 		entryD6 = tk.Entry(columnframe,bg="white",state=
-			'disabled',textvariable=self.entryD6,font="time 12 bold")
+			'disabled',textvariable=self.entryD6,font="time 10")
 		entryD6.grid(row=7, column=2)
-
 		entryD7 = tk.Entry(columnframe,bg="white",state=
-			'disabled',textvariable=self.entryD7,font="time 12 bold")
+			'disabled',textvariable=self.entryD7,font="time 10")
 		entryD7.grid(row=8, column=2)
-
 		entryD8 = tk.Entry(columnframe,bg="white",state=
-			'disabled',textvariable=self.entryD8,font="time 12 bold")
+			'disabled',textvariable=self.entryD8,font="time 10")
 		entryD8.grid(row=9, column=2)
-
 		entryD9 = tk.Entry(columnframe,bg="white",state=
-			'disabled',textvariable=self.entryD9,font="time 12 bold")
+			'disabled',textvariable=self.entryD9,font="time 10")
 		entryD9.grid(row=10, column=2)
-
 		entryD10 = tk.Entry(columnframe,bg="white",state=
-			'disabled',textvariable=self.entryD10,font="time 12 bold")
+			'disabled',textvariable=self.entryD10,font="time 10")
 		entryD10.grid(row=11, column=2)
-
 		entryD11 = tk.Entry(columnframe,bg="white",state=
-			'disabled',textvariable=self.entryD11,font="time 12 bold")
+			'disabled',textvariable=self.entryD11,font="time 10")
 		entryD11.grid(row=12, column=2)
-
 		entryD12 = tk.Entry(columnframe,bg="white",state=
-			'disabled',textvariable=self.entryD12,font="time 12 bold")
+			'disabled',textvariable=self.entryD12,font="time 10")
 		entryD12.grid(row=13, column=2)
 		#============================================================================================================
 
 		#============================================================================================================
 		#Total Price Entries
-		entryP1 = tk.Entry(columnframe,bg="white",textvariable=self.entryP1,font="time 12 bold", state='disabled')
+		entryP1 = tk.Entry(columnframe,bg="white",textvariable=self.entryP1,font="time 10", state='disabled')
 		entryP1.grid(row=2, column=3)
-
-		entryP2 = tk.Entry(columnframe,bg="white",textvariable=self.entryP2,font="time 12 bold", state='disabled')
+		entryP2 = tk.Entry(columnframe,bg="white",textvariable=self.entryP2,font="time 10", state='disabled')
 		entryP2.grid(row=3, column=3)
-
-		entryP3 = tk.Entry(columnframe,bg="white",textvariable=self.entryP3,font="time 12 bold", state='disabled')
+		entryP3 = tk.Entry(columnframe,bg="white",textvariable=self.entryP3,font="time 10", state='disabled')
 		entryP3.grid(row=4, column=3)
-
-		entryP4 = tk.Entry(columnframe,bg="white",textvariable=self.entryP4,font="time 12 bold", state='disabled')
+		entryP4 = tk.Entry(columnframe,bg="white",textvariable=self.entryP4,font="time 10", state='disabled')
 		entryP4.grid(row=5, column=3)
-
-		entryP5 = tk.Entry(columnframe,bg="white",textvariable=self.entryP5,font="time 12 bold", state='disabled')
+		entryP5 = tk.Entry(columnframe,bg="white",textvariable=self.entryP5,font="time 10", state='disabled')
 		entryP5.grid(row=6, column=3)
-
-		entryP6 = tk.Entry(columnframe,bg="white",textvariable=self.entryP6,font="time 12 bold", state='disabled')
+		entryP6 = tk.Entry(columnframe,bg="white",textvariable=self.entryP6,font="time 10", state='disabled')
 		entryP6.grid(row=7, column=3)
-
-		entryP7 = tk.Entry(columnframe,bg="white",textvariable=self.entryP7,font="time 12 bold", state='disabled')
+		entryP7 = tk.Entry(columnframe,bg="white",textvariable=self.entryP7,font="time 10", state='disabled')
 		entryP7.grid(row=8, column=3)
-
-		entryP8 = tk.Entry(columnframe,bg="white",textvariable=self.entryP8,font="time 12 bold", state='disabled')
+		entryP8 = tk.Entry(columnframe,bg="white",textvariable=self.entryP8,font="time 10", state='disabled')
 		entryP8.grid(row=9, column=3)
-
-		entryP9 = tk.Entry(columnframe,bg="white",textvariable=self.entryP9,font="time 12 bold", state='disabled')
+		entryP9 = tk.Entry(columnframe,bg="white",textvariable=self.entryP9,font="time 10", state='disabled')
 		entryP9.grid(row=10, column=3)
-
-		entryP10 = tk.Entry(columnframe,bg="white",textvariable=self.entryP10,font="time 12 bold", state='disabled')
+		entryP10 = tk.Entry(columnframe,bg="white",textvariable=self.entryP10,font="time 10", state='disabled')
 		entryP10.grid(row=11, column=3)
-
-		entryP11 = tk.Entry(columnframe,bg="white",textvariable=self.entryP11,font="time 12 bold", state='disabled')
+		entryP11 = tk.Entry(columnframe,bg="white",textvariable=self.entryP11,font="time 10", state='disabled')
 		entryP11.grid(row=12, column=3)
-
-		entryP12 = tk.Entry(bg="white",textvariable=self.entryP12,font="time 12 bold", state='disabled')
+		entryP12 = tk.Entry(bg="white",textvariable=self.entryP12,font="time 10", state='disabled')
 		entryP12.grid(row=13, column=3)
 		
 		#============================================================================================================
 
 		#============================================================================================================
-		#Label to Display total
-		totallabel = tk.Label(columnframe,textvariable=self.lbtotal,
-			font="time 12 bold",bg="cadetblue",fg="white",padx=12,pady=0, bd=0,height=3, 
-			width=12, relief=None)
-		self.lbtotal.set("Jumlisha")
-		totallabel.place(x=1120, y=360)
-		#Grandtotal Button
+		# GrandTotal Button
 		grandtotal = tk.Button(buttonframe,text="Total".upper()
-			,bg="cadetblue",fg="white",font="time 10 bold",
-			padx=12,pady=0, bd=0,height=3, width=12, 
-			relief=None,command=self.changelabel)
-		grandtotal.place(x=840, y=650)
-
-		#Clear Button
-		logout = tk.Button(buttonframe,text="Exit".upper()
-			,bg="cadetblue",fg="white",font="time 10 bold",
-			padx=12,pady=0, bd=0,height=3, width=12, 
-			relief=None,command=self.logout)
-		logout.place(x=1000, y=650)
+			,bg="cadetblue",fg="white",font="time 10",
+			bd=0,height=2, width=12, 
+			relief=None,command=self.todayssales)
+		grandtotal.place(x=60, y=650)
 
 
-		#product management Button
-		prodmgmts = Button(buttonframe,font="time 10 bold",text="Product Management".upper(),bg="cadetblue",fg="white",command=self.prodmgmt,padx=12,pady=0, bd=0,height=3, width=16).place(x=1160, y=650)
-
-		self.Salesbtn = Button(buttonframe,font="time 10 bold",text="Today Sales".upper(),bg="cadetblue",fg="white",command=self.todayssales,padx=12,pady=0, bd=0,height=3, width=16, state=DISABLED)
-		self.Salesbtn.place(x=1160, y=500)
-		#============================================================================================================
 		
 
-	def changelabel(self):
-		#get combobox one test Check
+		# Exit Button
+		logout = tk.Button(buttonframe,text="Exit".upper()
+			,bg="cadetblue",fg="white",font="time 10",
+			bd=0,height=2, width=12, 
+			relief=None,command=sys.exit)
+		logout.place(x=262, y=650)
+
+
+		#Product Management Button
+		prodmgmts = Button(buttonframe,font="time 10",text="Product Management".upper(),bg="cadetblue",fg="white",command=self.prodmgmt,bd=0,height=2, width=20).place(x=480, y=650)
+
+		# self.Salesbtn = Button(buttonframe,font="time 10",text="Undo Sale".upper(),bg="cadetblue",fg="white",command=self.todayssales,bd=0,height=2, width=16, state=DISABLED)
+		# self.Salesbtn.place(x=1160, y=650)
+
+		#Entry Box So as to view Database Sales by Date
+		SalesDateEntry = Entry(buttonframe,bg="white",textvariable=self.sale_date_entry,font="time 10")
+		SalesDateEntry.place(x=200, y=500)
+
+		SalesDateEntry_Button = Button(buttonframe,font="time 10",text="Get Sales".upper(),bg="cadetblue",fg="white",command=self.Get_Sales_By_Date,bd=0,height=1, width=20)
+		SalesDateEntry_Button.place(x=400, y=495)
+
+		SalesDateEntry_Label = Label(buttonframe,text="Enter Date -f dd/mm/yy i.e 24/4/2020 or 24.4.2020")
+		SalesDateEntry_Label.place(x=160, y=530)
+
+		SalesDateEntry.bind("<Return>",self.Get_Sales_By_Date)
+
+	#=================================================================================================================#
+		
+	def Get_Sales_By_Date(self, event=None):
+	#=================================================================================================================#
+		#initiate Database Connection and Find Values with Date Entered
+		self.daily.delete(1.0, END)
+
+		self.daily.insert(END,"Product\t\tQuantity\t\tTotal\n")
+		self.daily.insert(END, f'{45*"_"}')
+
+		valuestime = self.sale_date_entry.get()
+		
+		if "." in valuestime:
+			valuestime = valuestime.replace(".","/")
+
+		var = "0"
+		self.c.executemany("DELETE FROM 'Daily Sales' WHERE Quantity=?", var)
+		self.conn.commit()
+
+		self.stsales = self.c.execute("SELECT * FROM 'Daily Sales' WHERE Timed=?", (str(valuestime),)).fetchall()
+
+		try:
+			
+			valuestime = str(self.stsales[0][0])
+	
+			dtsales = {}    
+
+			#loop through the database values and append to dictionary
+			for row in self.stsales:
+
+				i = [i for i in range(0, len(row))]
+				j = [j for j in range(0, len(row))]
+
+				x = row[i[1]]
+				x2 = row[j[2]]
+				x3 = row[j[4]]
+
+				if x in dtsales:
+					y = str(dtsales[x])
+					z = str(y).replace("(","")
+					zn = z.replace(")", "")
+					f = zn.replace(" ","")
+					p,n = f.split(",")
+					#print(p)
+					dtsales.update({x:(x2+int(p),x3+int(n))})
+				else:
+					dtsales.update({x:(x2,x3)})
+			final = []
+			#loop through the dictionary and get q and price
+			for k,v in dtsales.items():
+				newv = str(v).replace("(","")
+				newv = newv.replace(")", "")
+
+				q,p = newv.split(",")
+				finall = p
+				self.daily.insert(END, f'{k.upper()}\t\t{q}\t\t{p}\n')
+				final.append(finall)
+
+			self.daily.insert(END, f'\t\t\t\t\t\t\t\t__________________\n')
+			#loop through the list and and calculate total
+			totalsales = 0
+			for i in range(0, len(final)):
+				if len(final[i]) == 1:
+					totalsales = final[0]
+				else:
+					totalsales = totalsales + int(final[i])
+					
+			self.daily.insert(END, f'\t\t\t\t\t\t\t\t\t{format(totalsales,",")}\n')
+			self.daily.insert(END, f'\t\t\t__________________\n')
+		except IndexError:
+			tk.messagebox.showinfo("No Sales", f'No Sales Record Found for Date={valuestime}, try replacing 0 on the Month')
+
+		
+	#=================================================================================================================#
+	def changelabel(self, event=None):
+	#========================================Update Dictionarys=========================================================#
 		stitems = self.stitems
 		stprice = {}
 		#============================================================================================================
@@ -463,7 +611,7 @@ class ShopLogin(tk.Tk):
 		#============================================================================================================
 		
 		
-		#============================================================================================================
+	#=================================================================================================================#
 		#Get combo box texts
 		f1 = self.box1.get()
 		f2 = self.box2.get()
@@ -600,106 +748,35 @@ class ShopLogin(tk.Tk):
 				self.entryP12.set(e)
 		#==========================================================================
 
-		#==========================================================================
-		# #loading database values and setting them to respective entries
-		# for row in self.c.execute("SELECT * FROM 'Daily Sales' ORDER BY Product"):
-		# 	print(row)
-		
 
-		# values1 = [self.box1.get(), self.entryq1.get(), self.entryD1.get(), self.entryP1.get()]
-		# #print(values)
-
-		# values2 = [self.box2.get(), self.entryq2.get(), self.entryD2.get(), self.entryP2.get()]
-		# #print(values)
-
-		# values3 = [self.box3.get(), self.entryq3.get(), self.entryD3.get(), self.entryP3.get()]
-		# #print(values)
-
-		# values4 = [self.box4.get(), self.entryq4.get(), self.entryD4.get(), self.entryP4.get()]
-		# #print(values)
-
-		# values5 = [self.box5.get(), self.entryq5.get(), self.entryD5.get(), self.entryP5.get()]
-		# #print(values)
-
-		# values6 = [self.box6.get(), self.entryq6.get(), self.entryD6.get(), self.entryP6.get()]
-		# #print(values)
-
-		# values7 = [self.box7.get(), self.entryq7.get(), self.entryD7.get(), self.entryP7.get()]
-		# #print(values)
-
-		# values8 = [self.box8.get(), self.entryq8.get(), self.entryD8.get(), self.entryP8.get()]
-		# #print(values)
-
-		# values9 = [self.box9.get(), self.entryq9.get(), self.entryD9.get(), self.entryP9.get()]
-		# #print(values)
-
-		# values10 = [self.box10.get(), self.entryq10.get(), self.entryD10.get(), self.entryP10.get()]
-		# #print(values)
-
-		# values11 = [self.box11.get(), self.entryq11.get(), self.entryD11.get(), self.entryP11.get()]
-		# #print(values)
-
-		# values12 = [self.box12.get(), self.entryq12.get(), self.entryD12.get(), self.entryP12.get()]
-		# #print(values)
-		# values = (values1,values2,values3,values4,values5,values6,values7,values8,
-		# 	values9,values10,values11,values12)
-
-	
-		#==========================================================================
-
-		#==========================================================================
+		#==================================Perfom Desired Mathematics q,d,p========================================
 		valuestime = f'{self.date.day}/{self.date.month}/{self.date.year}'
 
 		values1 = (valuestime,self.box1.get(), self.entryq1.get(), self.entryD1.get(), self.entryP1.get())
-		#print(values)
-
 		values2 = (valuestime,self.box2.get(), self.entryq2.get(), self.entryD2.get(), self.entryP2.get())
-		#print(values)
-
 		values3 = (valuestime,self.box3.get(), self.entryq3.get(), self.entryD3.get(), self.entryP3.get())
-		#print(values)
-
 		values4 = (valuestime,self.box4.get(), self.entryq4.get(), self.entryD4.get(), self.entryP4.get())
-		#print(values)
-
 		values5 = (valuestime,self.box5.get(), self.entryq5.get(), self.entryD5.get(), self.entryP5.get())
-		#print(values)
-
 		values6 = (valuestime,self.box6.get(), self.entryq6.get(), self.entryD6.get(), self.entryP6.get())
-		#print(values)
-
 		values7 = (valuestime,self.box7.get(), self.entryq7.get(), self.entryD7.get(), self.entryP7.get())
-		#print(values)
-
 		values8 = (valuestime,self.box8.get(), self.entryq8.get(), self.entryD8.get(), self.entryP8.get())
-		#print(values)
-
 		values9 = (valuestime,self.box9.get(), self.entryq9.get(), self.entryD9.get(), self.entryP9.get())
-		#print(values)
-
 		values10 = (valuestime,self.box10.get(), self.entryq10.get(), self.entryD10.get(), self.entryP10.get())
-		#print(values)
-
 		values11 = (valuestime,self.box11.get(), self.entryq11.get(), self.entryD11.get(), self.entryP11.get())
-		#print(values)
-
-		values12 = (valuestime,self.box12.get(), self.entryq12.get(), self.entryD12.get(), self.entryP12.get())
-		#print(values)
+		values12 = (valuestime,self.box12.get(), self.entryq12.get(), self.entryD12.get(), self.entryP12.get())     
 		
-		
-		#==========================================================================
+	#=================================================================================================================#
 
 
-		#==========================================================================
+	#==================================Calculating Total Values and inserting to db===================================#
 		grandfinal = (self.entryP1.get() +self.entryP2.get() +self.entryP3.get()
 		 +self.entryP4.get() +self.entryP4.get() +self.entryP5.get() +self.entryP6.get()
 		  +self.entryP7.get() +self.entryP8.get() +self.entryP9.get() +self.entryP10.get()
 		   +self.entryP11.get() +self.entryP12.get())
 
 
-		self.lbtotal.set(f'Jumla={grandfinal}')
+		#self.lbtotal.set(f'Jumla={grandfinal}')
 
-		
 
 		values = (values1,values2,values3,values4
 		,values5,values6,values7,values8,
@@ -707,29 +784,69 @@ class ShopLogin(tk.Tk):
 
 		self.c.executemany("INSERT INTO 'Daily Sales' VALUES (?,?,?,?,?)", values)
 		self.conn.commit()
+	#==================================After Executing Values Set Quantites to Zero===================================#
+		self.entryq1.set("0")
+		self.entryq2.set("0")
+		self.entryq3.set("0")
+		self.entryq4.set("0")
+		self.entryq5.set("0")
+		self.entryq6.set("0")
+		self.entryq7.set("0")
+		self.entryq8.set("0")
+		self.entryq9.set("0")
+		self.entryq10.set("0")
+		self.entryq11.set("0")
+		self.entryq12.set("0")
 
-		#Write data to the textbox
-		self.Salesbtn.config(state=NORMAL)
+	#=================================Call Today Sales Function=======================================================#
+		#self.Salesbtn.config(state=NORMAL)
 
+		#return self.todayssales()
+	#=========================================Drawing Canvas Graph====================================================#
+		# canvas = Canvas(self.salesframe, width=465, height=290, bg = 'white')
+		# canvas.place(x=330, y=412)
 
-	def todayssales(self):
-		self.Salesbtn.config(state=DISABLED)
+		# canvas.create_line(100,250,400,250, width=2)
+		# canvas.create_line(100,250,100,50, width=2)
 
+		# for i in range(6):
+		#   y = 250 - (i * 40)
+		#   canvas.create_line(100,y,105,y, width=2)
+		#   canvas.create_text(96,y, text='%5.1f'% (50.*i), anchor=E)
+
+		# for x,y in [(12, 56), (20, 94), (33, 98), (45, 120), (61, 180),
+		# (75, 160), (98, 223)]:
+		#   x = 100 + 3*x
+		#   y = 250 - (4*y)/5
+		#   canvas.create_oval(x-6,y-6,x+6,y+6, width=1,
+		# outline='black', fill='SkyBlue2')
+	#=================================================================================================================#
+	def todayssales(self, event=None):
+	#=================================================================================================================#
+		#self.Salesbtn.config(state=DISABLED)
+		self.changelabel()
 		self.daily.delete(1.0, END)
 
 		self.daily.insert(END,"Product\t\tQuantity\t\tTotal\n")
-		self.daily.insert(END, "=====================================\n")
 
 		valuestime = f'{self.date.day}/{self.date.month}/{self.date.year}' 
+		#self.daily.insert(END,f'{valuestime}')
+		self.daily.insert(END, f'{45*"_"}')
 
+		#===================Database delete all empty values==========================
 		var = "0"
 		self.c.executemany("DELETE FROM 'Daily Sales' WHERE Quantity=?", var)
 		self.conn.commit()
 
+		self.c.executemany("DELETE FROM 'Daily Sales' WHERE Price=?", var)
+		self.conn.commit()
+		#===================Database delete all empty values==========================
+
 		self.stsales = self.c.execute("SELECT * FROM 'Daily Sales' WHERE Timed=?", (str(valuestime),)).fetchall()
 
-		dtsales = {}
+		dtsales = {}    
 
+		#loop through the database values and append to dictionary
 		for row in self.stsales:
 
 			i = [i for i in range(0, len(row))]
@@ -739,38 +856,59 @@ class ShopLogin(tk.Tk):
 			x2 = row[j[2]]
 			x3 = row[j[4]]
 
-			dtsales.update({x:(x2,x3)})
-
+			if x in dtsales:
+				y = str(dtsales[x])
+				z = str(y).replace("(","")
+				zn = z.replace(")", "")
+				f = zn.replace(" ","")
+				p,n = f.split(",")
+				#print(p)
+				dtsales.update({x:(x2+int(p),x3+int(n))})
+			else:
+				dtsales.update({x:(x2,x3)})
+		final = []
+		#loop through the dictionary and get q and price
 		for k,v in dtsales.items():
 			newv = str(v).replace("(","")
 			newv = newv.replace(")", "")
 
 			q,p = newv.split(",")
+			finall = p
 			self.daily.insert(END, f'{k.upper()}\t\t{q}\t\t{p}\n')
+			final.append(finall)
 
-		# print(dtsales)
-
+		self.daily.insert(END, f'\t\t\t\t\t\t\t\t__________________\n')
+		#loop through the list and and calculate total
+		totalsales = 0
+		for i in range(0, len(final)):
+			if len(final[i]) == 1:
+				totalsales = final[0]
+			else:
+				totalsales = totalsales + int(final[i])
+				
+		self.daily.insert(END, f'\t\t\t\t\t\t\t\t\t{format(totalsales,",")}\n')
+		self.daily.insert(END, f'\t\t\t__________________\n')
 		
+	#=================================================================================================================#
 
 	def logout(self):
-		#self.conn.commit()	
-		
-		
+	#=================================================================================================================#
 		self.conn.commit()
 		self.conn.close()
 		Tk.destroy(self)
 		return Admin().mainloop()
-
+	#=================================================================================================================#
 	def prodmgmt(self):
 		Tk.destroy(self)
 		return pm().mainloop()
 
-	def showsales_time(self):
-		return None
+	#=================================================================================================================#
+	# def UndoSale(self):
+	# #====================================When Wrong Sale Entered======================================================#
+
 
 if __name__ == '__main__':
-	
-	ShopLogin().mainloop()
+	Admin().mainloop()
 
 
 

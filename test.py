@@ -72,6 +72,55 @@
 # 	print("va")
 
 
-nl = "\t"
+# nl = "\t"
 
-print(nl.join(28*"=\n"))
+# print(nl.join(28*"=\n"))
+
+#initialize database connection 
+import sqlite3
+import datetime as dt
+
+
+date = dt.datetime.now()
+
+valuestime = f'{date.day}/{date.month}/{date.year}' 
+
+conn = sqlite3.connect('sales')
+c = conn.cursor()
+
+stsales = c.execute("SELECT * FROM 'Daily Sales' ").fetchall()
+
+
+
+dtsales = {}
+
+
+for row in stsales:
+
+	i = [i for i in range(0, len(row))]
+	j = [j for j in range(0, len(row))]
+
+	x = row[i[1]]
+	x2 = row[j[2]]
+	x3 = row[j[4]]
+	print(dtsales)
+	if x in dtsales:
+		y = str(dtsales[x])
+		z = str(y).replace("(","")
+		zn = z.replace(")", "")
+		f = zn.replace(" ","")
+		p,n = f.split(",")
+		#print(p)
+		dtsales.update({x:(x2+int(p),x3+int(n))})
+	else:
+		dtsales.update({x:(x2,x3)})
+print(dtsales)            	
+
+for k,v in dtsales.items():
+	newv = str(v).replace("(","")
+	newv = newv.replace(")", "")
+
+	q,p = newv.split(",")
+	print(f'{k.upper()}\t\t{q}\t\t{p}\n')
+
+

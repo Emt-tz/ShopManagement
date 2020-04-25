@@ -1,3 +1,0 @@
-day 1 i was able to build a login system 
-
-and some few functionalities

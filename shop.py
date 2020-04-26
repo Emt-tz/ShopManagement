@@ -58,6 +58,9 @@ import datetime as dt
 import sys
 from time import strftime
 from prod import ProductManagement as pm
+from test2 import PasswordEncrypter as pencrypt
+
+key = pencrypt.GenerateKey()
 
 class Admin(tk.Tk):
 	#=================================================================================================================#
@@ -132,12 +135,13 @@ class Admin(tk.Tk):
 			userdict.update({user:password})
 
 		for k,v in userdict.items():
-			if un == k and pwd ==v:
+			v = pencrypt.Decrypt(v, key)
+			if un == k and pwd == v.decode():
 				try:
 					Tk.destroy(self)
 					ShopLogin().mainloop()
 				except:
-					tk.messagebox.showinfo("Error","Please Check Credentials")
+					pass
 				#ShopLogin().mainloop()
 
 	def CallAdmin1(self):
@@ -195,7 +199,7 @@ class Admin1(tk.Tk):
 		c = conn.cursor()
 
 		if self.pwdnew.get() == self.pwdnewchk.get():
-			c.execute("INSERT INTO 'login' VALUES (?,?) ", (self.unnew.get(),self.pwdnew.get()))
+			c.execute("INSERT INTO 'login' VALUES (?,?) ", (self.unnew.get(),pencrypt.Encrypt(self.pwdnew.get(),key)))
 			conn.commit()
 
 			tk.messagebox.showinfo("Succes", "User Added Successfully Press ok to Login")

@@ -42,4 +42,7 @@ To open product Management Window simply press the products management button to
 
 #Points to notice
 	1. Avoid entering numbers greater than "000,000,000" and avoid unnecessary data 
+# The Database File
+Passwords in the database are fully encrypted to prevent malicious hackers and crackers
+
 

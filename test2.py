@@ -1,18 +1,44 @@
-# import sqlite3
-
-# conn = sqlite3.connect('sales')
-# c = conn.cursor()
-# dt = '24/04/2020'
-# stsales = c.execute("SELECT * FROM 'Daily Sales' ").fetchall()
-
-# row = stsales
-# print(dt, row[0][0])
-# if dt == row[0][0]:
-# 	print("True")
-# else:
-# 	print("False")
+import base64
+import os
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.fernet import Fernet 
 
 
-#0719976260
 
-print(29*"_")
+class PasswordEncrypter:
+
+	def GenerateKey():
+		password_provided = "Windows78!" # This is input in the form of a string
+		password = password_provided.encode() # Convert to type bytes
+		salt = b'salt_' # CHANGE THIS - recommend using a key from os.urandom(16), must be of type bytes
+		kdf = PBKDF2HMAC(
+		    algorithm=hashes.SHA256(),
+		    length=32,
+		    salt=salt,
+		    iterations=100000,
+		    backend=default_backend()
+		)
+		key = base64.urlsafe_b64encode(kdf.derive(password))
+		return key
+
+	def Encrypt(userpassword,key):
+
+		msg = userpassword.encode()
+
+		f = Fernet(key)
+
+		encrypted = f.encrypt(msg)
+
+		return encrypted
+
+
+	def Decrypt(encryptedpassword,key):
+		f = Fernet(key)
+		decrypted = f.decrypt(encryptedpassword)
+
+		return decrypted
+
+
+

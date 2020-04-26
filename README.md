@@ -29,7 +29,7 @@ This layer consist of buttons which perform different functions
 	(iii) The Get Sales Button which Gets Sales Entered by date from the entry box, and displays sales in the Display Frame
 	(iv) The Products Management Button which calls the product management main window
 
-#How to Use
+# How to Use
 1. Daily Sales
 	Just choose product and type in the quantity, then press total button to add the product to active date sales
 2. Get Sales by Date
@@ -37,10 +37,10 @@ This layer consist of buttons which perform different functions
 3. Product Management
 To open product Management Window simply press the products management button to open the product management window
 
-#Product Management
+# Product Management
 	Here you can add,modify,list,delete products as you wish, all functionalities are easy to understand once the ui is opened.
 
-#Points to notice
+# Points to notice
 	1. Avoid entering numbers greater than "000,000,000" and avoid unnecessary data 
 # The Database File
 Passwords in the database are fully encrypted to prevent malicious hackers and crackers

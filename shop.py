@@ -195,7 +195,6 @@ class Admin1(tk.Tk):
 		c = conn.cursor()
 
 		if self.pwdnew.get() == self.pwdnewchk.get():
-
 			c.execute("INSERT INTO 'login' VALUES (?,?) ", (self.unnew.get(),self.pwdnew.get()))
 			conn.commit()
 

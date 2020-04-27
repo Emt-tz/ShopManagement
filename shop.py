@@ -1,53 +1,4 @@
-#This will be the main GUI, our Stationery Management System
-
-#Functions
-"""
-1. Add or remove products based on quantity
-2. Specify products buying and selling price so as to determine profit
-3. Print out Graphs showing business performance(Daily, Weekly and Monthly)
-4. Print receipt of daily, weekly and monthly sales based on dates
-5. Print out overall sales daily, weekly or monthly based on dates
-6. Adjust Products buying and selling price
-7. Add discounts to some products if exists
-8. Alert when products fall below certain amount of stock
-9. Disply Word of God daily, Optional
-10. Display the total Profit or Loss made overall since start of business
-11. Notify when no Transactions
-12. A Place to insert all the expenses 
-13. Ability to add more Functionality as time Goes
-
-"""
-
-"""
-Application Algorithm, we stick with simple as possible
-1. The front face will have three columns and upper row
-			Upper Row (Date)
-	Column1     Column2     Column3 Column4   Column5 
-	Products    quantity    Price    discount Expenses
-at row can be added if many products are sold 
-
-2. There will be two modes, single customer mode if receipt is required and 
-overall mode is receipt is not required
-Customer mode will only print out the receipt to the customer but the sales will automatically be added to overall mode
-
-3. Products are pre written in a listdown box or combo box
-4. At the bottom there is a calculate total button 
-5. When program is exited information is stored in the database automatically so if exit and open it will return to where it was 
-at the last time.
-6. At the top Menu we have option to display Graph based on date with a range of starting at 1 week and above
-The graph can be saved as a image
-7. There will be an option at the top to add a new product which will have three columns
-
-	ProductName BuyingPrice SellingPrice
-8.  Other Functionalities will be added later on    
-
-"""
-
-"""
-1. Login and choose between add product radio box and sales radio box and a log out button
-
-2. Day one try to build the four columns
-"""
+#created 10/04/2020
 import tkinter as tk
 from tkinter import *
 from tkinter import ttk
@@ -981,7 +932,7 @@ class ShopLogin(tk.Tk):
 
 
 if __name__ == '__main__':
-	ShopLogin().mainloop()
+	Admin().mainloop()
 
 
 

@@ -4,8 +4,9 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.fernet import Fernet 
-
-
+import pandas as pd
+from tkinter import filedialog
+import csv
 
 class PasswordEncrypter:
 
@@ -40,5 +41,13 @@ class PasswordEncrypter:
 
 		return decrypted
 
+class ConvertCsvtoExcel:
 
+	def getCSV(file):
+		return pd.read_csv(file)
+
+	def convertToExcel(file):
+		x = ConvertCsvtoExcel.getCSV(file)
+		export_file_path = filedialog.asksaveasfilename(defaultextension='.xlsx')
+		x.to_excel(export_file_path, index=None, header=True)
 

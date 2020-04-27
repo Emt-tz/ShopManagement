@@ -59,6 +59,8 @@ import sys
 from time import strftime
 from prod import ProductManagement as pm
 from test2 import PasswordEncrypter as pencrypt
+from test2 import ConvertCsvtoExcel as cexcel
+import csv
 
 key = pencrypt.GenerateKey()
 
@@ -509,6 +511,8 @@ class ShopLogin(tk.Tk):
 		#Product Management Button
 		prodmgmts = Button(buttonframe,font="time 10",text="Product Management".upper(),bg="cadetblue",fg="white",command=self.prodmgmt,bd=0,height=2, width=20).place(x=480, y=650)
 
+		exportsales = Button(buttonframe,font="time 10",text="Export Excel".upper(),bg="cadetblue",fg="white",command=self.exporttocsv,bd=0,height=2, width=20).place(x=780, y=650)
+
 		# self.Salesbtn = Button(buttonframe,font="time 10",text="Undo Sale".upper(),bg="cadetblue",fg="white",command=self.todayssales,bd=0,height=2, width=16, state=DISABLED)
 		# self.Salesbtn.place(x=1160, y=650)
 
@@ -525,7 +529,73 @@ class ShopLogin(tk.Tk):
 		SalesDateEntry.bind("<Return>",self.Get_Sales_By_Date)
 
 	#=================================================================================================================#
+	
+	#=================================================================================================================#
+	def exporttocsv(self):
+		#---------------------Get Database by date--------------------------------------------#
+		tk.messagebox.showinfo("Export as Excel", "Export Daily Sales in Excel Format, for todays date leave date field blank, for previous dates input date in the field.")
+		valuestime = self.sale_date_entry.get()
+
+		if valuestime == "":
+			valuestime = f'{self.date.day}/{self.date.month}/{self.date.year}'
+
+		if "." in valuestime:
+			valuestime = valuestime.replace(".","/")
+
+		self.stsales = self.c.execute("SELECT * FROM 'Daily Sales' WHERE Timed=?", (str(valuestime),)).fetchall()
+
+		dtsales = {}    
+
+		#loop through the database values and append to dictionary
+		for row in self.stsales:
+
+			i = [i for i in range(0, len(row))]
+			j = [j for j in range(0, len(row))]
+
+			x = row[i[1]]
+			x2 = row[j[2]]
+			x3 = row[j[4]]
+
+			if x in dtsales:
+				y = str(dtsales[x])
+				z = str(y).replace("(","")
+				zn = z.replace(")", "")
+				f = zn.replace(" ","")
+				p,n = f.split(",")
+				#print(p)
+				dtsales.update({x:(x2+int(p),x3+int(n))})
+			else:
+				dtsales.update({x:(x2,x3)})
+		final = []
+		#loop through the dictionary and get q and price
+		filename = 'csvf/Sales.csv'
+		with open(filename, 'w', newline='') as file:
+			w = csv.writer(file)
+			w.writerow(["Date","Product","Quantity","Price"])
+			for k,v in dtsales.items():
+				newv = str(v).replace("(","")
+				newv = newv.replace(")", "")
+				q,p = newv.split(",")
+				finall = p
+				final.append(finall)
+				w.writerow([valuestime,k.upper(),q,p.replace(" ","")])
+				
+		#create the csvfile
 		
+			#loop through the list and and calculate total
+			totalsales = 0
+			for i in range(0, len(final)):
+				if len(final[i]) == 1:
+					totalsales = final[0]
+				else:
+					totalsales = totalsales + int(final[i])
+			w.writerow(["","","",""])
+			w.writerow(["Jumla","","",totalsales])
+		#now we convert the csv to excel
+		return cexcel.convertToExcel(filename)
+
+	#=================================================================================================================#
+	
 	def Get_Sales_By_Date(self, event=None):
 	#=================================================================================================================#
 		#initiate Database Connection and Find Values with Date Entered
@@ -911,7 +981,7 @@ class ShopLogin(tk.Tk):
 
 
 if __name__ == '__main__':
-	Admin().mainloop()
+	ShopLogin().mainloop()
 
 
 

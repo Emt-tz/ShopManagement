@@ -4,9 +4,45 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.fernet import Fernet 
-import pandas as pd
+from pandas import read_csv
 from tkinter import filedialog
 import csv
+import sqlite3
+
+dailysales_table = """
+CREATE TABLE "Daily Sales" (
+	"Timed"	TEXT,
+	"Product"	TEXT,
+	"Quantity"	INTEGER,
+	"Buying Price"	INTEGER,
+	"Price"	NUMERIC
+);"""
+
+addproducts_table = """
+CREATE TABLE "AddProducts" (
+	"Name"	TEXT,
+	"Buy_Price"	NUMERIC,
+	"Sell_Price"	NUMERIC,
+	"Quantity"	NUMERIC
+);"""
+
+login_table = """
+CREATE TABLE "login" (
+	"User"	TEXT,
+	"Password"	TEXT
+);"""
+
+class InitializeDatabase:
+
+	def createdb():
+		dbname = 'sales'
+		conn = sqlite3.connect(dbname)
+		c = conn.cursor()
+		c.execute(dailysales_table)
+		c.execute(addproducts_table)
+		c.execute(login_table)
+		conn.commit()
+		conn.close()
 
 class PasswordEncrypter:
 
@@ -44,7 +80,7 @@ class PasswordEncrypter:
 class ConvertCsvtoExcel:
 
 	def getCSV(file):
-		return pd.read_csv(file)
+		return read_csv(file)
 
 	def convertToExcel(file):
 		x = ConvertCsvtoExcel.getCSV(file)

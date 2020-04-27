@@ -2,7 +2,7 @@
 import tkinter as tk
 from tkinter import *
 from tkinter import ttk
-import time
+import time,os
 import concurrent.futures
 import sqlite3
 import datetime as dt
@@ -12,6 +12,7 @@ from prod import ProductManagement as pm
 from test2 import PasswordEncrypter as pencrypt
 from test2 import ConvertCsvtoExcel as cexcel
 import csv
+from test2 import InitializeDatabase as dbinit
 
 key = pencrypt.GenerateKey()
 
@@ -74,28 +75,56 @@ class Admin(tk.Tk):
 		conn = sqlite3.connect('sales')
 		c = conn.cursor()
 
-		cred = c.execute("SELECT * FROM 'login'").fetchall()
+		try:
+			cred = c.execute("SELECT * FROM 'login'").fetchall()
 
-		#loop through the database and check for user if exists
+			#loop through the database and check for user if exists
 
-		#user one is when [0][0] and pass [0][1]
-		#user two is when [1][0] and pass[1][1]
-		userdict = {}
-		for i in range(0, len(cred)):
-			user = cred[1-i][0]
-			password = cred[1-i][1]
+			#user one is when [0][0] and pass [0][1]
+			#user two is when [1][0] and pass[1][1]
+			userdict = {}
+			for i in range(0, len(cred)):
+				user = cred[1-i][0]
+				password = cred[1-i][1]
 
-			userdict.update({user:password})
+				userdict.update({user:password})
 
-		for k,v in userdict.items():
-			v = pencrypt.Decrypt(v, key)
-			if un == k and pwd == v.decode():
-				try:
-					Tk.destroy(self)
-					ShopLogin().mainloop()
-				except:
-					pass
-				#ShopLogin().mainloop()
+			for k,v in userdict.items():
+				v = pencrypt.Decrypt(v, key)
+				if un == k and pwd == v.decode():
+					try:
+						Tk.destroy(self)
+						ShopLogin().mainloop()
+					except:
+						pass
+					#ShopLogin().mainloop()
+		except:
+			try:
+				dbinit.createdb()
+			except:
+				pass
+
+			cred = c.execute("SELECT * FROM 'login'").fetchall()
+			#loop through the database and check for user if exists
+
+			#user one is when [0][0] and pass [0][1]
+			#user two is when [1][0] and pass[1][1]
+			userdict = {}
+			for i in range(0, len(cred)):
+				user = cred[1-i][0]
+				password = cred[1-i][1]
+
+				userdict.update({user:password})
+
+			for k,v in userdict.items():
+				v = pencrypt.Decrypt(v, key)
+				if un == k and pwd == v.decode():
+					try:
+						Tk.destroy(self)
+						ShopLogin().mainloop()
+					except:
+						pass
+					#ShopLogin().mainloop()
 
 	def CallAdmin1(self):
 		Tk.destroy(self)
@@ -150,19 +179,32 @@ class Admin1(tk.Tk):
 	def AddUser(self):
 		conn = sqlite3.connect('sales')
 		c = conn.cursor()
+		try:
+			if self.pwdnew.get() == self.pwdnewchk.get() and (self.pwdnew.get() != ""):
+				c.execute("INSERT INTO 'login' VALUES (?,?) ", (self.unnew.get(),pencrypt.Encrypt(self.pwdnew.get(),key)))
+				conn.commit()
 
-		if self.pwdnew.get() == self.pwdnewchk.get():
-			c.execute("INSERT INTO 'login' VALUES (?,?) ", (self.unnew.get(),pencrypt.Encrypt(self.pwdnew.get(),key)))
-			conn.commit()
+				tk.messagebox.showinfo("Succes", "User Added Successfully Press ok to Login")
+				Tk.destroy(self)
+				Admin().mainloop()
+			else:
+				tk.messagebox.showinfo("Check Passwords","Ensure all Fields are Filled and If Passwords Match")
+		except:
+			try:
+				dbinit.createdb()
+			except:
+				pass
 
-			tk.messagebox.showinfo("Succes", "User Added Successfully Press ok to Login")
-			Tk.destroy(self)
-			Admin().mainloop()
-		else:
-			tk.messagebox.showinfo("Check Passwords","Passwords Dont Match Please Check")
+			if self.pwdnew.get() == self.pwdnewchk.get() and (self.pwdnew.get() !=""):
+				c.execute("INSERT INTO 'login' VALUES (?,?) ", (self.unnew.get(),pencrypt.Encrypt(self.pwdnew.get(),key)))
+				conn.commit()
+
+				tk.messagebox.showinfo("Succes", "User Added Successfully Press ok to Login")
+				Tk.destroy(self)
+				Admin().mainloop()
+			else:
+				tk.messagebox.showinfo("Check Passwords","Ensure all Fields are Filled and If Passwords Match")
 		
-
-
 class ShopLogin(tk.Tk):
 	#=================================================================================================================#
 	def __init__(self):
@@ -176,6 +218,7 @@ class ShopLogin(tk.Tk):
 		self.textinput = []
 		self.conn = sqlite3.connect('sales')
 		self.c = self.conn.cursor()
+
 		self.stitems = self.c.execute("SELECT * FROM AddProducts").fetchall() 
 
 		self.box1 =  StringVar()
@@ -230,6 +273,10 @@ class ShopLogin(tk.Tk):
 		self.entryP11 = IntVar()
 		self.entryP12 = IntVar()
 
+		self.entrytv = IntVar()
+
+
+
 		self.sale_date_entry = StringVar()
 
 		self.salesframe = Frame(bg="white", width=400, height=900, pady=3).place(x=1034,y=410)
@@ -239,6 +286,9 @@ class ShopLogin(tk.Tk):
 		self.daily.insert(END,f'Product\t\tQuantity\t\tTotal\n')
 		self.daily.insert(END, f'{45*"_"}')
 		# self.daily.insert(END, f'\t\t\t\t\t{self.nl.join(20*"|")}\n')
+		#Widget to display total balance so that it does not go downwards
+		self.entryt = tk.Entry(bg="white",textvariable=self.entrytv, font="time 10", state='normal',justify='right',bd=5,width=39)
+		self.entryt.place(x=1035, y=672)
 
 		self.lb = StringVar()
 		self.lbtotal = StringVar()
@@ -455,7 +505,7 @@ class ShopLogin(tk.Tk):
 		logout = tk.Button(buttonframe,text="Exit".upper()
 			,bg="cadetblue",fg="white",font="time 10",
 			bd=0,height=2, width=12, 
-			relief=None,command=sys.exit)
+			relief=None,command=self.logout)
 		logout.place(x=262, y=650)
 
 
@@ -519,30 +569,59 @@ class ShopLogin(tk.Tk):
 				dtsales.update({x:(x2,x3)})
 		final = []
 		#loop through the dictionary and get q and price
-		filename = 'csvf/Sales.csv'
-		with open(filename, 'w', newline='') as file:
-			w = csv.writer(file)
-			w.writerow(["Date","Product","Quantity","Price"])
-			for k,v in dtsales.items():
-				newv = str(v).replace("(","")
-				newv = newv.replace(")", "")
-				q,p = newv.split(",")
-				finall = p
-				final.append(finall)
-				w.writerow([valuestime,k.upper(),q,p.replace(" ","")])
-				
-		#create the csvfile
-		
-			#loop through the list and and calculate total
-			totalsales = 0
-			for i in range(0, len(final)):
-				if len(final[i]) == 1:
-					totalsales = final[0]
-				else:
-					totalsales = totalsales + int(final[i])
-			w.writerow(["","","",""])
-			w.writerow(["Jumla","","",totalsales])
-		#now we convert the csv to excel
+		try:
+			filename = 'csvf/Sales.csv'
+
+			with open(filename, 'w', newline='') as file:
+				w = csv.writer(file)
+				w.writerow(["Date","Product","Quantity","Price"])
+				for k,v in dtsales.items():
+					newv = str(v).replace("(","")
+					newv = newv.replace(")", "")
+					q,p = newv.split(",")
+					finall = p
+					final.append(finall)
+					w.writerow([valuestime,k.upper(),q,p.replace(" ","")])
+					
+			#create the csvfile
+			
+				#loop through the list and and calculate total
+				totalsales = 0
+				for i in range(0, len(final)):
+					if len(final[i]) == 1:
+						totalsales = final[0]
+					else:
+						totalsales = totalsales + int(final[i])
+				w.writerow(["","","",""])
+				w.writerow(["Jumla","","",totalsales])
+		except:
+			os.mkdir('csvf')
+
+			filename = 'csvf/Sales.csv'
+			
+			with open(filename, 'w', newline='') as file:
+				w = csv.writer(file)
+				w.writerow(["Date","Product","Quantity","Price"])
+				for k,v in dtsales.items():
+					newv = str(v).replace("(","")
+					newv = newv.replace(")", "")
+					q,p = newv.split(",")
+					finall = p
+					final.append(finall)
+					w.writerow([valuestime,k.upper(),q,p.replace(" ","")])
+					
+			#create the csvfile
+			
+				#loop through the list and and calculate total
+				totalsales = 0
+				for i in range(0, len(final)):
+					if len(final[i]) == 1:
+						totalsales = final[0]
+					else:
+						totalsales = totalsales + int(final[i])
+				w.writerow(["","","",""])
+				w.writerow(["Jumla","","",totalsales])
+			#now we convert the csv to excel
 		return cexcel.convertToExcel(filename)
 
 	#=================================================================================================================#
@@ -600,10 +679,10 @@ class ShopLogin(tk.Tk):
 
 				q,p = newv.split(",")
 				finall = p
-				self.daily.insert(END, f'{k.upper()}\t\t{q}\t\t{p}\n')
+				self.daily.insert(END, f'{k.upper()}\t\t    {q}\t\t{p}\n')
 				final.append(finall)
 
-			self.daily.insert(END, f'\t\t\t\t\t\t\t\t__________________\n')
+			#self.daily.insert(END, f'\t\t\t\t\t\t\t\t__________________\n')
 			#loop through the list and and calculate total
 			totalsales = 0
 			for i in range(0, len(final)):
@@ -612,8 +691,9 @@ class ShopLogin(tk.Tk):
 				else:
 					totalsales = totalsales + int(final[i])
 					
-			self.daily.insert(END, f'\t\t\t\t\t\t\t\t\t{format(totalsales,",")}\n')
-			self.daily.insert(END, f'\t\t\t__________________\n')
+			#self.daily.insert(END, f'\t\t\t\t\t\t\t\t\t{format(totalsales,",")}\n')
+			self.entrytv.set(format(totalsales,","))
+			#self.daily.insert(END, f'\t\t\t__________________\n')
 		except IndexError:
 			tk.messagebox.showinfo("No Sales", f'No Sales Record Found for Date={valuestime}, try replacing 0 on the Month')
 
@@ -898,10 +978,10 @@ class ShopLogin(tk.Tk):
 
 			q,p = newv.split(",")
 			finall = p
-			self.daily.insert(END, f'{k.upper()}\t\t{q}\t\t{p}\n')
+			self.daily.insert(END, f'{k.upper()}\t\t    {q}\t\t{p}\n')
 			final.append(finall)
 
-		self.daily.insert(END, f'\t\t\t\t\t\t\t\t__________________\n')
+		#self.daily.insert(END, f'\t\t\t\t\t\t\t\t__________________\n')
 		#loop through the list and and calculate total
 		totalsales = 0
 		for i in range(0, len(final)):
@@ -910,8 +990,9 @@ class ShopLogin(tk.Tk):
 			else:
 				totalsales = totalsales + int(final[i])
 				
-		self.daily.insert(END, f'\t\t\t\t\t\t\t\t\t{format(totalsales,",")}\n')
-		self.daily.insert(END, f'\t\t\t__________________\n')
+		#self.daily.insert(END, f'\t\t\t\t\t\t\t\t\t{format(totalsales,",")}\n')
+		self.entrytv.set(format(totalsales,","))
+		#self.daily.insert(END, f'\t\t\t__________________\n')
 		
 	#=================================================================================================================#
 
@@ -932,7 +1013,7 @@ class ShopLogin(tk.Tk):
 
 
 if __name__ == '__main__':
-	Admin().mainloop()
+	ShopLogin().mainloop()
 
 
 

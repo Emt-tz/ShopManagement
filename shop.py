@@ -172,11 +172,13 @@ class Admin1(tk.Tk):
 		createuserbtn = tk.Button(text="CreateUser",font="time 13 bold", command=self.AddUser)
 		createuserbtn.grid(row=5, column=0)
 
+		passwordconfirm.bind('<Return>',self.AddUser)
+
 		authtext = tk.Label(textvariable=self.txt,fg="cadetblue",font="time 12", relief=RAISED)
 		self.txt.set("Add New Credentials")
 		authtext.grid(row=6, column=0)
 
-	def AddUser(self):
+	def AddUser(self, event=None):
 		conn = sqlite3.connect('sales')
 		c = conn.cursor()
 		try:
@@ -216,6 +218,7 @@ class ShopLogin(tk.Tk):
 		self.txt = []
 		self.date = dt.datetime.now()
 		self.textinput = []
+
 		self.conn = sqlite3.connect('sales')
 		self.c = self.conn.cursor()
 
@@ -298,6 +301,7 @@ class ShopLogin(tk.Tk):
 
 		
 		self.Sales()
+		self.todayssales()
 	#=================================================================================================================#
 
 	def ShopItems(self):
@@ -494,28 +498,27 @@ class ShopLogin(tk.Tk):
 		# GrandTotal Button
 		grandtotal = tk.Button(buttonframe,text="Total".upper()
 			,bg="cadetblue",fg="white",font="time 10",
-			bd=0,height=2, width=12, 
+			bd=0,height=1, width=12, 
 			relief=None,command=self.todayssales)
-		grandtotal.place(x=60, y=650)
+		grandtotal.place(x=60, y=672)
 
-
+		undobtn = Button(buttonframe,font="time 10",text="UNDO SALE".upper(),bg="cadetblue",fg="white",command=self.UndoLastSale,bd=0,height=1, width=20)
+		undobtn.place(x=180, y=672)
 		
+		#Product Management Button
+		prodmgmts = Button(buttonframe,font="time 10",text="Product Management".upper(),bg="cadetblue",fg="white",command=self.prodmgmt,bd=0,height=1, width=20)
+		prodmgmts.place(x=360, y=672)
+
+		exportsales = Button(buttonframe,font="time 10",text="Export".upper(),bg="cadetblue",fg="white",command=self.exporttocsv,bd=0,height=1, width=20)
+		exportsales.place(x=545, y=672)
 
 		# Exit Button
 		logout = tk.Button(buttonframe,text="Exit".upper()
 			,bg="cadetblue",fg="white",font="time 10",
-			bd=0,height=2, width=12, 
+			bd=0,height=1, width=12, 
 			relief=None,command=self.logout)
-		logout.place(x=262, y=650)
+		logout.place(x=900, y=672)
 
-
-		#Product Management Button
-		prodmgmts = Button(buttonframe,font="time 10",text="Product Management".upper(),bg="cadetblue",fg="white",command=self.prodmgmt,bd=0,height=2, width=20).place(x=480, y=650)
-
-		exportsales = Button(buttonframe,font="time 10",text="Export Excel".upper(),bg="cadetblue",fg="white",command=self.exporttocsv,bd=0,height=2, width=20).place(x=780, y=650)
-
-		# self.Salesbtn = Button(buttonframe,font="time 10",text="Undo Sale".upper(),bg="cadetblue",fg="white",command=self.todayssales,bd=0,height=2, width=16, state=DISABLED)
-		# self.Salesbtn.place(x=1160, y=650)
 
 		#Entry Box So as to view Database Sales by Date
 		SalesDateEntry = Entry(buttonframe,bg="white",textvariable=self.sale_date_entry,font="time 10")
@@ -528,6 +531,8 @@ class ShopLogin(tk.Tk):
 		SalesDateEntry_Label.place(x=160, y=530)
 
 		SalesDateEntry.bind("<Return>",self.Get_Sales_By_Date)
+
+	
 
 	#=================================================================================================================#
 	
@@ -995,6 +1000,12 @@ class ShopLogin(tk.Tk):
 		#self.daily.insert(END, f'\t\t\t__________________\n')
 		
 	#=================================================================================================================#
+	def UndoLastSale(self):
+		conn = sqlite3.connect('sales')
+		c = conn.cursor()
+		c.execute("DELETE FROM 'Daily Sales' WHERE ROWID = (SELECT MAX(ROWID) FROM 'Daily Sales');")
+		conn.commit()
+		self.todayssales()
 
 	def logout(self):
 	#=================================================================================================================#
@@ -1013,6 +1024,7 @@ class ShopLogin(tk.Tk):
 
 
 if __name__ == '__main__':
+
 	ShopLogin().mainloop()
 
 

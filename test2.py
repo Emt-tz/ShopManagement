@@ -32,6 +32,14 @@ CREATE TABLE "login" (
 	"Password"	TEXT
 );"""
 
+class Profit:
+
+	def profit(bp,qt,sp,nqt):
+		priceforone = bp/qt
+		profit = sp - priceforone
+		value = sp*nqt
+
+		return nqt*profit
 class InitializeDatabase:
 
 	def createdb():

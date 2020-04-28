@@ -26,7 +26,7 @@ PYTHON_INSTALL_DIR = os.path.dirname(sys.executable)
 os.environ['TCL_LIBRARY'] = os.path.join(PYTHON_INSTALL_DIR, 'tcl', 'tcl8.6')
 os.environ['TK_LIBRARY'] = os.path.join(PYTHON_INSTALL_DIR, 'tcl', 'tk8.6')
 
-include_files = [""]
+include_files = ["sales"]
 packages = ["tkinter","datetime","time","sqlite3","pandas"]
 options = {'build_exe' : {'packages':packages, 'include_files':include_files}}
 

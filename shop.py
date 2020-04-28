@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import *
 from tkinter import ttk
+from tkcalendar import DateEntry
 import time,os
 import concurrent.futures
 import sqlite3
@@ -13,6 +14,7 @@ from test2 import PasswordEncrypter as pencrypt
 from test2 import ConvertCsvtoExcel as cexcel
 import csv
 from test2 import InitializeDatabase as dbinit
+from test2 import Profit as profit
 
 key = pencrypt.GenerateKey()
 
@@ -521,25 +523,23 @@ class ShopLogin(tk.Tk):
 
 
 		#Entry Box So as to view Database Sales by Date
-		SalesDateEntry = Entry(buttonframe,bg="white",textvariable=self.sale_date_entry,font="time 10")
-		SalesDateEntry.place(x=200, y=500)
+		self.SalesDateEntry = DateEntry(buttonframe,foreground="white",background='green',date_pattern="dd/m/yyyy",textvariable=self.sale_date_entry,font="time 10")
+		self.SalesDateEntry.place(x=200, y=420)
 
 		SalesDateEntry_Button = Button(buttonframe,font="time 10",text="Get Sales".upper(),bg="cadetblue",fg="white",command=self.Get_Sales_By_Date,bd=0,height=1, width=20)
-		SalesDateEntry_Button.place(x=400, y=495)
+		SalesDateEntry_Button.place(x=400, y=420)
 
-		SalesDateEntry_Label = Label(buttonframe,text="Enter Date -f dd/mm/yy i.e 24/4/2020 or 24.4.2020")
-		SalesDateEntry_Label.place(x=160, y=530)
+		# SalesDateEntry_Label = Label(buttonframe,text="Enter Date -f dd/mm/yy i.e 24/4/2020 or 24.4.2020")
+		# SalesDateEntry_Label.place(x=160, y=480)
 
-		SalesDateEntry.bind("<Return>",self.Get_Sales_By_Date)
-
-	
-
+		self.SalesDateEntry.bind("<Return>",self.Get_Sales_By_Date)
+		
 	#=================================================================================================================#
 	
 	#=================================================================================================================#
 	def exporttocsv(self):
 		#---------------------Get Database by date--------------------------------------------#
-		tk.messagebox.showinfo("Export as Excel", "Export Daily Sales in Excel Format, for todays date leave date field blank, for previous dates input date in the field.")
+		tk.messagebox.showinfo("Export as Excel", "Export Daily Sales in Excel Format, Select Date to Export")
 		valuestime = self.sale_date_entry.get()
 
 		if valuestime == "":
@@ -634,6 +634,8 @@ class ShopLogin(tk.Tk):
 	def Get_Sales_By_Date(self, event=None):
 	#=================================================================================================================#
 		#initiate Database Connection and Find Values with Date Entered
+		self.after(1, self.SalesDateEntry.delete,0,END)
+
 		self.daily.delete(1.0, END)
 
 		self.daily.insert(END,"Product\t\tQuantity\t\tTotal\n")
@@ -700,7 +702,7 @@ class ShopLogin(tk.Tk):
 			self.entrytv.set(format(totalsales,","))
 			#self.daily.insert(END, f'\t\t\t__________________\n')
 		except IndexError:
-			tk.messagebox.showinfo("No Sales", f'No Sales Record Found for Date={valuestime}, try replacing 0 on the Month')
+			tk.messagebox.showinfo("No Sales", f'No Sales Record Found for Date={valuestime}')
 
 		
 	#=================================================================================================================#
@@ -986,6 +988,14 @@ class ShopLogin(tk.Tk):
 			self.daily.insert(END, f'{k.upper()}\t\t    {q}\t\t{p}\n')
 			final.append(finall)
 
+			x = self.c.execute("SELECT * FROM 'AddProducts'").fetchall()
+
+			for i in range(0, len(x)):
+				productname = x[i][0]
+				if productname == k:
+					print(k,q)
+				
+
 		#self.daily.insert(END, f'\t\t\t\t\t\t\t\t__________________\n')
 		#loop through the list and and calculate total
 		totalsales = 0
@@ -1006,7 +1016,12 @@ class ShopLogin(tk.Tk):
 		c.execute("DELETE FROM 'Daily Sales' WHERE ROWID = (SELECT MAX(ROWID) FROM 'Daily Sales');")
 		conn.commit()
 		self.todayssales()
-
+	#=================================================================================================================#
+	#=================================================================================================================#
+	def stockleft(self):
+		pass
+	#=================================================================================================================#
+	
 	def logout(self):
 	#=================================================================================================================#
 		self.conn.commit()
@@ -1019,9 +1034,7 @@ class ShopLogin(tk.Tk):
 		return pm().mainloop()
 
 	#=================================================================================================================#
-	# def UndoSale(self):
-	# #====================================When Wrong Sale Entered======================================================#
-
+	
 
 if __name__ == '__main__':
 

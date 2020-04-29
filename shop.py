@@ -283,10 +283,10 @@ class ShopLogin(tk.Tk):
 
 		self.sale_date_entry = StringVar()
 
-		self.salesframe = Frame(bg="white", width=400, height=900, pady=3).place(x=1034,y=410)
+		self.salesframe = Frame(bg="white", width=400, height=900, pady=3).place(x=1034,y=210)
 
-		self.daily = tk.Text(self.salesframe,width=40, height=20, font="time 10",relief=RAISED)
-		self.daily.place(x=1037, y=412)
+		self.daily = tk.Text(self.salesframe,width=40, height=800, font="time 10",relief=RAISED)
+		self.daily.place(x=1037, y=210)
 
 		self.daily.insert(END,f'Product\t\tQuantity\t\tTotal\n')
 		self.daily.insert(END, f'{45*"_"}')
@@ -332,9 +332,9 @@ class ShopLogin(tk.Tk):
 		heading1 = tk.Label(headingframe,text="",bg="lightgrey",fg="blue",font="time 10", bd=0,pady=3,height=3, width=20, relief=None,)
 		heading1.grid(row=0, column=0)
 
-		buttonframe = Frame(bg="lightgrey", width=1030, height=300, pady=3).place(x=2, y=413)
+		buttonframe = Frame(bg="lightgrey", width=1030, height=800, pady=3).place(x=2, y=210)
 
-		maincanvas = Canvas(self,width=1920,height=360,bg="cadetblue")
+		maincanvas = Canvas(self,width=1920,height=160,bg="cadetblue")
 		maincanvas.place(x=0,y=50)
 		#Entry Box So as to view Database Sales by Date
 		# self.SalesDateEntry = DateEntry(foreground="white",background='green',date_pattern="dd/m/yyyy",textvariable=self.sale_date_entry,font="time 10")
@@ -349,7 +349,7 @@ class ShopLogin(tk.Tk):
 		self.SalesDateEntry.bind("<Return>",self.Get_Sales_By_Date)
 
 		#Label to Warn user to not conflict with database
-		warning = Label(bg="cadetblue",fg="green", text="*To Check Product Price Put Quantity 0 and Press Total", font="time 11").place(x=400,y=380)
+		warning = Label(bg="cadetblue",fg="green", text="*To Check Product Price Put Quantity 0 and Press Total", font="time 11").place(x=400,y=180)
 	
 		Product = tk.Label(text="Product".upper(),bg="white",font="time 11 bold", height=2, width=34, relief=RAISED)
 		Product.grid(row=1, column=0)
@@ -424,15 +424,11 @@ class ShopLogin(tk.Tk):
 
 	#============================Price Entry Defined Here============================================================
 		#Sell Price Entries D[i].
-		entryD1 = tk.Entry(bg="white",state=
-			'disabled',textvariable=self.entryD1,font="time 10")
+		entryD1 = tk.Entry(bg="white",textvariable=self.entryD1,font="time 10")
 		entryD1.grid(row=2, column=2)
-		entryD2 = tk.Entry(bg="white",state=
-			'disabled',textvariable=self.entryD2,font="time 10")
-		entryD3 = tk.Entry(bg="white",state=
-			'disabled',textvariable=self.entryD3,font="time 10")
-		entryD4 = tk.Entry(bg="white",state=
-			'disabled',textvariable=self.entryD4,font="time 10")
+		entryD2 = tk.Entry(bg="white",textvariable=self.entryD2,font="time 10")
+		entryD3 = tk.Entry(bg="white",textvariable=self.entryD3,font="time 10")
+		entryD4 = tk.Entry(bg="white",textvariable=self.entryD4,font="time 10")
 	
 
 		maincanvas.create_window(850,58,window=entryD1)
@@ -666,41 +662,66 @@ class ShopLogin(tk.Tk):
 		#=========================================================================
 		for k,v in stprice.items():
 			if f1 == k :
-				self.entryD1.set(v)
-				x = self.entryD1.get()
-				y = self.entryq1.get()
-				e =  y * x
-				self.entryP1.set(e)
+				if self.entryD1.get() != 0:
+					x = self.entryD1.get()
+					y = self.entryq1.get()
+					e =  y * x
+					self.entryP1.set(e)
+				else:
+					self.entryD1.set(v)
+					x = self.entryD1.get()
+					y = self.entryq1.get()
+					e =  y * x
+					self.entryP1.set(e)
+				
 				
 		#==========================================================================
 		#=========================================================================
 		for k,v in stprice.items():
 			if f2 == k:
-				self.entryD2.set(v)
-				x = self.entryD2.get()
-				y = self.entryq2.get()
-				e =  y * x
-				self.entryP2.set(e)
+				if self.entryD2.get() != 0:
+					x = self.entryD2.get()
+					y = self.entryq2.get()
+					e =  y * x
+					self.entryP2.set(e)
+				else:
+					self.entryD2.set(v)
+					x = self.entryD2.get()
+					y = self.entryq2.get()
+					e =  y * x
+					self.entryP2.set(e)
 				
 		#==========================================================================
 		#=========================================================================
 		for k,v in stprice.items():
 			if f3 == k:
-				self.entryD3.set(v)
-				x = self.entryD3.get()
-				y = self.entryq3.get()
-				e =  y * x
-				self.entryP3.set(e)
+				if self.entryD3.get() != 0:
+					x = self.entryD3.get()
+					y = self.entryq3.get()
+					e =  y * x
+					self.entryP3.set(e)
+				else:
+					self.entryD3.set(v)
+					x = self.entryD3.get()
+					y = self.entryq3.get()
+					e =  y * x
+					self.entryP3.set(e)
 				
 		#==========================================================================
 		#=========================================================================
 		for k,v in stprice.items():
 			if f4 == k:
-				self.entryD4.set(v)
-				x = self.entryD4.get()
-				y = self.entryq4.get()
-				e =  y * x
-				self.entryP4.set(e)
+				if self.entryD4.get() != 0:
+					x = self.entryD4.get()
+					y = self.entryq4.get()
+					e =  y * x
+					self.entryP4.set(e)
+				else:
+					self.entryD4.set(v)
+					x = self.entryD4.get()
+					y = self.entryq4.get()
+					e =  y * x
+					self.entryP4.set(e)
 				
 		#==========================================================================
 		
@@ -842,7 +863,7 @@ class ShopLogin(tk.Tk):
 	#=================================================================================================================#
 
 if __name__ == '__main__':
-	Admin().mainloop()
+	ShopLogin().mainloop()
 
 
 

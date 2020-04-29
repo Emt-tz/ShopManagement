@@ -1,32 +1,20 @@
-#1 rim of paper is sold at 8000 Tsh
-# so one paper is bought at 8000/500 = 16tsh
-# 1 copy costs 100
-# so profit for one copy = (100-16) = 84
-# so profit for n copies = n * 84
+import tkinter as tk
 
+root= tk.Tk()
 
-def profit(bp,qt,sp,nqt):
-	try:
-		priceforone = bp/qt
-		profit = sp - priceforone
-		value = sp*nqt
-	except ZeroDivisionError:
-		"Check rows with zerob"
-	return nqt*profit
+canvas1 = tk.Canvas(root, width = 400, height = 300)
+canvas1.pack()
 
-import sqlite3
+entry1 = tk.Entry (root) 
+canvas1.create_window(200, 190, window=entry1)
 
-conn = sqlite3.connect('sales')
-c = conn.cursor()
+def getSquareRoot ():  
+    x1 = entry1.get()
+    
+    label1 = tk.Label(root, text= float(x1)**0.5)
+    canvas1.create_window(200, 230, window=label1)
+    
+button1 = tk.Button(text='Get the Square Root', command=getSquareRoot)
+canvas1.create_window(200, 180, window=button1)
 
-
-x = c.execute("SELECT * FROM 'AddProducts'").fetchall()
-
-for i in range(0, len(x)):
-	productname = x[i][0]
-	bp = x[i][1]
-	sp = x[i][2]
-	qt = x[i][3]
-	#print(productname,bp,sp,qt)
-	print(productname,profit(bp,qt,sp,1))
-
+root.mainloop()

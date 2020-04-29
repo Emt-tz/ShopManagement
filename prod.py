@@ -341,4 +341,4 @@ class ProductManagement(tk.Tk):
 		from shop import ShopLogin as sl
 		sl().mainloop()
 
-# ProductManagement().mainloop()
+#ProductManagement().mainloop()

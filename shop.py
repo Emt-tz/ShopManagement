@@ -218,6 +218,7 @@ class ShopLogin(tk.Tk):
 		self.txt = []
 		self.date = dt.datetime.now()
 		self.textinput = []
+		self.height = 1
 
 		self.conn = sqlite3.connect('sales')
 		self.c = self.conn.cursor()
@@ -228,83 +229,156 @@ class ShopLogin(tk.Tk):
 		self.box2 =  StringVar()
 		self.box3 =  StringVar()
 		self.box4 =  StringVar()
-		self.box5 =  StringVar()
-		self.box6 =  StringVar()
-		self.box7 =  StringVar()
-		self.box8 =  StringVar()
-		self.box9 =  StringVar()
-		self.box10 = StringVar()
-		self.box11 = StringVar()
-		self.box12 = StringVar()
 
 		self.entryq1 = IntVar()
 		self.entryq2 = IntVar()
 		self.entryq3 = IntVar()
 		self.entryq4 = IntVar()
-		self.entryq5 = IntVar()
-		self.entryq6 = IntVar()
-		self.entryq7 = IntVar()
-		self.entryq8 = IntVar()
-		self.entryq9 = IntVar()
-		self.entryq10 = IntVar()
-		self.entryq11 = IntVar()
-		self.entryq12 = IntVar()
 
 		self.entryD1 = IntVar()
 		self.entryD2 = IntVar()
 		self.entryD3 = IntVar()
 		self.entryD4 = IntVar()
-		self.entryD5 = IntVar()
-		self.entryD6 = IntVar()
-		self.entryD7 = IntVar()
-		self.entryD8 = IntVar()
-		self.entryD9 = IntVar()
-		self.entryD10 = IntVar()
-		self.entryD11 = IntVar()
-		self.entryD12 = IntVar()
-
+	
 		self.entryP1 = IntVar()
 		self.entryP2 = IntVar()
 		self.entryP3 = IntVar()
 		self.entryP4 = IntVar()
-		self.entryP5 = IntVar()
-		self.entryP6 = IntVar()
-		self.entryP7 = IntVar()
-		self.entryP8 = IntVar()
-		self.entryP9 = IntVar()
-		self.entryP10 = IntVar()
-		self.entryP11 = IntVar()
-		self.entryP12 = IntVar()
-
+	
 		self.entrytv = IntVar()
 		self.entrypv = IntVar()
 
 
+		self.WIDTH, self.HEIGHT = self.winfo_screenwidth(), self.winfo_screenheight()
+
+		if self.WIDTH == 1280 and self.HEIGHT == 720:
+		#==============Screen of 1280 x 720 ========================
+			#buttons y place values
+			self.btny = 620
+			self.btnx = 0
+			#label height and width
+			self.labelheight = 1
+			self.labelwidth = 32
+			#entries y and x values
+			self.entry1y = 41
+			self.entry2y = 61
+			self.entry3y = 81
+			self.entry4y = 101
+			#combobox x value
+			self.entrybx = 160
+			#quantity x values
+			self.entryqx = 500
+			#sell price x values
+			self.entrydx = 810
+			#price x values
+			self.entrypx = 1130
+			#profit entry and total sales
+			self.xvalue = 950
+			self.yvalue = 210
+			self.total1y = 590
+			self.profit1y = 620
+			#buttons frame width and height
+			self.buttonsframewidth = 950
+			self.buttonsframeheight = 800
+			#getsales entry and button
+			self.entrydatey = 420
+			self.entrydatex = 300
+			self.entrydatebuttonx = 600
+
+		elif (self.WIDTH == 1366 and self.HEIGHT == 768) or (self.WIDTH ==1360 and self.HEIGHT==768):
+		#==============Screen of 1280 x 720 ========================
+			#buttons y place values
+			self.btny = 672
+			self.btnx = 0
+			#label height and width
+			self.labelheight = 2
+			self.labelwidth = 34
+			#entries y and x values
+			self.entry1y = 58
+			self.entry2y = 78
+			self.entry3y = 98
+			self.entry4y = 118
+			#combobox x value
+			self.entrybx = 170
+			#quantity x values
+			self.entryqx = 530
+			#sell price x values
+			self.entrydx = 850
+			#price x values
+			self.entrypx = 1180
+			#profit entry and total sales
+			self.xvalue = 1040
+			self.yvalue = 210
+			self.total1y = 642
+			self.profit1y = 672
+			#buttons frame width and height
+			self.buttonsframewidth = 1040
+			self.buttonsframeheight = 800
+			#getsales entry and button
+			self.entrydatey = 420
+			self.entrydatex = 50
+			self.entrydatebuttonx = 220
+		else:
+			#==============Screen of 1280 x 720 ========================
+			#buttons y place values
+			self.btny = 672
+			self.btnx = 0
+			#label height and width
+			self.labelheight = 2
+			self.labelwidth = 34
+			#entries y and x values
+			self.entry1y = 58
+			self.entry2y = 78
+			self.entry3y = 98
+			self.entry4y = 118
+			#combobox x value
+			self.entrybx = 170
+			#quantity x values
+			self.entryqx = 530
+			#sell price x values
+			self.entrydx = 850
+			#price x values
+			self.entrypx = 1180
+			#profit entry and total sales
+			self.xvalue = 1040
+			self.yvalue = 210
+			self.total1y = 642
+			self.profit1y = 672
+			#buttons frame width and height
+			self.buttonsframewidth = 1040
+			self.buttonsframeheight = 800
+			#getsales entry and button
+			self.entrydatey = 420
+			self.entrydatex = 50
+			self.entrydatebuttonx = 220
 
 		self.sale_date_entry = StringVar()
 
-		self.salesframe = Frame(bg="white", width=400, height=900, pady=3).place(x=1034,y=210)
+		self.salesframe = Frame(bg="white", width=400, height=900, pady=3).place(x=self.xvalue,y=self.yvalue)
 
 		self.daily = tk.Text(self.salesframe,width=40, height=800, font="time 10",relief=RAISED)
-		self.daily.place(x=1037, y=210)
+		self.daily.place(x=self.xvalue, y=self.yvalue)
 
 		self.daily.insert(END,f'Product\t\tQuantity\t\tTotal\n')
 		self.daily.insert(END, f'{45*"_"}')
 
 		self.entryt = Entry(bg="white",textvariable=self.entrytv, font="time 10", state='normal',justify='right',bd=5,width=39)
-		self.entryt.place(x=1035, y=642)
+		self.entryt.place(x=self.xvalue, y=self.total1y)
 
 		self.entryp = Entry(bg="white",textvariable=self.entrypv, font="time 10", state='normal',justify='right',bd=5,width=39)
-		self.entryp.place(x=1035, y=672)
+		self.entryp.place(x=self.xvalue, y=self.profit1y)
 
 		self.lb = StringVar()
 		self.lbtotal = StringVar()
 
-		self.geometry('1350x1080+10+0')
-		self.resizable(True, True)
-
-		self.todayssales()
 		self.Sales()
+
+		self.geometry(f'{self.WIDTH}x{self.HEIGHT}')
+
+		self.resizable(False, True)
+
+	
+	
 	#=================================================================================================================#
 
 	def ShopItems(self):
@@ -327,65 +401,65 @@ class ShopLogin(tk.Tk):
 		headingframe = Frame(bg="lightgrey",width=1920, height=200).place(x=0,y=0)
 
 		Shop_title = Label(headingframe,text="Welcome to Emt Shop Management System".upper(),bg="lightgrey",fg="green",font="time 14", bd=0,height=2,relief=None)
-		Shop_title.place(y=0, x=500)
+		Shop_title.place(y=0, x=450)
 
 		heading1 = tk.Label(headingframe,text="",bg="lightgrey",fg="blue",font="time 10", bd=0,pady=3,height=3, width=20, relief=None,)
 		heading1.grid(row=0, column=0)
 
-		buttonframe = Frame(bg="lightgrey", width=1030, height=800, pady=3).place(x=2, y=210)
+		buttonframe = Frame(bg="lightgrey", width=self.buttonsframewidth, height=self.buttonsframeheight, pady=3).place(x=2, y=210)
 
 		maincanvas = Canvas(self,width=1920,height=160,bg="cadetblue")
 		maincanvas.place(x=0,y=50)
 		#Entry Box So as to view Database Sales by Date
-		# self.SalesDateEntry = DateEntry(foreground="white",background='green',date_pattern="dd/m/yyyy",textvariable=self.sale_date_entry,font="time 10")
-		# self.SalesDateEntry.place(x=200, y=420)
+	
 
-		self.SalesDateEntry = Entry(foreground="white",background='white',textvariable=self.sale_date_entry,font="time 10")
-		self.SalesDateEntry.place(x=200, y=420)
+		# self.SalesDateEntry = Entry(foreground="black",background='white',textvariable=self.sale_date_entry,font="time 10")
+		# self.SalesDateEntry.place(x=self.entrydatex, y=self.entrydatey)
 
-		SalesDateEntry_Button = Button(buttonframe,font="time 10",text="Get Sales".upper(),bg="cadetblue",fg="white",command=self.Get_Sales_By_Date,bd=0,height=1, width=20)
-		SalesDateEntry_Button.place(x=400, y=420)
-
-		self.SalesDateEntry.bind("<Return>",self.Get_Sales_By_Date)
+	
 
 		#Label to Warn user to not conflict with database
 		warning = Label(bg="cadetblue",fg="green", text="*To Check Product Price Put Quantity 0 and Press Total", font="time 11").place(x=400,y=180)
 	
-		Product = tk.Label(text="Product".upper(),bg="white",font="time 11 bold", height=2, width=34, relief=RAISED)
+		Product = tk.Label(text="Product".upper(),bg="white",font="time 11 bold", height=self.labelheight, width=self.labelwidth, relief=RAISED)
 		Product.grid(row=1, column=0)
 
-		Quantity = tk.Label(text="Quantity".upper(),bg="white",font="time 11 bold", height=2, width=34, relief=RAISED)
+		Quantity = tk.Label(text="Quantity".upper(),bg="white",font="time 11 bold", height=self.labelheight, width=self.labelwidth, relief=RAISED)
 		Quantity.grid(row=1, column=1)
 
-		Discount = tk.Label(text="Sell Price".upper(),bg="white",font="time 11 bold", height=2, width=34, relief=RAISED)
+		Discount = tk.Label(text="Sell Price".upper(),bg="white",font="time 11 bold", height=self.labelheight, width=self.labelwidth, relief=RAISED)
 		Discount.grid(row=1, column=2)
 
-		Price = tk.Label(text="Price".upper(),bg="white",font="time 11 bold", height=2, width=34, relief=RAISED)
+		Price = tk.Label(text="Price".upper(),bg="white",font="time 11 bold", height=self.labelheight, width=self.labelwidth, relief=RAISED)
 		Price.grid(row=1, column=3)
+
+
+		SalesDateEntry_Button = Button(buttonframe,font="time 10",text="Get Sales".upper(),bg="cadetblue",fg="white",command=self.Get_Sales_By_Date,bd=0,height=1, width=20)
+		SalesDateEntry_Button.place(x=self.entrydatebuttonx, y=self.entrydatey)
 
 				# GrandTotal Button
 		grandtotal = tk.Button(buttonframe,text="Total".upper()
 			,bg="cadetblue",fg="white",font="time 10",
 			bd=0,height=1, width=12, 
 			relief=None,command=self.todayssales)
-		grandtotal.place(x=60, y=672)
+		grandtotal.place(x=20, y=self.btny)
 
 		undobtn = Button(buttonframe,font="time 10",text="UNDO SALE".upper(),bg="cadetblue",fg="white",command=self.UndoLastSale,bd=0,height=1, width=20)
-		undobtn.place(x=180, y=672)
+		undobtn.place(x=140, y=self.btny)
 		
 		#Product Management Button
 		prodmgmts = Button(buttonframe,font="time 10",text="Product Management".upper(),bg="cadetblue",fg="white",command=self.prodmgmt,bd=0,height=1, width=20)
-		prodmgmts.place(x=360, y=672)
+		prodmgmts.place(x=320, y=self.btny)
 
 		exportsales = Button(buttonframe,font="time 10",text="Export".upper(),bg="cadetblue",fg="white",command=self.exporttocsv,bd=0,height=1, width=20)
-		exportsales.place(x=545, y=672)
+		exportsales.place(x=505, y=self.btny)
 
 		# Exit Button
 		logout = tk.Button(buttonframe,text="Exit".upper()
 			,bg="cadetblue",fg="white",font="time 10",
 			bd=0,height=1, width=12, 
 			relief=None,command=self.logout)
-		logout.place(x=900, y=672)
+		logout.place(x=660, y=self.btny)
 	#=================================================================================================================#
 	#============================Combobox,Entry Defined Here==========================================================#
 	# 	#Deal with the combobox here start at row=2
@@ -394,10 +468,10 @@ class ShopLogin(tk.Tk):
 		box3 = ttk.Combobox(textvariable=self.box3,values=self.ShopItems(),font="time 12")
 		box4 = ttk.Combobox(textvariable=self.box4,values=self.ShopItems(),font="time 12")
 
-		maincanvas.create_window(170,58,window=box1)
-		maincanvas.create_window(170,78,window=box2)
-		maincanvas.create_window(170,98,window=box3)
-		maincanvas.create_window(170,118,window=box4)
+		maincanvas.create_window(self.entrybx,self.entry1y,window=box1)
+		maincanvas.create_window(self.entrybx,self.entry2y,window=box2)
+		maincanvas.create_window(self.entrybx,self.entry3y,window=box3)
+		maincanvas.create_window(self.entrybx,self.entry4y,window=box4)
 	
 	# #============================================================================================================
 
@@ -408,10 +482,10 @@ class ShopLogin(tk.Tk):
 		entryq3 = tk.Entry(bg="white",textvariable=self.entryq3,font="time 10")
 		entryq4 = tk.Entry(bg="white",textvariable=self.entryq4,font="time 10")
 
-		maincanvas.create_window(530,58,window=entryq1)
-		maincanvas.create_window(530,78,window=entryq2)
-		maincanvas.create_window(530,98,window=entryq3)
-		maincanvas.create_window(530,118,window=entryq4)
+		maincanvas.create_window(self.entryqx,self.entry1y,window=entryq1)
+		maincanvas.create_window(self.entryqx,self.entry2y,window=entryq2)
+		maincanvas.create_window(self.entryqx,self.entry3y,window=entryq3)
+		maincanvas.create_window(self.entryqx,self.entry4y,window=entryq4)
 
 
 	# 	#bind all q entries with the enter key
@@ -425,16 +499,15 @@ class ShopLogin(tk.Tk):
 	#============================Price Entry Defined Here============================================================
 		#Sell Price Entries D[i].
 		entryD1 = tk.Entry(bg="white",textvariable=self.entryD1,font="time 10")
-		entryD1.grid(row=2, column=2)
 		entryD2 = tk.Entry(bg="white",textvariable=self.entryD2,font="time 10")
 		entryD3 = tk.Entry(bg="white",textvariable=self.entryD3,font="time 10")
 		entryD4 = tk.Entry(bg="white",textvariable=self.entryD4,font="time 10")
 	
 
-		maincanvas.create_window(850,58,window=entryD1)
-		maincanvas.create_window(850,78,window=entryD2)
-		maincanvas.create_window(850,98,window=entryD3)
-		maincanvas.create_window(850,118,window=entryD4)
+		maincanvas.create_window(self.entrydx,self.entry1y,window=entryD1)
+		maincanvas.create_window(self.entrydx,self.entry2y,window=entryD2)
+		maincanvas.create_window(self.entrydx,self.entry3y,window=entryD3)
+		maincanvas.create_window(self.entrydx,self.entry4y,window=entryD4)
 	
 	#============================================================================================================
 
@@ -445,10 +518,13 @@ class ShopLogin(tk.Tk):
 		entryP3 = tk.Entry(bg="white",textvariable=self.entryP3,font="time 10", state='disabled')
 		entryP4 = tk.Entry(bg="white",textvariable=self.entryP4,font="time 10", state='disabled')
 
-		maincanvas.create_window(1180,58,window=entryP1)
-		maincanvas.create_window(1180,78,window=entryP2)
-		maincanvas.create_window(1180,98,window=entryP3)
-		maincanvas.create_window(1180,118,window=entryP4)
+		maincanvas.create_window(self.entrypx,self.entry1y,window=entryP1)
+		maincanvas.create_window(self.entrypx,self.entry2y,window=entryP2)
+		maincanvas.create_window(self.entrypx,self.entry3y,window=entryP3)
+		maincanvas.create_window(self.entrypx,self.entry4y,window=entryP4)
+
+		#self.SalesDateEntry = DateEntry(foreground="white",background='cadetblue',date_pattern="dd/m/yyyy",textvariable=self.sale_date_entry,font="time 10")
+		# self.SalesDateEntry.place(x=self.entrydatex, y=self.entrydatey)
 
 	#=================================================================================================================#
 	def exporttocsv(self):
@@ -749,15 +825,6 @@ class ShopLogin(tk.Tk):
 		self.entryq2.set("0")
 		self.entryq3.set("0")
 		self.entryq4.set("0")
-		self.entryq5.set("0")
-		self.entryq6.set("0")
-		self.entryq7.set("0")
-		self.entryq8.set("0")
-		self.entryq9.set("0")
-		self.entryq10.set("0")
-		self.entryq11.set("0")
-		self.entryq12.set("0")
-
 	#=================================================================================================================#
 	def todayssales(self, event=None):
 	#=================================================================================================================#

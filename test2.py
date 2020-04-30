@@ -32,6 +32,12 @@ CREATE TABLE "login" (
 	"Password"	TEXT
 );"""
 
+madeni_table = """
+CREATE TABLE "madeni" (
+	"jina"	TEXT,
+	"kiasi"	INTEGER
+);
+"""
 class Profit:
 
 	def profit(bp,qt,sp,nqt):
@@ -49,6 +55,7 @@ class InitializeDatabase:
 		c.execute(dailysales_table)
 		c.execute(addproducts_table)
 		c.execute(login_table)
+		c.execute(madeni_table)
 		conn.commit()
 		conn.close()
 

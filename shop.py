@@ -273,6 +273,8 @@ class ShopLogin(tk.Tk):
 		self.debtnameentry = StringVar()
 		self.debtcashentry = IntVar()
 
+		self.majinacombo = StringVar()
+
 		self.entrytv = IntVar()
 		self.entrypv = IntVar()
 
@@ -399,9 +401,6 @@ class ShopLogin(tk.Tk):
 		self.daily = tk.Text(self.salesframe,width=40, height=800, font="time 10",relief=RAISED)
 		self.daily.place(x=self.xvalue, y=self.yvalue)
 
-		self.daily.insert(END,f'Product\t\tQuantity\t\tTotal\n')
-		self.daily.insert(END, f'{45*"_"}')
-
 		self.entryt = Entry(bg="white",textvariable=self.entrytv, font="time 10", state='normal',justify='right',bd=5,width=39)
 		self.entryt.place(x=self.xvalue, y=self.total1y)
 
@@ -411,16 +410,12 @@ class ShopLogin(tk.Tk):
 		self.lb = StringVar()
 		self.lbtotal = StringVar()
 
-	
-
 		self.geometry(f'{self.WIDTH}x{self.HEIGHT}')
 
 		self.resizable(False, True)
 
-		self.Sales()
-
-	
-	
+		self.Sales()    
+		self.todayssales()
 	#=================================================================================================================#
 
 	def ShopItems(self):
@@ -435,6 +430,22 @@ class ShopLogin(tk.Tk):
 				x = row[0]
 			items.append(x.upper())
 		return sorted(items)
+	#=================================================================================================================#
+	def madeninames(self):
+		conn= sqlite3.connect('sales')
+		c = conn.cursor()
+		names = c.execute("SELECT * FROM madeni").fetchall()
+
+		majina = []
+
+		for row in names:
+			for i in range(0, len(row)):
+				x = row[0]
+			majina.append(x)
+
+		return sorted(majina)
+	#=================================================================================================================#
+
 	#=================================================================================================================#
 
 	def Sales(self):
@@ -461,7 +472,7 @@ class ShopLogin(tk.Tk):
 		self.SalesDateEntry = DateEntry(foreground="white",background='cadetblue',date_pattern="dd/m/yyyy",textvariable=self.sale_date_entry,font="time 10")
 		self.SalesDateEntry.place(x=self.entrydatex, y=self.entrydatey)
 
-		#Label to Warn user to not conflict with database	
+		#Label to Warn user to not conflict with database   
 		Product = tk.Label(text="Product".upper(),bg="white",font="time 11 bold", height=self.labelheight, width=self.labelwidth, relief=RAISED)
 		Product.grid(row=1, column=0)
 
@@ -504,10 +515,10 @@ class ShopLogin(tk.Tk):
 
 		#debtbutton
 		debtbutton = Button(buttonframe,font="time 10",text="Debts".upper(),bg="cadetblue",fg="white",command=self.DebtFunction,bd=0,height=1, width=15)
-		debtbutton.place(x=840, y=self.btny)
+		debtbutton.place(x=830, y=self.btny)
 	#=================================================================================================================#
 	#============================Combobox,Entry Defined Here==========================================================#
-	# 	#Deal with the combobox here start at row=2
+	#   #Deal with the combobox here start at row=2
 		box1 = ttk.Combobox(textvariable=self.box1,values=self.ShopItems(),font="time 12")
 		box2 = ttk.Combobox(textvariable=self.box2,values=self.ShopItems(),font="time 12")
 		box3 = ttk.Combobox(textvariable=self.box3,values=self.ShopItems(),font="time 12")
@@ -533,7 +544,7 @@ class ShopLogin(tk.Tk):
 	# #============================================================================================================
 
 	# #============================Quantity Entry Defined Here========================================================
-	# 	#Quantity Entry Boxes
+	#   #Quantity Entry Boxes
 		entryq1 = tk.Entry(bg="white",textvariable=self.entryq1,font="time 10")
 		entryq2 = tk.Entry(bg="white",textvariable=self.entryq2,font="time 10")
 		entryq3 = tk.Entry(bg="white",textvariable=self.entryq3,font="time 10")
@@ -558,7 +569,7 @@ class ShopLogin(tk.Tk):
 
 
 
-	# 	#bind all q entries with the enter key
+	#   #bind all q entries with the enter key
 		entryq1.bind("<Return>",self.todayssales)
 		entryq2.bind("<Return>",self.todayssales)
 		entryq3.bind("<Return>",self.todayssales)
@@ -622,35 +633,88 @@ class ShopLogin(tk.Tk):
 		maincanvas.create_window(self.entrypx,self.entry9y,window=entryP9)
 		maincanvas.create_window(self.entrypx,self.entry10y,window=entryP10)
 
+
+				#We need name, item, debt
+		debtcanvas = Canvas(self,width=238,height=370,bg="lightgrey")
+		debtcanvas.place(x=790,y=301)
+
+		madenilabel = Label(fg="cadetblue",text="Madeni na Matumizi")
+		debtcanvas.create_window(108, 10, window=madenilabel)
+
+		self.debtnameentry12 = Entry(bg="white",textvariable=self.debtnameentry,font="time 10",width=26)
+		self.debtnameentry.set("")
+		debtcanvas.create_window(108,45,window=self.debtnameentry12)
+
+
+		self.debtcashentry12 = Entry(bg="white",textvariable=self.debtcashentry,font="time 10",width=26)
+		debtcanvas.create_window(108,75,window=self.debtcashentry12)
+
+		self.debtview12 = ttk.Combobox(textvariable=self.majinacombo,values=self.madeninames(),font="time 12")
+		debtcanvas.create_window(108, 200,window=self.debtview12)
+
+		self.submitbutton = Button(font="time 10",text="Add".upper(),bg="cadetblue",fg="white",command=self.submittodb,bd=0,height=1, width=6)
+		self.submitbutton.place(x=860, y=self.entrydatey+10)
+
+	
+		self.removebutton = Button(font="time 10",text="Del".upper(),bg="cadetblue",fg="white",command=self.removedb,bd=0,height=1, width=6)
+		self.removebutton.place(x=860, y=self.entrydatey+120)
+
+		self.debtnameentry12.config(state="disabled")
+		self.debtcashentry12.config(state="disabled")
+		self.debtview12.config(state="disabled")
+		self.submitbutton.config(state="disabled")
+		self.removebutton.config(state="disabled")
+
 	#=================================================================================================================#
 
 	#=================================================================================================================#
 	def DebtFunction(self):
-		#We need name, item, debt
-		debtcanvas = Canvas(self,width=238,height=370,bg="lightgrey")
-		debtcanvas.place(x=790,y=301)
 
-		debtnameentry = Entry(bg="white",textvariable=self.debtnameentry,font="time 10",width=26)
-		self.debtnameentry.set("Jina")
-		debtcanvas.create_window(108,45,window=debtnameentry)
+		self.daily.delete(1.0, END)
+		self.daily.insert(END,f'Jina\t\t\t\tTotal\n')
+		self.daily.insert(END, f'{45*"_"}')
 
-		debtcashentry = Entry(bg="white",textvariable=self.debtcashentry,font="time 10",width=26)
-		debtcanvas.create_window(108,75,window=debtcashentry)
+		self.debtnameentry12.config(state="normal")
+		self.debtcashentry12.config(state="normal")
+		self.debtview12.config(state="normal")
+		self.submitbutton.config(state="normal")
+		self.removebutton.config(state="normal")
+		self.debtnameentry.set("")
 
-		submitbutton = Button(font="time 10",text="Add".upper(),bg="cadetblue",fg="white",command=self.submittodb,bd=0,height=1, width=10)
-		submitbutton.place(x=792, y=self.entrydatey)
 
-	
-		removebutton = Button(font="time 10",text="Del".upper(),bg="cadetblue",fg="white",command=self.removedb,bd=0,height=1, width=10)
-		removebutton.place(x=892, y=self.entrydatey)
 
 	def submittodb(self):
 			conn = sqlite3.connect('sales')
 			c = conn.cursor()
 
+			jina = self.debtnameentry.get()
+			kiasi = self.debtcashentry.get()
+
+			query = (jina.upper(),kiasi)
+			c.execute("INSERT INTO 'madeni' Values (?,?)", query)
+			conn.commit()
+
+			self.debtnameentry.set("")
+			self.debtcashentry.set("")
+
+			self.after(1, self.DebtFunction(),END)
+
 	def removedb(self):
 			conn = sqlite3.connect('sales')
 			c = conn.cursor()
+
+			jina = self.majinacombo.get()
+
+			query = (jina.upper())
+
+			c.execute("DELETE FROM 'madeni' WHERE jina=?", (jina,))
+			conn.commit()
+
+			self.debtnameentry.set("")
+			self.debtcashentry.set("")
+			self.majinacombo.set("")
+
+			self.after(1, self.DebtFunction(),END)
 	#=================================================================================================================#
 
 	def exporttocsv(self):
@@ -752,6 +816,12 @@ class ShopLogin(tk.Tk):
 	#=================================================================================================================#
 		#initiate Database Connection and Find Values with Date Entered
 		#self.after(1, self.SalesDateEntry.delete,0,END)
+		self.debtnameentry12.config(state="disabled")
+		self.debtcashentry12.config(state="disabled")
+		self.debtview12.config(state="disabled")
+		self.submitbutton.config(state="disabled")
+		self.removebutton.config(state="disabled")
+		self.debtnameentry.set("Jina")
 
 		self.daily.delete(1.0, END)
 
@@ -1074,6 +1144,14 @@ class ShopLogin(tk.Tk):
 	#=================================================================================================================#
 		#self.Salesbtn.config(state=DISABLED)
 		self.changelabel()
+		
+		self.debtnameentry12.config(state="disabled")
+		self.debtcashentry12.config(state="disabled")
+		self.debtview12.config(state="disabled")
+		self.submitbutton.config(state="disabled")
+		self.removebutton.config(state="disabled")
+		self.debtnameentry.set("Jina")
+
 		self.daily.delete(1.0, END)
 
 		self.daily.insert(END,"Product\t\tQuantity\t\tTotal\n")

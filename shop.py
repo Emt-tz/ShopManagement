@@ -229,22 +229,50 @@ class ShopLogin(tk.Tk):
 		self.box2 =  StringVar()
 		self.box3 =  StringVar()
 		self.box4 =  StringVar()
+		self.box5 =  StringVar()
+		self.box6 =  StringVar()
+		self.box7 =  StringVar()
+		self.box8 =  StringVar()
+		self.box9 =  StringVar()
+		self.box10 =  StringVar()
+	
 
 		self.entryq1 = IntVar()
 		self.entryq2 = IntVar()
 		self.entryq3 = IntVar()
 		self.entryq4 = IntVar()
+		self.entryq5 = IntVar()
+		self.entryq6 = IntVar()
+		self.entryq7 = IntVar()
+		self.entryq8 = IntVar()
+		self.entryq9 = IntVar()
+		self.entryq10 = IntVar()
 
 		self.entryD1 = IntVar()
 		self.entryD2 = IntVar()
 		self.entryD3 = IntVar()
 		self.entryD4 = IntVar()
-	
+		self.entryD5 = IntVar()
+		self.entryD6 = IntVar()
+		self.entryD7 = IntVar()
+		self.entryD8 = IntVar()
+		self.entryD9 = IntVar()
+		self.entryD10 = IntVar()
+
 		self.entryP1 = IntVar()
 		self.entryP2 = IntVar()
 		self.entryP3 = IntVar()
 		self.entryP4 = IntVar()
-	
+		self.entryP5 = IntVar()
+		self.entryP6 = IntVar()
+		self.entryP7 = IntVar()
+		self.entryP8 = IntVar()
+		self.entryP9 = IntVar()
+		self.entryP10 = IntVar()
+
+		self.debtnameentry = StringVar()
+		self.debtcashentry = IntVar()
+
 		self.entrytv = IntVar()
 		self.entrypv = IntVar()
 
@@ -298,6 +326,12 @@ class ShopLogin(tk.Tk):
 			self.entry2y = 78
 			self.entry3y = 98
 			self.entry4y = 118
+			self.entry5y = 138
+			self.entry6y = 158
+			self.entry7y = 178
+			self.entry8y = 198
+			self.entry9y = 218
+			self.entry10y = 238
 			#combobox x value
 			self.entrybx = 170
 			#quantity x values
@@ -308,7 +342,7 @@ class ShopLogin(tk.Tk):
 			self.entrypx = 1180
 			#profit entry and total sales
 			self.xvalue = 1040
-			self.yvalue = 210
+			self.yvalue = 300
 			self.total1y = 642
 			self.profit1y = 672
 			#buttons frame width and height
@@ -331,6 +365,12 @@ class ShopLogin(tk.Tk):
 			self.entry2y = 78
 			self.entry3y = 98
 			self.entry4y = 118
+			self.entry5y = 138
+			self.entry6y = 158
+			self.entry7y = 178
+			self.entry8y = 198
+			self.entry9y = 218
+			self.entry10y = 238
 			#combobox x value
 			self.entrybx = 170
 			#quantity x values
@@ -341,7 +381,7 @@ class ShopLogin(tk.Tk):
 			self.entrypx = 1180
 			#profit entry and total sales
 			self.xvalue = 1040
-			self.yvalue = 210
+			self.yvalue = 300
 			self.total1y = 642
 			self.profit1y = 672
 			#buttons frame width and height
@@ -371,11 +411,13 @@ class ShopLogin(tk.Tk):
 		self.lb = StringVar()
 		self.lbtotal = StringVar()
 
-		self.Sales()
+	
 
 		self.geometry(f'{self.WIDTH}x{self.HEIGHT}')
 
 		self.resizable(False, True)
+
+		self.Sales()
 
 	
 	
@@ -408,7 +450,7 @@ class ShopLogin(tk.Tk):
 
 		buttonframe = Frame(bg="lightgrey", width=self.buttonsframewidth, height=self.buttonsframeheight, pady=3).place(x=2, y=210)
 
-		maincanvas = Canvas(self,width=1920,height=160,bg="cadetblue")
+		maincanvas = Canvas(self,width=1920,height=250,bg="cadetblue")
 		maincanvas.place(x=0,y=50)
 		#Entry Box So as to view Database Sales by Date
 	
@@ -416,11 +458,10 @@ class ShopLogin(tk.Tk):
 		# self.SalesDateEntry = Entry(foreground="black",background='white',textvariable=self.sale_date_entry,font="time 10")
 		# self.SalesDateEntry.place(x=self.entrydatex, y=self.entrydatey)
 
-	
+		self.SalesDateEntry = DateEntry(foreground="white",background='cadetblue',date_pattern="dd/m/yyyy",textvariable=self.sale_date_entry,font="time 10")
+		self.SalesDateEntry.place(x=self.entrydatex, y=self.entrydatey)
 
-		#Label to Warn user to not conflict with database
-		warning = Label(bg="cadetblue",fg="green", text="*To Check Product Price Put Quantity 0 and Press Total", font="time 11").place(x=400,y=180)
-	
+		#Label to Warn user to not conflict with database	
 		Product = tk.Label(text="Product".upper(),bg="white",font="time 11 bold", height=self.labelheight, width=self.labelwidth, relief=RAISED)
 		Product.grid(row=1, column=0)
 
@@ -460,6 +501,10 @@ class ShopLogin(tk.Tk):
 			bd=0,height=1, width=12, 
 			relief=None,command=self.logout)
 		logout.place(x=660, y=self.btny)
+
+		#debtbutton
+		debtbutton = Button(buttonframe,font="time 10",text="Debts".upper(),bg="cadetblue",fg="white",command=self.DebtFunction,bd=0,height=1, width=15)
+		debtbutton.place(x=840, y=self.btny)
 	#=================================================================================================================#
 	#============================Combobox,Entry Defined Here==========================================================#
 	# 	#Deal with the combobox here start at row=2
@@ -467,11 +512,23 @@ class ShopLogin(tk.Tk):
 		box2 = ttk.Combobox(textvariable=self.box2,values=self.ShopItems(),font="time 12")
 		box3 = ttk.Combobox(textvariable=self.box3,values=self.ShopItems(),font="time 12")
 		box4 = ttk.Combobox(textvariable=self.box4,values=self.ShopItems(),font="time 12")
+		box5 = ttk.Combobox(textvariable=self.box5,values=self.ShopItems(),font="time 12")
+		box6 = ttk.Combobox(textvariable=self.box6,values=self.ShopItems(),font="time 12")
+		box7 = ttk.Combobox(textvariable=self.box7,values=self.ShopItems(),font="time 12")
+		box8 = ttk.Combobox(textvariable=self.box8,values=self.ShopItems(),font="time 12")
+		box9 = ttk.Combobox(textvariable=self.box9,values=self.ShopItems(),font="time 12")
+		box10 = ttk.Combobox(textvariable=self.box10,values=self.ShopItems(),font="time 12")
 
 		maincanvas.create_window(self.entrybx,self.entry1y,window=box1)
 		maincanvas.create_window(self.entrybx,self.entry2y,window=box2)
 		maincanvas.create_window(self.entrybx,self.entry3y,window=box3)
 		maincanvas.create_window(self.entrybx,self.entry4y,window=box4)
+		maincanvas.create_window(self.entrybx,self.entry5y,window=box5)
+		maincanvas.create_window(self.entrybx,self.entry6y,window=box6)
+		maincanvas.create_window(self.entrybx,self.entry7y,window=box7)
+		maincanvas.create_window(self.entrybx,self.entry8y,window=box8)
+		maincanvas.create_window(self.entrybx,self.entry9y,window=box9)
+		maincanvas.create_window(self.entrybx,self.entry10y,window=box10)
 	
 	# #============================================================================================================
 
@@ -481,11 +538,24 @@ class ShopLogin(tk.Tk):
 		entryq2 = tk.Entry(bg="white",textvariable=self.entryq2,font="time 10")
 		entryq3 = tk.Entry(bg="white",textvariable=self.entryq3,font="time 10")
 		entryq4 = tk.Entry(bg="white",textvariable=self.entryq4,font="time 10")
+		entryq5 = tk.Entry(bg="white",textvariable=self.entryq5,font="time 10")
+		entryq6 = tk.Entry(bg="white",textvariable=self.entryq6,font="time 10")
+		entryq7 = tk.Entry(bg="white",textvariable=self.entryq7,font="time 10")
+		entryq8 = tk.Entry(bg="white",textvariable=self.entryq8,font="time 10")
+		entryq9 = tk.Entry(bg="white",textvariable=self.entryq9,font="time 10")
+		entryq10 = tk.Entry(bg="white",textvariable=self.entryq10,font="time 10")
 
 		maincanvas.create_window(self.entryqx,self.entry1y,window=entryq1)
 		maincanvas.create_window(self.entryqx,self.entry2y,window=entryq2)
 		maincanvas.create_window(self.entryqx,self.entry3y,window=entryq3)
 		maincanvas.create_window(self.entryqx,self.entry4y,window=entryq4)
+		maincanvas.create_window(self.entryqx,self.entry5y,window=entryq5)
+		maincanvas.create_window(self.entryqx,self.entry6y,window=entryq6)
+		maincanvas.create_window(self.entryqx,self.entry7y,window=entryq7)
+		maincanvas.create_window(self.entryqx,self.entry8y,window=entryq8)
+		maincanvas.create_window(self.entryqx,self.entry9y,window=entryq9)
+		maincanvas.create_window(self.entryqx,self.entry10y,window=entryq10)
+
 
 
 	# 	#bind all q entries with the enter key
@@ -493,6 +563,12 @@ class ShopLogin(tk.Tk):
 		entryq2.bind("<Return>",self.todayssales)
 		entryq3.bind("<Return>",self.todayssales)
 		entryq4.bind("<Return>",self.todayssales)
+		entryq5.bind("<Return>",self.todayssales)
+		entryq6.bind("<Return>",self.todayssales)
+		entryq7.bind("<Return>",self.todayssales)
+		entryq8.bind("<Return>",self.todayssales)
+		entryq9.bind("<Return>",self.todayssales)
+		entryq10.bind("<Return>",self.todayssales)
 
 	#============================================================================================================
 
@@ -502,34 +578,85 @@ class ShopLogin(tk.Tk):
 		entryD2 = tk.Entry(bg="white",textvariable=self.entryD2,font="time 10")
 		entryD3 = tk.Entry(bg="white",textvariable=self.entryD3,font="time 10")
 		entryD4 = tk.Entry(bg="white",textvariable=self.entryD4,font="time 10")
-	
+		entryD5 = tk.Entry(bg="white",textvariable=self.entryD5,font="time 10")
+		entryD6 = tk.Entry(bg="white",textvariable=self.entryD6,font="time 10")
+		entryD7 = tk.Entry(bg="white",textvariable=self.entryD7,font="time 10")
+		entryD8 = tk.Entry(bg="white",textvariable=self.entryD8,font="time 10")
+		entryD9 = tk.Entry(bg="white",textvariable=self.entryD9,font="time 10")
+		entryD10 = tk.Entry(bg="white",textvariable=self.entryD10,font="time 10")
 
 		maincanvas.create_window(self.entrydx,self.entry1y,window=entryD1)
 		maincanvas.create_window(self.entrydx,self.entry2y,window=entryD2)
 		maincanvas.create_window(self.entrydx,self.entry3y,window=entryD3)
 		maincanvas.create_window(self.entrydx,self.entry4y,window=entryD4)
+		maincanvas.create_window(self.entrydx,self.entry5y,window=entryD5)
+		maincanvas.create_window(self.entrydx,self.entry6y,window=entryD6)
+		maincanvas.create_window(self.entrydx,self.entry7y,window=entryD7)
+		maincanvas.create_window(self.entrydx,self.entry8y,window=entryD8)
+		maincanvas.create_window(self.entrydx,self.entry9y,window=entryD9)
+		maincanvas.create_window(self.entrydx,self.entry10y,window=entryD10)
 	
 	#============================================================================================================
 
 	#============================Total Price Entry Defined Here=======================================================
 		#Total Price Entries
-		entryP1 = tk.Entry(bg="white",textvariable=self.entryP1,font="time 10", state='disabled')
-		entryP2 = tk.Entry(bg="white",textvariable=self.entryP2,font="time 10", state='disabled')
-		entryP3 = tk.Entry(bg="white",textvariable=self.entryP3,font="time 10", state='disabled')
-		entryP4 = tk.Entry(bg="white",textvariable=self.entryP4,font="time 10", state='disabled')
+		entryP1 = tk.Entry(bg="white",textvariable=self.entryP1,font="time 10")
+		entryP2 = tk.Entry(bg="white",textvariable=self.entryP2,font="time 10")
+		entryP3 = tk.Entry(bg="white",textvariable=self.entryP3,font="time 10")
+		entryP4 = tk.Entry(bg="white",textvariable=self.entryP4,font="time 10")
+		entryP5 = tk.Entry(bg="white",textvariable=self.entryP5,font="time 10")
+		entryP6 = tk.Entry(bg="white",textvariable=self.entryP6,font="time 10")
+		entryP7 = tk.Entry(bg="white",textvariable=self.entryP7,font="time 10")
+		entryP8 = tk.Entry(bg="white",textvariable=self.entryP8,font="time 10")
+		entryP9 = tk.Entry(bg="white",textvariable=self.entryP9,font="time 10")
+		entryP10 = tk.Entry(bg="white",textvariable=self.entryP10,font="time 10")
 
 		maincanvas.create_window(self.entrypx,self.entry1y,window=entryP1)
 		maincanvas.create_window(self.entrypx,self.entry2y,window=entryP2)
 		maincanvas.create_window(self.entrypx,self.entry3y,window=entryP3)
 		maincanvas.create_window(self.entrypx,self.entry4y,window=entryP4)
-
-		#self.SalesDateEntry = DateEntry(foreground="white",background='cadetblue',date_pattern="dd/m/yyyy",textvariable=self.sale_date_entry,font="time 10")
-		# self.SalesDateEntry.place(x=self.entrydatex, y=self.entrydatey)
+		maincanvas.create_window(self.entrypx,self.entry5y,window=entryP5)
+		maincanvas.create_window(self.entrypx,self.entry6y,window=entryP6)
+		maincanvas.create_window(self.entrypx,self.entry7y,window=entryP7)
+		maincanvas.create_window(self.entrypx,self.entry8y,window=entryP8)
+		maincanvas.create_window(self.entrypx,self.entry9y,window=entryP9)
+		maincanvas.create_window(self.entrypx,self.entry10y,window=entryP10)
 
 	#=================================================================================================================#
+
+	#=================================================================================================================#
+	def DebtFunction(self):
+		#We need name, item, debt
+		debtcanvas = Canvas(self,width=238,height=370,bg="lightgrey")
+		debtcanvas.place(x=790,y=301)
+
+		debtnameentry = Entry(bg="white",textvariable=self.debtnameentry,font="time 10",width=26)
+		self.debtnameentry.set("Jina")
+		debtcanvas.create_window(108,45,window=debtnameentry)
+
+		debtcashentry = Entry(bg="white",textvariable=self.debtcashentry,font="time 10",width=26)
+		debtcanvas.create_window(108,75,window=debtcashentry)
+
+		submitbutton = Button(font="time 10",text="Add".upper(),bg="cadetblue",fg="white",command=self.submittodb,bd=0,height=1, width=10)
+		submitbutton.place(x=792, y=self.entrydatey)
+
+	
+		removebutton = Button(font="time 10",text="Del".upper(),bg="cadetblue",fg="white",command=self.removedb,bd=0,height=1, width=10)
+		removebutton.place(x=892, y=self.entrydatey)
+
+	def submittodb(self):
+			conn = sqlite3.connect('sales')
+			c = conn.cursor()
+
+	def removedb(self):
+			conn = sqlite3.connect('sales')
+			c = conn.cursor()
+	#=================================================================================================================#
+
 	def exporttocsv(self):
 		#---------------------Get Database by date--------------------------------------------#
 		tk.messagebox.showinfo("Export as Excel", "Export Daily Sales in Excel Format, Select Date to Export")
+
 		valuestime = self.sale_date_entry.get()
 
 		if valuestime == "":
@@ -732,6 +859,13 @@ class ShopLogin(tk.Tk):
 		f2 = self.box2.get()
 		f3 = self.box3.get()
 		f4 = self.box4.get()
+		f5 = self.box5.get()
+		f6 = self.box6.get()
+		f7 = self.box7.get()
+		f8 = self.box8.get()
+		f9 = self.box9.get()
+		f10 = self.box10.get()
+
 		#============================================================================================================
 		#This logic performs the desired calculations.
 		#First Row
@@ -800,6 +934,103 @@ class ShopLogin(tk.Tk):
 					self.entryP4.set(e)
 				
 		#==========================================================================
+		#=========================================================================
+		for k,v in stprice.items():
+			if f5 == k :
+				if self.entryD5.get() != 0:
+					x = self.entryD5.get()
+					y = self.entryq5.get()
+					e =  y * x
+					self.entryP5.set(e)
+				else:
+					self.entryD5.set(v)
+					x = self.entryD5.get()
+					y = self.entryq5.get()
+					e =  y * x
+					self.entryP5.set(e)
+				
+				
+		#==========================================================================
+		#=========================================================================
+		for k,v in stprice.items():
+			if f6 == k:
+				if self.entryD6.get() != 0:
+					x = self.entryD6.get()
+					y = self.entryq6.get()
+					e =  y * x
+					self.entryP6.set(e)
+				else:
+					self.entryD6.set(v)
+					x = self.entryD6.get()
+					y = self.entryq6.get()
+					e =  y * x
+					self.entryP6.set(e)
+				
+		#==========================================================================
+		#=========================================================================
+		for k,v in stprice.items():
+			if f7 == k:
+				if self.entryD7.get() != 0:
+					x = self.entryD7.get()
+					y = self.entryq7.get()
+					e =  y * x
+					self.entryP7.set(e)
+				else:
+					self.entryD7.set(v)
+					x = self.entryD7.get()
+					y = self.entryq7.get()
+					e =  y * x
+					self.entryP7.set(e)
+				
+		#==========================================================================
+		#=========================================================================
+		for k,v in stprice.items():
+			if f8 == k:
+				if self.entryD8.get() != 0:
+					x = self.entryD8.get()
+					y = self.entryq8.get()
+					e =  y * x
+					self.entryP8.set(e)
+				else:
+					self.entryD8.set(v)
+					x = self.entryD8.get()
+					y = self.entryq8.get()
+					e =  y * x
+					self.entryP8.set(e)
+				
+		#==========================================================================
+		#=========================================================================
+		for k,v in stprice.items():
+			if f9== k:
+				if self.entryD9.get() != 0:
+					x = self.entryD9.get()
+					y = self.entryq9.get()
+					e =  y * x
+					self.entryP9.set(e)
+				else:
+					self.entryD9.set(v)
+					x = self.entryD9.get()
+					y = self.entryq9.get()
+					e =  y * x
+					self.entryP9.set(e)
+				
+		#==========================================================================
+		#=========================================================================
+		for k,v in stprice.items():
+			if f10 == k:
+				if self.entryD10.get() != 0:
+					x = self.entryD10.get()
+					y = self.entryq10.get()
+					e =  y * x
+					self.entryP10.set(e)
+				else:
+					self.entryD10.set(v)
+					x = self.entryD10.get()
+					y = self.entryq10.get()
+					e =  y * x
+					self.entryP10.set(e)
+				
+		#==========================================================================
 		
 
 		#==================================Perfom Desired Mathematics q,d,p========================================
@@ -809,14 +1040,21 @@ class ShopLogin(tk.Tk):
 		values2 = (valuestime,self.box2.get(), self.entryq2.get(), self.entryD2.get(), self.entryP2.get())
 		values3 = (valuestime,self.box3.get(), self.entryq3.get(), self.entryD3.get(), self.entryP3.get())
 		values4 = (valuestime,self.box4.get(), self.entryq4.get(), self.entryD4.get(), self.entryP4.get())
+		values5 = (valuestime,self.box5.get(), self.entryq5.get(), self.entryD5.get(), self.entryP5.get())
+		values6 = (valuestime,self.box6.get(), self.entryq6.get(), self.entryD6.get(), self.entryP6.get())
+		values7 = (valuestime,self.box7.get(), self.entryq7.get(), self.entryD7.get(), self.entryP7.get())
+		values8 = (valuestime,self.box8.get(), self.entryq8.get(), self.entryD8.get(), self.entryP8.get())
+		values9 = (valuestime,self.box9.get(), self.entryq9.get(), self.entryD9.get(), self.entryP9.get())
+		values10 = (valuestime,self.box10.get(), self.entryq10.get(), self.entryD10.get(), self.entryP10.get())
 	#=================================================================================================================#
 
 
 	#==================================Calculating Total Values and inserting to db===================================#
 		grandfinal = (self.entryP1.get() +self.entryP2.get() +self.entryP3.get()
-		 +self.entryP4.get() +self.entryP4.get())
+		 +self.entryP4.get() +self.entryP4.get()+self.entryP5.get() +self.entryP6.get() +self.entryP7.get()
+		 +self.entryP8.get() +self.entryP9.get()+self.entryP10.get())
 
-		values = (values1,values2,values3,values4)
+		values = (values1,values2,values3,values4,values5,values6,values7,values8,values9,values10)
 
 		self.c.executemany("INSERT INTO 'Daily Sales' VALUES (?,?,?,?,?)", values)
 		self.conn.commit()
@@ -825,6 +1063,12 @@ class ShopLogin(tk.Tk):
 		self.entryq2.set("0")
 		self.entryq3.set("0")
 		self.entryq4.set("0")
+		self.entryq5.set("0")
+		self.entryq6.set("0")
+		self.entryq7.set("0")
+		self.entryq8.set("0")
+		self.entryq9.set("0")
+		self.entryq10.set("0")
 	#=================================================================================================================#
 	def todayssales(self, event=None):
 	#=================================================================================================================#

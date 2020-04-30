@@ -5,7 +5,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.fernet import Fernet 
 from pandas import read_csv
-from tkinter import filedialog
+from tkinter import filedialog,messagebox
 import csv
 import sqlite3
 
@@ -92,6 +92,10 @@ class ConvertCsvtoExcel:
 
 	def convertToExcel(file):
 		x = ConvertCsvtoExcel.getCSV(file)
-		export_file_path = filedialog.asksaveasfilename(defaultextension='.xlsx')
-		x.to_excel(export_file_path, index=None, header=True)
+		try:
+			export_file_path = filedialog.asksaveasfilename(defaultextension='.xlsx')
+			x.to_excel(export_file_path, index=None, header=True)
+		except:
+			messagebox.showinfo("Speciy Directory","Please Specify Place To Save")
+		
 

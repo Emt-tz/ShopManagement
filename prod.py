@@ -183,7 +183,7 @@ class ProductManagement(tk.Tk):
 		
 
 		for row in sorted(products):
-			textlist1.insert(END, f'  {row[0].upper()}')
+			textlist1.insert(END, '{:10.10}'.format(row[0].upper()))
 			textlist1.insert(END, "-------------------")
 			textlist2.insert(END, f'  {row[1]}')
 			textlist2.insert(END, "-------------------")
@@ -341,4 +341,4 @@ class ProductManagement(tk.Tk):
 		from shop import ShopLogin as sl
 		sl().mainloop()
 
-#ProductManagement().mainloop()
+# ProductManagement().mainloop()

@@ -219,9 +219,10 @@ class ProductManagement(tk.Tk):
 			
 
 		def combo():
-			return [x for x in prod]
+			return [x for x in sorted(prod)]
 
-		name_entry = ttk.Combobox(font=self.font,textvariable=self.namevar1,values=combo(), width=19,height=19).place(x=590,y=150)
+		self.name_entry12 = ttk.Combobox(font=self.font,textvariable=self.namevar1,values=combo(), width=19,height=19)
+		self.name_entry12.place(x=590,y=150)
 
 		delbtn = Button(editframe, text="Delete",font="Verdana 10 bold",command=self.delcombo).place(x=455, y=320)
 		clearbtn = Button(editframe, text="Back",font="Verdana 10 bold", command=self.clearbtn).place(x=600, y=320)
@@ -258,7 +259,7 @@ class ProductManagement(tk.Tk):
 			
 
 		def combo():
-			return [x for x in prod]
+			return [x for x in sorted(prod)]
 
 		name_entry = ttk.Combobox(font=self.font,textvariable=self.namevar1,values=combo(), width=19,height=19).place(x=590,y=50)
 		buy_price_entry = Entry(font=self.font,textvariable=self.buypricevar1).place(x=590, y=100)
@@ -324,6 +325,7 @@ class ProductManagement(tk.Tk):
 			tk.messagebox.showinfo("Success", f'Succesfully Deleted {x.upper()}')
 		else:
 			tk.messagebox.showinfo("Not Present", "Selected Item is Not Found")	
+		self.after(1, self.DeleteProducts(),END)
 		#=============================================================================================
 
 	def clearbtn(self):

@@ -281,7 +281,7 @@ class ShopLogin(tk.Tk):
 
 		self.WIDTH, self.HEIGHT = self.winfo_screenwidth(), self.winfo_screenheight()
 
-		if self.WIDTH == 1280 and self.HEIGHT == 720:
+		if self.WIDTH == 1280 and self.HEIGHT == 710:
 		#==============Screen of 1280 x 720 ========================
 			#buttons y place values
 			self.btny = 620
@@ -431,9 +431,10 @@ class ShopLogin(tk.Tk):
 			items.append(x.upper())
 		return sorted(items)
 	#=================================================================================================================#
-	def madeninames(self):
+	def madeninames(self,event=None):
 		conn= sqlite3.connect('sales')
 		c = conn.cursor()
+
 		names = c.execute("SELECT * FROM madeni").fetchall()
 
 		majina = []
@@ -445,7 +446,9 @@ class ShopLogin(tk.Tk):
 
 		return sorted(majina)
 	#=================================================================================================================#
-
+	def updatecomboboxlist(self):
+		liste = self.madeninames()
+		self.debtview12['values'] = liste
 	#=================================================================================================================#
 
 	def Sales(self):
@@ -649,7 +652,8 @@ class ShopLogin(tk.Tk):
 		self.debtcashentry12 = Entry(bg="white",textvariable=self.debtcashentry,font="time 10",width=26)
 		debtcanvas.create_window(108,75,window=self.debtcashentry12)
 
-		self.debtview12 = ttk.Combobox(textvariable=self.majinacombo,values=self.madeninames(),font="time 12")
+
+		self.debtview12 = ttk.Combobox(textvariable=self.majinacombo,postcommand=self.updatecomboboxlist,font="time 12")
 		debtcanvas.create_window(108, 200,window=self.debtview12)
 
 		self.submitbutton = Button(font="time 10",text="Add".upper(),bg="cadetblue",fg="white",command=self.submittodb,bd=0,height=1, width=6)
@@ -664,6 +668,8 @@ class ShopLogin(tk.Tk):
 		self.debtview12.config(state="disabled")
 		self.submitbutton.config(state="disabled")
 		self.removebutton.config(state="disabled")
+
+		self.debtcashentry12.bind("<Return>",self.submittodb)
 
 	#=================================================================================================================#
 
@@ -681,40 +687,50 @@ class ShopLogin(tk.Tk):
 		self.removebutton.config(state="normal")
 		self.debtnameentry.set("")
 
+		madeni = self.c.execute("SELECT * FROM 'madeni'").fetchall()
 
+		totaldebt = []
 
-	def submittodb(self):
-			conn = sqlite3.connect('sales')
-			c = conn.cursor()
+		for row in sorted(madeni):
+			self.daily.insert(END,f'{row[0]}\t\t\t\t{row[1]}\n')
+			values = row[1]
+			totaldebt.append(values)
 
-			jina = self.debtnameentry.get()
-			kiasi = self.debtcashentry.get()
+		self.entrytv.set(format(sum(totaldebt),","))
+		self.entrypv.set(0)
+		self.after(1,self.updatecomboboxlist(),END)
 
-			query = (jina.upper(),kiasi)
-			c.execute("INSERT INTO 'madeni' Values (?,?)", query)
-			conn.commit()
+	def submittodb(self, event=None):
+		jina = self.debtnameentry.get()
+		kiasi = self.debtcashentry.get()
 
-			self.debtnameentry.set("")
-			self.debtcashentry.set("")
+		query = (jina.upper(),kiasi)
 
-			self.after(1, self.DebtFunction(),END)
+		self.c.execute("INSERT INTO 'madeni' Values (?,?)", query)
+		self.conn.commit()
+
+	
+
+		self.debtnameentry.set("")
+		self.debtcashentry.set("")
+
+		self.after(1, self.DebtFunction(),END)
 
 	def removedb(self):
-			conn = sqlite3.connect('sales')
-			c = conn.cursor()
+		
+		jina = self.majinacombo.get()
 
-			jina = self.majinacombo.get()
+		query = (jina.upper())
 
-			query = (jina.upper())
+		self.c.execute("DELETE FROM 'madeni' WHERE jina=?", (jina,))
+		self.conn.commit()
 
-			c.execute("DELETE FROM 'madeni' WHERE jina=?", (jina,))
-			conn.commit()
+		self.debtnameentry.set("")
+		self.debtcashentry.set("")
+		self.majinacombo.set("")
 
-			self.debtnameentry.set("")
-			self.debtcashentry.set("")
-			self.majinacombo.set("")
-
-			self.after(1, self.DebtFunction(),END)
+		self.after(1, self.DebtFunction(),END)
+	
 	#=================================================================================================================#
 
 	def exporttocsv(self):
@@ -873,9 +889,9 @@ class ShopLogin(tk.Tk):
 				newv = newv.replace(")", "")
 
 				q,p = newv.split(",")
-				finall = p
+				finall = p.replace(" ","")
 				self.daily.insert(END, f'{k.upper()}\t\t    {q}\t\t{p}\n')
-				final.append(finall)
+				final.append(int(finall))
 
 				x = self.c.execute("SELECT * FROM 'AddProducts'").fetchall()
 
@@ -884,22 +900,10 @@ class ShopLogin(tk.Tk):
 					productname = x[i][0]
 					if productname == k:
 						prof = (profit.profit(int(x[i][1]),int(x[i][3]),int(x[i][2]),int(q)))
-						profitn.append(prof)
-
-			#self.daily.insert(END, f'\t\t\t\t\t\t\t\t__________________\n')
-			#loop through the list and and calculate total
-			totalsales = 0
-			profitnew = 0
-			for i in range(0, len(final)):
-				if len(final[i]) == 1:
-					totalsales = final[0]
-					profitnew = profitn[0]
-				else:
-					totalsales = totalsales + int(final[i])
-					profitnew = profitnew+int(profitn[i])
-					
-			self.entrytv.set(format(totalsales,","))
-			self.entrypv.set(format(profitnew,","))
+						profitn.append(int(prof))
+			
+			self.entrytv.set(format(sum(final),","))
+			self.entrypv.set(format(sum(profitn),","))
 		except IndexError:
 			tk.messagebox.showinfo("No Sales", f'No Sales Record Found for Date={valuestime}')
 			self.entrytv.set(format(0,","))
@@ -1201,31 +1205,19 @@ class ShopLogin(tk.Tk):
 			newv = newv.replace(")", "")
 
 			q,p = newv.split(",")
-			finall = p
+			finall = p.replace(" ","")
 			self.daily.insert(END, f'{k.upper()}\t\t    {q}\t\t{p}\n')
-			final.append(finall)
+			final.append(int(finall))
 
 			x = self.c.execute("SELECT * FROM 'AddProducts'").fetchall()
 			for i in range(0, len(x)):
 				productname = x[i][0]
 				if productname == k:
 					prof = (profit.profit(int(x[i][1]),int(x[i][3]),int(x[i][2]),int(q)))
-					profitn.append(prof)
-
-		#self.daily.insert(END, f'\t\t\t\t\t\t\t\t__________________\n')
-		#loop through the list and and calculate total
-		totalsales = 0
-		profitnew = 0
-		for i in range(0, len(final)):
-			if len(final[i]) == 1:
-				totalsales = final[0]
-				profitnew = profitn[0]
-			else:
-				totalsales = totalsales + int(final[i])
-				profitnew = profitnew+int(profitn[i])
-				
-		self.entrytv.set(format(totalsales,","))
-		self.entrypv.set(format(profitnew,","))
+					profitn.append(int(prof))
+	
+		self.entrytv.set(format(sum(final),","))
+		self.entrypv.set(format(sum(profitn),","))
 		
 	#=================================================================================================================#
 	def UndoLastSale(self):

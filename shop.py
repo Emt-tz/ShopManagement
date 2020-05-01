@@ -10,6 +10,7 @@ import sys
 from prod import ProductManagement as pm
 from test2 import PasswordEncrypter as pencrypt
 from test2 import ConvertCsvtoExcel as cexcel
+from test2 import MonthlySales as mnsales
 import csv
 from test2 import InitializeDatabase as dbinit
 from test2 import Profit as profit
@@ -270,10 +271,15 @@ class ShopLogin(tk.Tk):
 		self.entryP9 = IntVar()
 		self.entryP10 = IntVar()
 
+		self.fromdateentry = StringVar()
+		self.todateentry = StringVar()
+
 		self.debtnameentry = StringVar()
 		self.debtcashentry = IntVar()
 
 		self.majinacombo = StringVar()
+
+		self.yearlyentry = IntVar()
 
 		self.entrytv = IntVar()
 		self.entrypv = IntVar()
@@ -415,7 +421,7 @@ class ShopLogin(tk.Tk):
 		self.resizable(False, True)
 
 		self.Sales()    
-		self.todayssales()
+		#self.todayssales()
 	#=================================================================================================================#
 
 	def ShopItems(self):
@@ -429,6 +435,7 @@ class ShopLogin(tk.Tk):
 			for i in range(0, len(row)):
 				x = row[0]
 			items.append(x.upper())
+			
 		return sorted(items)
 	#=================================================================================================================#
 	def madeninames(self,event=None):
@@ -472,9 +479,6 @@ class ShopLogin(tk.Tk):
 		# self.SalesDateEntry = Entry(foreground="black",background='white',textvariable=self.sale_date_entry,font="time 10")
 		# self.SalesDateEntry.place(x=self.entrydatex, y=self.entrydatey)
 
-		self.SalesDateEntry = DateEntry(foreground="white",background='cadetblue',date_pattern="dd/m/yyyy",textvariable=self.sale_date_entry,font="time 10")
-		self.SalesDateEntry.place(x=self.entrydatex, y=self.entrydatey)
-
 		#Label to Warn user to not conflict with database   
 		Product = tk.Label(text="Product".upper(),bg="white",font="time 11 bold", height=self.labelheight, width=self.labelwidth, relief=RAISED)
 		Product.grid(row=1, column=0)
@@ -488,39 +492,7 @@ class ShopLogin(tk.Tk):
 		Price = tk.Label(text="Price".upper(),bg="white",font="time 11 bold", height=self.labelheight, width=self.labelwidth, relief=RAISED)
 		Price.grid(row=1, column=3)
 
-
-		SalesDateEntry_Button = Button(buttonframe,font="time 10",text="Get Sales".upper(),bg="cadetblue",fg="white",command=self.Get_Sales_By_Date,bd=0,height=1, width=20)
-		SalesDateEntry_Button.place(x=self.entrydatebuttonx, y=self.entrydatey)
-
-				# GrandTotal Button
-		grandtotal = tk.Button(buttonframe,text="Total".upper()
-			,bg="cadetblue",fg="white",font="time 10",
-			bd=0,height=1, width=12, 
-			relief=None,command=self.todayssales)
-		grandtotal.place(x=20, y=self.btny)
-
-		undobtn = Button(buttonframe,font="time 10",text="UNDO SALE".upper(),bg="cadetblue",fg="white",command=self.UndoLastSale,bd=0,height=1, width=20)
-		undobtn.place(x=140, y=self.btny)
-		
-		#Product Management Button
-		prodmgmts = Button(buttonframe,font="time 10",text="Product Management".upper(),bg="cadetblue",fg="white",command=self.prodmgmt,bd=0,height=1, width=20)
-		prodmgmts.place(x=320, y=self.btny)
-
-		exportsales = Button(buttonframe,font="time 10",text="Export".upper(),bg="cadetblue",fg="white",command=self.exporttocsv,bd=0,height=1, width=20)
-		exportsales.place(x=505, y=self.btny)
-
-		# Exit Button
-		logout = tk.Button(buttonframe,text="Exit".upper()
-			,bg="cadetblue",fg="white",font="time 10",
-			bd=0,height=1, width=12, 
-			relief=None,command=self.logout)
-		logout.place(x=660, y=self.btny)
-
-		#debtbutton
-		debtbutton = Button(buttonframe,font="time 10",text="Debts".upper(),bg="cadetblue",fg="white",command=self.DebtFunction,bd=0,height=1, width=15)
-		debtbutton.place(x=830, y=self.btny)
-	#=================================================================================================================#
-	#============================Combobox,Entry Defined Here==========================================================#
+			#============================Combobox,Entry Defined Here==========================================================#
 	#   #Deal with the combobox here start at row=2
 		box1 = ttk.Combobox(textvariable=self.box1,values=self.ShopItems(),font="time 12")
 		box2 = ttk.Combobox(textvariable=self.box2,values=self.ShopItems(),font="time 12")
@@ -636,12 +608,38 @@ class ShopLogin(tk.Tk):
 		maincanvas.create_window(self.entrypx,self.entry9y,window=entryP9)
 		maincanvas.create_window(self.entrypx,self.entry10y,window=entryP10)
 
+	#===================================================================================================================================
+	#===================================================================================================================================
+		# GrandTotal Button
+		grandtotal = tk.Button(buttonframe,text="Total".upper()
+			,bg="cadetblue",fg="white",font="time 10",
+			bd=0,height=1, width=12, 
+			relief=None,command=self.todayssales)
+		grandtotal.place(x=20, y=self.btny)
 
+		undobtn = Button(buttonframe,font="time 10",text="UNDO SALE".upper(),bg="cadetblue",fg="white",command=self.UndoLastSale,bd=0,height=1, width=20)
+		undobtn.place(x=140, y=self.btny)
+		
+		#Product Management Button
+		prodmgmts = Button(buttonframe,font="time 10",text="Product Management".upper(),bg="cadetblue",fg="white",command=self.prodmgmt,bd=0,height=1, width=20)
+		prodmgmts.place(x=320, y=self.btny)
+
+		# Exit Button
+		logout = tk.Button(buttonframe,text="Exit".upper()
+			,bg="cadetblue",fg="white",font="time 10",
+			bd=0,height=1, width=12, 
+			relief=None,command=self.logout)
+		logout.place(x=660, y=self.btny)
+
+		#debtbutton
+		debtbutton = Button(buttonframe,font="time 10",text="Debts".upper(),bg="cadetblue",fg="white",command=self.DebtFunction,bd=0,height=1, width=15)
+		debtbutton.place(x=830, y=self.btny)
+	#=================================================================================================================#
 				#We need name, item, debt
 		debtcanvas = Canvas(self,width=238,height=370,bg="lightgrey")
 		debtcanvas.place(x=790,y=301)
 
-		madenilabel = Label(fg="cadetblue",text="Madeni na Matumizi")
+		madenilabel = Label(fg="cadetblue",text="Debt and Expenses")
 		debtcanvas.create_window(108, 10, window=madenilabel)
 
 		self.debtnameentry12 = Entry(bg="white",textvariable=self.debtnameentry,font="time 10",width=26)
@@ -671,13 +669,21 @@ class ShopLogin(tk.Tk):
 
 		self.debtcashentry12.bind("<Return>",self.submittodb)
 
-	#=================================================================================================================#
+		self.clicktoload = Label(font="time 12", text="*Click Debts to Get Export Sales Functions".upper())
+		self.clicktoload.place(x=self.entrydatex, y=self.entrydatey)
 
+	#=================================================================================================================#
+	def getsalesbymonth(self):
+		return mnsales.salesbymonth(self.fromdateentry.get(),self.todateentry.get())
+
+	def getsalesbyyear(self):
+		return mnsales.GetYearlySales(self.yearlyentry.get())
 	#=================================================================================================================#
 	def DebtFunction(self):
+		self.clicktoload.config(text="*Choose Start Date to End Date for Monthly\n*Enter Year only for Yearly Print".upper())
 
 		self.daily.delete(1.0, END)
-		self.daily.insert(END,f'Jina\t\t\t\tTotal\n')
+		self.daily.insert(END,f'Name\t\t\t\tTotal\n')
 		self.daily.insert(END, f'{45*"_"}')
 
 		self.debtnameentry12.config(state="normal")
@@ -698,6 +704,29 @@ class ShopLogin(tk.Tk):
 
 		self.entrytv.set(format(sum(totaldebt),","))
 		self.entrypv.set(0)
+
+		#==============================================Exporting by date range===============================================================
+		self.fromdateEntry = DateEntry(foreground="white",background='cadetblue',date_pattern="dd/m/yyyy",textvariable=self.fromdateentry,font="time 10")
+		self.fromdateEntry.place(x=self.entrydatex, y=self.entrydatey+100)
+
+		self.todateEntry = DateEntry(foreground="white",background='cadetblue',date_pattern="dd/m/yyyy",textvariable=self.todateentry,font="time 10")
+		self.todateEntry.place(x=self.entrydatex+120, y=self.entrydatey+100)
+
+		self.exportsales = Button(font="time 10",text="Monthly".upper(),bg="cadetblue",fg="white",command=self.getsalesbymonth,bd=0,height=1, width=15)
+		self.exportsales.place(x=self.entrydatex+250, y=self.entrydatey+95)
+
+		self.exportyearsales = Button(font="time 10",text="Yearly".upper(),bg="cadetblue",fg="white",command=self.getsalesbyyear,bd=0,height=1, width=15)
+		self.exportyearsales.place(x=self.entrydatex+250, y=self.entrydatey+170)
+
+		self.yearlysales = Entry(foreground="black",background='white',textvariable=self.yearlyentry,font="time 10",width=15)
+		self.yearlysales.place(x=self.entrydatex, y=self.entrydatey+170)
+
+		# SalesDateEntry_Button = Button(font="time 10",text="Get Sales".upper(),bg="cadetblue",fg="white",command=self.Get_Sales_By_Date,bd=0,height=1, width=20)
+		# SalesDateEntry_Button.place(x=self.entrydatebuttonx, y=self.entrydatey)
+
+		# self.SalesDateEntry = DateEntry(foreground="white",background='cadetblue',date_pattern="dd/m/yyyy",textvariable=self.sale_date_entry,font="time 10")
+		# self.SalesDateEntry.place(x=self.entrydatex, y=self.entrydatey)
+
 		self.after(1,self.updatecomboboxlist(),END)
 
 	def submittodb(self, event=None):
@@ -737,14 +766,9 @@ class ShopLogin(tk.Tk):
 		#---------------------Get Database by date--------------------------------------------#
 		tk.messagebox.showinfo("Export as Excel", "Export Daily Sales in Excel Format, Select Date to Export")
 
-		valuestime = self.sale_date_entry.get()
-
-		if valuestime == "":
-			valuestime = f'{self.date.day}/{self.date.month}/{self.date.year}'
-
-		if "." in valuestime:
-			valuestime = valuestime.replace(".","/")
-
+		valuestime1 = self.fromdateentry.get()
+		valuestime2 = self.todateentry.get()
+		
 		self.stsales = self.c.execute("SELECT * FROM 'Daily Sales' WHERE Timed=?", (str(valuestime),)).fetchall()
 
 		dtsales = {}    
@@ -828,90 +852,90 @@ class ShopLogin(tk.Tk):
 
 	#=================================================================================================================#
 	
-	def Get_Sales_By_Date(self, event=None):
-	#=================================================================================================================#
-		#initiate Database Connection and Find Values with Date Entered
-		#self.after(1, self.SalesDateEntry.delete,0,END)
-		self.debtnameentry12.config(state="disabled")
-		self.debtcashentry12.config(state="disabled")
-		self.debtview12.config(state="disabled")
-		self.submitbutton.config(state="disabled")
-		self.removebutton.config(state="disabled")
-		self.debtnameentry.set("Jina")
+	# def Get_Sales_By_Date(self, event=None):
+	# #=================================================================================================================#
+	# 	#initiate Database Connection and Find Values with Date Entered
+	# 	#self.after(1, self.SalesDateEntry.delete,0,END)
+	# 	self.debtnameentry12.config(state="disabled")
+	# 	self.debtcashentry12.config(state="disabled")
+	# 	self.debtview12.config(state="disabled")
+	# 	self.submitbutton.config(state="disabled")
+	# 	self.removebutton.config(state="disabled")
+	# 	self.debtnameentry.set("Jina")
 
-		self.daily.delete(1.0, END)
+	# 	self.daily.delete(1.0, END)
 
-		self.daily.insert(END,"Product\t\tQuantity\t\tTotal\n")
-		self.daily.insert(END, f'{45*"_"}')
+	# 	self.daily.insert(END,"Product\t\tQuantity\t\tTotal\n")
+	# 	self.daily.insert(END, f'{45*"_"}')
 
-		valuestime = self.sale_date_entry.get()
+	# 	valuestime = self.sale_date_entry.get()
 		
-		if "." in valuestime:
-			valuestime = valuestime.replace(".","/")
+	# 	if "." in valuestime:
+	# 		valuestime = valuestime.replace(".","/")
 
-		var = "0"
-		self.c.executemany("DELETE FROM 'Daily Sales' WHERE Quantity=?", var)
-		self.conn.commit()
+	# 	var = "0"
+	# 	self.c.executemany("DELETE FROM 'Daily Sales' WHERE Quantity=?", var)
+	# 	self.conn.commit()
 
-		self.stsales = self.c.execute("SELECT * FROM 'Daily Sales' WHERE Timed=?", (str(valuestime),)).fetchall()
+	# 	self.stsales = self.c.execute("SELECT * FROM 'Daily Sales' WHERE Timed=?", (str(valuestime),)).fetchall()
 
-		try:
+	# 	try:
 			
-			valuestime = str(self.stsales[0][0])
+	# 		valuestime = str(self.stsales[0][0])
 	
-			dtsales = {}    
+	# 		dtsales = {}    
 
-			#loop through the database values and append to dictionary
-			for row in self.stsales:
+	# 		#loop through the database values and append to dictionary
+	# 		for row in self.stsales:
 
-				i = [i for i in range(0, len(row))]
-				j = [j for j in range(0, len(row))]
+	# 			i = [i for i in range(0, len(row))]
+	# 			j = [j for j in range(0, len(row))]
 
-				x = row[i[1]]
-				x2 = row[j[2]]
-				x3 = row[j[4]]
+	# 			x = row[i[1]]
+	# 			x2 = row[j[2]]
+	# 			x3 = row[j[4]]
 
-				if x in dtsales:
-					y = str(dtsales[x])
-					z = str(y).replace("(","")
-					zn = z.replace(")", "")
-					f = zn.replace(" ","")
-					p,n = f.split(",")
-					#print(p)
-					dtsales.update({x:(x2+int(p),x3+int(n))})
-				else:
-					dtsales.update({x:(x2,x3)})
-			final = []
-			profitn = []
-			#loop through the dictionary and get q and price
-			for k,v in dtsales.items():
-				newv = str(v).replace("(","")
-				newv = newv.replace(")", "")
+	# 			if x in dtsales:
+	# 				y = str(dtsales[x])
+	# 				z = str(y).replace("(","")
+	# 				zn = z.replace(")", "")
+	# 				f = zn.replace(" ","")
+	# 				p,n = f.split(",")
+	# 				#print(p)
+	# 				dtsales.update({x:(x2+int(p),x3+int(n))})
+	# 			else:
+	# 				dtsales.update({x:(x2,x3)})
+	# 		final = []
+	# 		profitn = []
+	# 		#loop through the dictionary and get q and price
+	# 		for k,v in dtsales.items():
+	# 			newv = str(v).replace("(","")
+	# 			newv = newv.replace(")", "")
 
-				q,p = newv.split(",")
-				finall = p.replace(" ","")
-				self.daily.insert(END, f'{k.upper()}\t\t    {q}\t\t{p}\n')
-				final.append(int(finall))
+	# 			q,p = newv.split(",")
+	# 			finall = p.replace(" ","")
+	# 			self.daily.insert(END, f'{k.upper()}\t\t    {q}\t\t{p}\n')
+	# 			final.append(int(finall))
 
-				x = self.c.execute("SELECT * FROM 'AddProducts'").fetchall()
+	# 			x = self.c.execute("SELECT * FROM 'AddProducts'").fetchall()
 
 				
-				for i in range(0, len(x)):
-					productname = x[i][0]
-					if productname == k:
-						prof = (profit.profit(int(x[i][1]),int(x[i][3]),int(x[i][2]),int(q)))
-						profitn.append(int(prof))
+	# 			for i in range(0, len(x)):
+	# 				productname = x[i][0]
+	# 				if productname == k:
+	# 					prof = (profit.profit(int(x[i][1]),int(x[i][3]),int(x[i][2]),int(q)))
+	# 					profitn.append(int(prof))
 			
-			self.entrytv.set(format(sum(final),","))
-			self.entrypv.set(format(sum(profitn),","))
-		except IndexError:
-			tk.messagebox.showinfo("No Sales", f'No Sales Record Found for Date={valuestime}')
-			self.entrytv.set(format(0,","))
-			self.entrypv.set(format(0,","))
+	# 		self.entrytv.set(format(sum(final),","))
+	# 		self.entrypv.set(format(sum(profitn),","))
+	# 	except IndexError:
+	# 		tk.messagebox.showinfo("No Sales", f'No Sales Record Found for Date={valuestime}')
+	# 		self.entrytv.set(format(0,","))
+	# 		self.entrypv.set(format(0,","))
 
 		
 	#=================================================================================================================#
-	def changelabel(self, event=None):
+	def gettotalsales(self, event=None):
 	#========================================Update Dictionarys=========================================================#
 		stitems = self.stitems
 		stprice = {}
@@ -1143,12 +1167,34 @@ class ShopLogin(tk.Tk):
 		self.entryq8.set("0")
 		self.entryq9.set("0")
 		self.entryq10.set("0")
+
+		self.entryD1.set("0")
+		self.entryD2.set("0")
+		self.entryD3.set("0")
+		self.entryD4.set("0")
+		self.entryD5.set("0")
+		self.entryD6.set("0")
+		self.entryD7.set("0")
+		self.entryD8.set("0")
+		self.entryD9.set("0")
+		self.entryD10.set("0")
+
+		self.entryP1.set("0")
+		self.entryP2.set("0")
+		self.entryP3.set("0")
+		self.entryP4.set("0")
+		self.entryP5.set("0")
+		self.entryP6.set("0")
+		self.entryP7.set("0")
+		self.entryP8.set("0")
+		self.entryP9.set("0")
+		self.entryP10.set("0")
 	#=================================================================================================================#
 	def todayssales(self, event=None):
 	#=================================================================================================================#
 		#self.Salesbtn.config(state=DISABLED)
-		self.changelabel()
-		
+		self.gettotalsales()
+
 		self.debtnameentry12.config(state="disabled")
 		self.debtcashentry12.config(state="disabled")
 		self.debtview12.config(state="disabled")
@@ -1218,6 +1264,14 @@ class ShopLogin(tk.Tk):
 	
 		self.entrytv.set(format(sum(final),","))
 		self.entrypv.set(format(sum(profitn),","))
+
+		# try:
+		# 	self.clicktoload.config(text="*Click Debts to Get Export Sales Functions".upper())
+		# 	self.fromdateEntry.config(state="disabled")
+		# 	self.todateEntry.config(state="disabled")
+		# 	self.exportsales.config(state="disabled")
+		# except:
+		# 	pass
 		
 	#=================================================================================================================#
 	def UndoLastSale(self):
@@ -1229,7 +1283,6 @@ class ShopLogin(tk.Tk):
 	def stockleft(self):
 		pass
 	#=================================================================================================================#
-	
 	def logout(self):
 	#=================================================================================================================#
 		self.conn.commit()

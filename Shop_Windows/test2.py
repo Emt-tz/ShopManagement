@@ -1,15 +1,12 @@
-
 import base64
 import os
-try:
-	from cryptography.hazmat.backends import default_backend
-	from cryptography.hazmat.primitives import hashes
-	from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-	from cryptography.fernet import Fernet
-except:
-	pass 
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.fernet import Fernet 
 from pandas import read_csv
-from tkinter import filedialog,messagebox
+from tkinter import filedialog
+from tkinter import messagebox
 import csv
 import sqlite3
 
@@ -245,4 +242,5 @@ class ConvertCsvtoExcel:
 			messagebox.showinfo("Success",f'exported successfully')
 		except:
 			messagebox.showinfo("Speciy Directory","Please Specify Place To Save")
+
 			

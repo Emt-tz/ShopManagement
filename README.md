@@ -45,4 +45,7 @@ To open product Management Window simply press the products management button to
 # The Database File
 Passwords in the database are fully encrypted to prevent malicious hackers and crackers
 
+# Overview
+![Shop Management](img.jpg)
+![Product Management](2.jpg)
 

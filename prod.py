@@ -1,6 +1,5 @@
 #This will manage the products addition or removing
 #Function inside here include
-
 """
 1. Add Product(Name,Buy Price, Sell Price, Quantity)
 2. Modify Product

@@ -80,10 +80,15 @@ class Balance(tk.Tk):
 				self.cashin8.set(v2[0][4])
 			except:
 				pass
-		var = v2[0][5]-v1[0][5]
-		self.total.set(format(var,","))
-		self.openingmainlabel.config(text="")
-		self.closingmainlabel.config(text="")
+		try:
+			var = v2[0][5]-v1[0][5]
+			self.total.set(format(var,","))
+			self.openingmainlabel.config(text="")
+			self.closingmainlabel.config(text="")
+		except:
+			pass
+
+		
 
 #====================================================================================================================
 	def MainPage(self):

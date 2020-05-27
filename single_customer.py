@@ -22,7 +22,6 @@ import datetime as dt
 import subprocess as s
 from tkinter import messagebox
 
-
 curtime = dt.datetime.now()
 
 time = str(curtime)
@@ -60,7 +59,7 @@ class Customer(tk.Tk):
 		leftframe = Frame(bg=self.colors[2],width=300,height=550)
 		leftframe.place(relx=0.03,rely=0.05)
 
-		rightframe = Frame(bg=self.colors[1],width=260,height=550)
+		rightframe = Frame(bg=self.colors[1],width=280,height=550)
 		rightframe.place(relx=0.52,rely=0.05)
 	#=======================Labels and Entries=====================================================
 
@@ -93,40 +92,20 @@ class Customer(tk.Tk):
 		quantityentry = Entry(leftframe,width=21,bd=2,font=self.font,textvariable=self.quantity)
 		quantityentry.place(relx=0.3,rely=0.3)
 	#=======================Text Display==========================================================
-		displayreceipt = Text(rightframe,width=30,height=31,bd=8)
+		displayreceipt = Text(rightframe,width=32,height=31,bd=8)
 		displayreceipt.place(relx=0,rely=0)
 	#=======================Buttons===============================================================
 		def logic():
 			conn = sq.connect('sales')
 			c = conn.cursor()
 
-			stitems = c.execute("SELECT * FROM AddProducts").fetchall()
+			displayreceipt.insert(END,f'\n\n\n--------------------------------')
+			displayreceipt.insert(END,f'\nTotal:\t\t\t{self.total}')
+			displayreceipt.insert(END,f'\n--------------------------------\n')
 
-			stprice = {}
+			newtime = f'{self.date.day}/{self.date.month}/{self.date.year}'
 
-			for stitem in stitems:
-			            #print(stitem)
-			            j = [j for j in range(0, len(stitem))]
-			            i = [i for i in range(0, len(stitem))]
-			            
-			            stprice.update({stitem[j[0]]:stitem[i[2]]})
-
-			for k,v in stprice.items():
-				if self.product.get() == k:
-					self.total = v*self.quantity.get()
-					break
-
-			displayreceipt.delete(1.0,END)
-			displayreceipt.insert(END,
-				f'    Emt Stationery Receipt\n------------------------------\n{curtime}\n------------------------------\n')
-
-			message = f'\n\n       {self.name.get().upper()}\n\n|Products\t\t    Qty\t     |\n'
-
-			displayreceipt.insert(END,message)
-
-			values = f'\n\n  {self.product.get()}\t\t    {self.quantity.get()}'
-
-			displayreceipt.insert(END,values)
+			PrintButton.config(state="normal")
 
 		def add():
 			#add each sale to Daily Sales table
@@ -156,26 +135,85 @@ class Customer(tk.Tk):
 			values1 = (newtime,self.product.get(),self.quantity.get(),self.price,self.total)
 
 			values = (values1)
+			#===================Database delete all empty values==========================
+			var = "0"
+			c.executemany("DELETE FROM 'Daily Sales' WHERE Quantity=?", var)
+			conn.commit()
+
+			c.executemany("DELETE FROM 'Daily Sales' WHERE Price=?", var)
+			conn.commit()
+
 			c.execute("INSERT INTO 'Daily Sales' VALUES (?,?,?,?,?)", values)
 			conn.commit()
 
+			c.execute("INSERT INTO 'Temp Sales' VALUES (?,?,?,?,?)", values)
+			conn.commit()
+
+			#v = c.execute("SELECT * FROM 'Daily Sales' WHERE ROWID = (SELECT MAX(ROWID) FROM 'Daily Sales');").fetchall()
+
+			v = c.execute("SELECT * FROM 'Temp Sales' WHERE Timed=?", (str(newtime),)).fetchall()
+			
+			displayreceipt.delete(1.0,END)
+			displayreceipt.insert(END,
+				f'    Emt Stationery Receipt\n--------------------------------\n{curtime}\n--------------------------------\n')
+			x = f'--------------------------------\n'
+			message = f'From:\t{self.name.get().upper()}\n{x}Products\t\tQty\tTotal\n'
+			displayreceipt.insert(END,message)
+			displayreceipt.insert(END,f'--------------------------------\n')
+
+			transactions = {}
+			
+			for row in v:
+				#print(row[0])
+				i = [i for i in range(0, len(row))]
+				j = [j for j in range(0, len(row))]
+
+				x = row[i[1]]
+				x2 = row[j[2]]
+				x3 = row[j[4]]
+
+				if x in transactions:
+					transactions.update({x:(x2,x3)})
+				else:
+					transactions.update({x:(x2,x3)})
+			
+			final = []
+
+			for k,v in transactions.items():
+				newv = str(v).replace("(","")
+				newv = newv.replace(")", "")
+
+				q,p = newv.split(",")
+				finall = p.replace(" ","")
+				final.append(int(finall))
+
+				values = f'{k}\t\t{q}\t{p}\n'
+
+				displayreceipt.insert(END,values)
+			self.total = sum(final)
+
 		def printf():
-			lpr = s.Popen("/usr/bin/lpr",stdin=s.PIPE)
 
-			x = tk.messagebox.askyesno("Print Receipt","Do you wish to print the receipt?")
+			conn = sq.connect('sales')
+			c = conn.cursor()
+			
+			newtime = f'{self.date.day}/{self.date.month}/{self.date.year}'
+			
+			total = displayreceipt.get('1.0',tk.END)
 
-			data1 = f'    Emt Stationery Receipt\n------------------------------\n{curtime}\n------------------------------\n'
-			data2 = f'\n\n       {self.name.get().upper()}\n\n|Products\t    Qty\t   |\n'
-			data3 = f'\n\n{self.product.get()}\t    {self.quantity.get()}'
+			print(str(total))
 
-			total = f'{data1}{data2}{data3}'
+			# lpr = s.Popen("/usr/bin/lpr",stdin=s.PIPE)
 
-			if x == False:
-				pass
+			# x = tk.messagebox.askyesno("Print Receipt","Do you wish to print the receipt?")
+			# if x == False:
+			# 	pass
 		
-			if x == True:
-				#lpr.stdin.write(total.encode())
-				stdout, stderr = lpr.communicate(input=total.encode())
+			# if x == True:
+			# 	lpr.stdin.write(total.encode())
+			# 	stdout, stderr = lpr.communicate(input=total.encode())
+			c.execute("DELETE FROM 'Temp Sales' WHERE Timed=?", (str(newtime),))
+			conn.commit()
 
 
 		AddButton = Button(leftframe,text="Add",bg=self.colors[0],command=add)
@@ -184,7 +222,7 @@ class Customer(tk.Tk):
 		TotalButton = Button(leftframe,text="Total",bg=self.colors[0],command=logic)
 		TotalButton.place(relx=0.35,rely=0.905)
 
-		PrintButton = Button(leftframe,text="Print",bg=self.colors[0],command=printf)
+		PrintButton = Button(leftframe,text="Print",bg=self.colors[0],command=printf,state="disabled")
 		PrintButton.place(relx=0.65,rely=0.905)
 
 if __name__ == '__main__':

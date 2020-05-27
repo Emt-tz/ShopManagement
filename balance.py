@@ -14,7 +14,7 @@ timenow = str(dt.datetime.today())
 v = c.execute("SELECT * FROM 'openingstock' WHERE Timed=?",(timenow[0:10],)).fetchall()
 
 dates = []
-
+print(dates)
 for i in range(0, len(v)):
 	try:
 		dates.append(v[0][i])
@@ -60,26 +60,29 @@ class Balance(tk.Tk):
 	def initiate(self):
 		#====================================================================================================================
 		#Opening stock data
-		v1 = self.c.execute("SELECT * FROM 'openingstock' ").fetchall()
-		if timenow[0:10] in dates:
-			try:
-				self.cashin1.set(v1[0][1])
-				self.cashin2.set(v1[0][2])
-				self.cashin3.set(v1[0][3])
-				self.cashin4.set(v1[0][4])
-			except:
-				pass
+		conn = sq.connect('sales')
+		c = conn.cursor()
+
+		v1 = c.execute("SELECT * FROM 'openingstock' WHERE Timed=?",(timenow[0:10],)).fetchall()
+
+		try:
+			self.cashin1.set(v1[0][1])
+			self.cashin2.set(v1[0][2])
+			self.cashin3.set(v1[0][3])
+			self.cashin4.set(v1[0][4])
+		except:
+			pass
 
 		#Closing stock data
-		v2 = self.c.execute("SELECT * FROM 'closingstock' ").fetchall()
-		if timenow[0:10] in dates:
-			try:
-				self.cashin5.set(v2[0][1])
-				self.cashin6.set(v2[0][2])
-				self.cashin7.set(v2[0][3])
-				self.cashin8.set(v2[0][4])
-			except:
-				pass
+		v2 = c.execute("SELECT * FROM 'closingstock' WHERE Timed=?",(timenow[0:10],)).fetchall()
+		try:
+			self.cashin5.set(v2[0][1])
+			self.cashin6.set(v2[0][2])
+			self.cashin7.set(v2[0][3])
+			self.cashin8.set(v2[0][4])
+		except:
+			pass
+			
 		try:
 			var = v2[0][5]-v1[0][5]
 			self.total.set(format(var,","))

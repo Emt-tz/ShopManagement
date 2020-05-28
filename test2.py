@@ -43,6 +43,41 @@ CREATE TABLE "madeni" (
 );
 """
 
+closingstock_table = """
+CREATE TABLE "closingstock" (
+	"Timed"	INTEGER,
+	"Mpesa"	INTEGER,
+	"Tigo"	INTEGER,
+	"Airtel"	INTEGER,
+	"Closingcash"	INTEGER,
+	"Total"	INTEGER
+);
+"""
+
+openingstock_table = """
+CREATE TABLE "openingstock" (
+	"Timed"	INTEGER,
+	"Mpesa"	INTEGER,
+	"Tigo"	INTEGER,
+	"Airtel"	INTEGER,
+	"Opencash"	INTEGER,
+	"Total"	INTEGER
+);
+"""
+
+tempsales_table = """
+CREATE TABLE "Temp Sales" (
+	"Timed"	TEXT,
+	"Product"	TEXT,
+	"Quantity"	INTEGER,
+	"Buying Price"	INTEGER,
+	"Price"	NUMERIC
+);
+"""
+
+
+
+
 class MonthlySales:
 
 	def GetYearlySales(year):
@@ -196,6 +231,9 @@ class InitializeDatabase:
 		c.execute(addproducts_table)
 		c.execute(login_table)
 		c.execute(madeni_table)
+		c.execute(openingstock_table)
+		c.execute(closingstock_table)
+		c.execute(tempsales_table)
 		conn.commit()
 		conn.close()
 

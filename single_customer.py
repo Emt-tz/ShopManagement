@@ -19,6 +19,7 @@ from tkinter import ttk
 import sqlite3 as sq
 import datetime as dt
 
+
 import subprocess as s
 from tkinter import messagebox
 
@@ -49,6 +50,11 @@ class Customer(tk.Tk):
 		self.geometry('600x600+400+50')
 		self.resizable(False,False)
 		self.Mainui()
+
+	def exit(self):
+		Tk.destroy(self)
+		from shop import ShopLogin
+		return ShopLogin().mainloop()
 
 
 	def Mainui(self):
@@ -201,17 +207,15 @@ class Customer(tk.Tk):
 			
 			total = displayreceipt.get('1.0',tk.END)
 
-			print(str(total))
+			lpr = s.Popen("/usr/bin/lpr",stdin=s.PIPE)
 
-			# lpr = s.Popen("/usr/bin/lpr",stdin=s.PIPE)
-
-			# x = tk.messagebox.askyesno("Print Receipt","Do you wish to print the receipt?")
-			# if x == False:
-			# 	pass
+			x = tk.messagebox.askyesno("Print Receipt","Do you wish to print the receipt?")
+			if x == False:
+				pass
 		
-			# if x == True:
-			# 	lpr.stdin.write(total.encode())
-			# 	stdout, stderr = lpr.communicate(input=total.encode())
+			if x == True:
+				lpr.stdin.write(total.encode())
+				stdout, stderr = lpr.communicate(input=total.encode())
 			c.execute("DELETE FROM 'Temp Sales' WHERE Timed=?", (str(newtime),))
 			conn.commit()
 
@@ -224,6 +228,10 @@ class Customer(tk.Tk):
 
 		PrintButton = Button(leftframe,text="Print",bg=self.colors[0],command=printf,state="disabled")
 		PrintButton.place(relx=0.65,rely=0.905)
+
+		exitbutton = Button(leftframe,text="X",bg=self.colors[0],command=self.exit,state="normal")
+		exitbutton.place(relx=0.85,rely=0.905)
+
 
 if __name__ == '__main__':
 	Customer().mainloop()

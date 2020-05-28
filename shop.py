@@ -17,6 +17,7 @@ from test2 import InitializeDatabase as dbinit
 from test2 import Profit as profit
 from password_strength import PasswordPolicy as pc
 from balance import Balance as mobilemoney
+from single_customer import Customer
 
 #======define our password rules======================
 policy = pc.from_names(length=8,uppercase=1,numbers=1,special=1,nonletters=1)
@@ -667,6 +668,10 @@ class ShopLogin(tk.Tk):
 		#mobile money button
 		mobilemoneybtn = Button(buttonframe,font=self.font,text="MOBILE MONEY".upper(),bg="cadetblue",fg="white",command=self.mobile,bd=0,height=1, width=12)
 		mobilemoneybtn.place(x=500, y=self.btny)
+		#Receipt
+		receiptbtn = Button(buttonframe,font=self.font,text="RECEIPT".upper(),bg="cadetblue",fg="white",command=self.receipt,bd=0,height=1, width=12)
+		receiptbtn.place(x=660, y=self.btny-40)
+
 
 		# Exit Button
 		logout = tk.Button(buttonframe,text="Exit".upper()
@@ -676,8 +681,8 @@ class ShopLogin(tk.Tk):
 		logout.place(x=660, y=self.btny)
 
 		#debtbutton
-		debtbutton = Button(buttonframe,font=self.font,text="Debts".upper(),bg="cadetblue",fg="white",command=self.DebtFunction,bd=0,height=1, width=15)
-		debtbutton.place(x=830, y=self.btny)
+		self.debtbutton = Button(buttonframe,font=self.font,text="Debts".upper(),bg="cadetblue",fg="white",command=self.DebtFunction,bd=0,height=1, width=15)
+		self.debtbutton.place(x=830, y=self.btny)
 	#=================================================================================================================#
 				#We need name, item, debt
 		debtcanvas = Canvas(self,width=238,height=370,bg="lightgrey")
@@ -705,6 +710,9 @@ class ShopLogin(tk.Tk):
 		self.removebutton = Button(font=self.font,text="Del".upper(),bg="cadetblue",fg="white",command=self.removedb,bd=0,height=1, width=6)
 		self.removebutton.place(x=860, y=self.entrydatey+120)
 
+		self.disablebutton = Button(font=self.font,text="Disable".upper(),bg="cadetblue",fg="white",command=self.Sales,bd=0,height=1, width=15,state="disabled")
+		self.disablebutton.place(x=830, y=self.entrydatey+210)
+
 		self.debtnameentry12.config(state="disabled")
 		self.debtcashentry12.config(state="disabled")
 		self.debtview12.config(state="disabled")
@@ -715,6 +723,8 @@ class ShopLogin(tk.Tk):
 
 		self.clicktoload = Label(font="time 12", text="*Click Debts to Get Export Sales Functions".upper())
 		self.clicktoload.place(x=self.entrydatex, y=self.entrydatey)
+
+		self.daily.delete(1.0, END)
 
 	#=================================================================================================================#
 	def getsalesbymonth(self):
@@ -735,6 +745,8 @@ class ShopLogin(tk.Tk):
 		self.debtview12.config(state="normal")
 		self.submitbutton.config(state="normal")
 		self.removebutton.config(state="normal")
+		self.disablebutton.config(state="normal")
+		self.debtbutton.config(state="disabled")
 		self.debtnameentry.set("")
 
 		madeni = self.c.execute("SELECT * FROM 'madeni'").fetchall()
@@ -1333,6 +1345,10 @@ class ShopLogin(tk.Tk):
 	def mobile(self):
 		Tk.destroy(self)
 		return mobilemoney().mainloop()
+	#=================================================================================================================#
+	def receipt(self):
+		Tk.destroy(self)
+		return Customer().mainloop()
 
 if __name__ == '__main__':
 	Admin().mainloop()

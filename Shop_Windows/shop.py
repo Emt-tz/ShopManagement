@@ -42,7 +42,7 @@ class Admin(tk.Tk):
 		self.pwdnew = StringVar()
 		self.pwdnewchk = StringVar()
 		self.geometry('246x300+500+300')
-		self.resizable(False, False)
+		#self.resizable(False, False)
 		self.Interface()
 	#=================================================================================================================#
 

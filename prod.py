@@ -295,7 +295,7 @@ class ProductManagement(tk.Tk):
 			prod.append(ne)
 		
 		if x in prod:
-			print(x)
+			#print(x)
 			values = (x, x2, x3, x4)
 			self.c.execute("DELETE FROM AddProducts where Name=?", (x,))
 			self.c.execute("INSERT INTO AddProducts VALUES (?,?,?,?)", values)

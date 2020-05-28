@@ -14,7 +14,7 @@ timenow = str(dt.datetime.today())
 v = c.execute("SELECT * FROM 'openingstock' WHERE Timed=?",(timenow[0:10],)).fetchall()
 
 dates = []
-print(dates)
+
 for i in range(0, len(v)):
 	try:
 		dates.append(v[0][i])
@@ -259,8 +259,8 @@ class Balance(tk.Tk):
 	
 
 
-if __name__ == '__main__':
-	Balance().mainloop()
+# if __name__ == '__main__':
+# 	Balance().mainloop()
 
 
 '''

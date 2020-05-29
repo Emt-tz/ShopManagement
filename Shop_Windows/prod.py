@@ -1,6 +1,5 @@
 #This will manage the products addition or removing
 #Function inside here include
-
 """
 1. Add Product(Name,Buy Price, Sell Price, Quantity)
 2. Modify Product
@@ -22,12 +21,11 @@ class ProductManagement(tk.Tk):
 		#=============================================================================================
 		super().__init__()
 		self.title("Product Management")
-		self.iconbitmap("sc.ico")
 		self.turn = True
 		self.conn = sqlite3.connect('sales')
 		self.c = self.conn.cursor()
 		self.btns = []
-		self.font = "Verdana 9 bold"
+		self.font = "Verdana 10 bold"
 		self.bd = 20
 
 		self.namevar = StringVar()
@@ -76,7 +74,7 @@ class ProductManagement(tk.Tk):
 
 
 		for k, j in sorted(btn_dict.items()):
-			btns = Button(bottom_frame,text=j, width=13,height=1,pady=5,font=self.font, command=btncommands[k], state=self.btnstate[k])
+			btns = Button(bottom_frame,text=j, width=12,height=1,pady=5,font=self.font, command=btncommands[k], state=self.btnstate[k])
 			btns.grid()
 
 			self.btns.append(btns)
@@ -162,22 +160,22 @@ class ProductManagement(tk.Tk):
 		products = self.c.execute("SELECT * FROM AddProducts").fetchall()
 
 		#Cerate 4 List Boxes to view the products 
-		textlist1 = Listbox(editframe,font="time 11", height=17,width=12, fg="yellowgreen")
+		textlist1 = Listbox(editframe,font="time 10", height=17,width=12, fg="yellowgreen")
 		textlist1.place(x=452)
 		textlist1.insert(END, "PRODUCTS")
 		textlist1.insert(END,"-------------------")
 
-		textlist2 = Listbox(editframe,font="time 11",height=17,width=12, fg="yellowgreen")
+		textlist2 = Listbox(editframe, height=17,width=12, fg="yellowgreen")
 		textlist2.place(x=550)
 		textlist2.insert(END, "BUYPRICE")
 		textlist2.insert(END,"-------------------")
 
-		textlist3 = Listbox(editframe,font="time 11",height=17,width=12, fg="yellowgreen")
+		textlist3 = Listbox(editframe, height=17,width=12, fg="yellowgreen")
 		textlist3.place(x=650)
 		textlist3.insert(END, "SELLPRICE")
 		textlist3.insert(END,"-------------------")
 
-		textlist4 = Listbox(editframe,font="time 11",height=17,width=12, fg="yellowgreen")
+		textlist4 = Listbox(editframe, height=17,width=12, fg="yellowgreen")
 		textlist4.place(x=750)
 		textlist4.insert(END, "QUANTITY")
 		textlist4.insert(END,"-------------------")
@@ -194,7 +192,7 @@ class ProductManagement(tk.Tk):
 			textlist4.insert(END, "-------------------")
 
 		
-		clearbtn = Button(editframe, text="Back",font=self.font, command=self.clearbtn).place(x=600, y=320)
+		clearbtn = Button(editframe, text="Back",font="Verdana 10 bold", command=self.clearbtn).place(x=600, y=320)
 		exitbtn = Button(editframe, font=self.font, command=self.maingui, text="Exit").place(x=750,y=320)
 				
 		#=============================================================================================
@@ -225,8 +223,8 @@ class ProductManagement(tk.Tk):
 		self.name_entry12 = ttk.Combobox(font=self.font,textvariable=self.namevar1,values=combo(), width=19,height=19)
 		self.name_entry12.place(x=590,y=150)
 
-		delbtn = Button(editframe, text="Delete",font=self.font,command=self.delcombo).place(x=455, y=320)
-		clearbtn = Button(editframe, text="Back",font=self.font, command=self.clearbtn).place(x=600, y=320)
+		delbtn = Button(editframe, text="Delete",font="Verdana 10 bold",command=self.delcombo).place(x=455, y=320)
+		clearbtn = Button(editframe, text="Back",font="Verdana 10 bold", command=self.clearbtn).place(x=600, y=320)
 		exitbtn = Button(editframe, font=self.font, command=self.maingui, text="Exit").place(x=750,y=320)
 		#=============================================================================================
 	
@@ -270,8 +268,8 @@ class ProductManagement(tk.Tk):
 	
 		#Algorithm to Update Value
 	
-		updatebtn = Button(editframe, text="Update",font=self.font,command=self.checkcombo).place(x=455, y=320)
-		clearbtn = Button(editframe, text="Back",font=self.font, command=self.clearbtn).place(x=600, y=320)
+		updatebtn = Button(editframe, text="Update",font="Verdana 10 bold",command=self.checkcombo).place(x=455, y=320)
+		clearbtn = Button(editframe, text="Back",font="Verdana 10 bold", command=self.clearbtn).place(x=600, y=320)
 		exitbtn = Button(editframe, font=self.font, command=self.maingui, text="Exit").place(x=750,y=320)
 		#=============================================================================================
 
@@ -297,7 +295,7 @@ class ProductManagement(tk.Tk):
 			prod.append(ne)
 		
 		if x in prod:
-			print(x)
+			#print(x)
 			values = (x, x2, x3, x4)
 			self.c.execute("DELETE FROM AddProducts where Name=?", (x,))
 			self.c.execute("INSERT INTO AddProducts VALUES (?,?,?,?)", values)
@@ -341,7 +339,7 @@ class ProductManagement(tk.Tk):
 		self.conn.commit()  
 		self.conn.close()
 		Tk.destroy(self)
-		from shop import ShopLogin as sl
-		sl().mainloop()
+		from Admin import Admin
+		return Admin().mainloop()
 
-#ProductManagement().mainloop()
+# ProductManagement().mainloop()

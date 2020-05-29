@@ -26,15 +26,15 @@ PYTHON_INSTALL_DIR = os.path.dirname(sys.executable)
 os.environ['TCL_LIBRARY'] = os.path.join(PYTHON_INSTALL_DIR, 'tcl', 'tcl8.6')
 os.environ['TK_LIBRARY'] = os.path.join(PYTHON_INSTALL_DIR, 'tcl', 'tk8.6')
 
-include_files = ["sc.ico"]
-packages = ["tkinter","datetime","time","sqlite3","pandas","babel.numbers","Tkinter","tkinter.filedialog","openpyxl"]
+include_files = []
+packages = ["tkinter","datetime","time","sqlite3","pandas","babel"]
 options = {'build_exe' : {'packages':packages, 'include_files':include_files}}
 
 # GUI applications require a different base on Windows (the default is for a console application).
 base = None
 if sys.platform == "win32":
-   base = "Win32GUI"
+    base = "Win32GUI"
 
-executables = [Executable("shop.py", base=base,icon="sc.ico")]
+executables = [Executable("Admin.py", base=base)]
 
-setup(name="Shop",options=options,version="0.1",description="Emmanuel Mtera Shop Management System",executables=executables)
+setup(name="Shop",options=options,version="0.1",description="<any description>",executables=executables,data_files = [('C:\\Windows\\Fonts', ['Ubuntu-L.ttf'])])

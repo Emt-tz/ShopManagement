@@ -1,12 +1,15 @@
+
 import base64
 import os
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.fernet import Fernet 
+try:
+	from cryptography.hazmat.backends import default_backend
+	from cryptography.hazmat.primitives import hashes
+	from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+	from cryptography.fernet import Fernet
+except:
+	pass 
 from pandas import read_csv
-from tkinter import filedialog
-from tkinter import messagebox
+from tkinter import filedialog,messagebox
 import csv
 import sqlite3
 
@@ -39,6 +42,41 @@ CREATE TABLE "madeni" (
 	"kiasi"	INTEGER
 );
 """
+
+closingstock_table = """
+CREATE TABLE "closingstock" (
+	"Timed"	INTEGER,
+	"Mpesa"	INTEGER,
+	"Tigo"	INTEGER,
+	"Airtel"	INTEGER,
+	"Closingcash"	INTEGER,
+	"Total"	INTEGER
+);
+"""
+
+openingstock_table = """
+CREATE TABLE "openingstock" (
+	"Timed"	INTEGER,
+	"Mpesa"	INTEGER,
+	"Tigo"	INTEGER,
+	"Airtel"	INTEGER,
+	"Opencash"	INTEGER,
+	"Total"	INTEGER
+);
+"""
+
+tempsales_table = """
+CREATE TABLE "Temp Sales" (
+	"Timed"	TEXT,
+	"Product"	TEXT,
+	"Quantity"	INTEGER,
+	"Buying Price"	INTEGER,
+	"Price"	NUMERIC
+);
+"""
+
+
+
 
 class MonthlySales:
 
@@ -193,6 +231,9 @@ class InitializeDatabase:
 		c.execute(addproducts_table)
 		c.execute(login_table)
 		c.execute(madeni_table)
+		c.execute(openingstock_table)
+		c.execute(closingstock_table)
+		c.execute(tempsales_table)
 		conn.commit()
 		conn.close()
 
@@ -242,5 +283,4 @@ class ConvertCsvtoExcel:
 			messagebox.showinfo("Success",f'exported successfully')
 		except:
 			messagebox.showinfo("Speciy Directory","Please Specify Place To Save")
-
 			

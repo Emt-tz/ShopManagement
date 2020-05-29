@@ -339,7 +339,7 @@ class ProductManagement(tk.Tk):
 		self.conn.commit()  
 		self.conn.close()
 		Tk.destroy(self)
-		from shop import ShopLogin as sl
-		sl().mainloop()
+		from Admin import Admin
+		return Admin().mainloop()
 
 # ProductManagement().mainloop()

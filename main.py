@@ -35,6 +35,6 @@ base = None
 if sys.platform == "win32":
     base = "Win32GUI"
 
-executables = [Executable("shop.py", base=base)]
+executables = [Executable("Admin.py", base=base)]
 
 setup(name="Shop",options=options,version="0.1",description="<any description>",executables=executables,data_files = [('C:\\Windows\\Fonts', ['Ubuntu-L.ttf'])])

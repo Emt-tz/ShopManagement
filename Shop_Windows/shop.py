@@ -11,6 +11,28 @@ from test2 import ConvertCsvtoExcel as cexcel
 import csv
 from test2 import Profit as profit
 from tkcalendar import DateEntry
+from test2 import Stock 
+
+conn = sqlite3.connect('sales')
+c = conn.cursor()
+
+def getquantity(name):
+		data = (name,)
+		c.execute("CREATE INDEX IF NOT EXISTS Idx5 ON AddProducts(Name)")
+		v = c.execute("SELECT * FROM AddProducts WHERE Name=?",data)
+		for row in v:
+			z = row[3]
+		x = z
+		return x
+
+def getprice(name):
+	data = (name,)
+	c.execute("CREATE INDEX IF NOT EXISTS Idx5 ON AddProducts(Name)")
+	v = c.execute("SELECT * FROM AddProducts WHERE Name=?",data)
+	for row in v:
+		z = row[2]
+	x = z
+	return x
 
 
 class ShopLogin(tk.Tk):
@@ -18,6 +40,7 @@ class ShopLogin(tk.Tk):
 	def __init__(self):
 		super().__init__()
 		self.title("Emt Management System")
+		self.iconbitmap("sc.ico")
 		self.labels = []
 		self.turn = True
 		self.count = 0
@@ -84,7 +107,7 @@ class ShopLogin(tk.Tk):
 		self.entrytv = IntVar()
 		self.entrypv = IntVar()
 
-		self.font = Font(family="Times New Roman bold", size=10)
+		self.font = Font(family="Times New Roman", size=11)
 
 
 		self.WIDTH, self.HEIGHT = 1095, 690
@@ -93,7 +116,7 @@ class ShopLogin(tk.Tk):
 		self.btnx = 0
 		#label height and width
 		self.labelheight = 1
-		self.labelwidth = 33
+		self.labelwidth = 45
 		#entries y and x values
 		self.entry1y = 58
 		self.entry2y = 78
@@ -128,15 +151,15 @@ class ShopLogin(tk.Tk):
 
 		self.sale_date_entry = StringVar()
 
-		self.salesframe = Frame(bg="lightgrey", width=40, height=900, pady=3).place(x=self.xvalue-300,y=self.yvalue)
+		self.salesframe = Frame(bg="white", width=40, height=900, pady=3).place(x=self.xvalue-300,y=self.yvalue-20)
 
-		self.daily = tk.Text(self.salesframe,width=40, height=20, font=self.font,relief=RAISED)
+		self.daily = tk.Text(self.salesframe,width=40, height=20, font='time 11',relief=RAISED)
 		self.daily.place(x=self.xvalue-270, y=self.yvalue-20)
 
-		self.entryt = Entry(bg="white",textvariable=self.entrytv, font=self.font, state='normal',justify='right',bd=5,width=39)
+		self.entryt = Entry(bg="white",textvariable=self.entrytv, font='time 11', state='normal',justify='right',bd=5,width=39)
 		self.entryt.place(x=self.xvalue-270, y=self.total1y-20)
 
-		self.entryp = Entry(bg="white",textvariable=self.entrypv, font=self.font, state='normal',justify='right',bd=5,width=39)
+		self.entryp = Entry(bg="white",textvariable=self.entrypv, font='time 11', state='normal',justify='right',bd=5,width=39)
 		self.entryp.place(x=self.xvalue-270, y=self.profit1y-20)
 
 		self.lb = StringVar()
@@ -145,9 +168,9 @@ class ShopLogin(tk.Tk):
 		self.geometry(f'{self.WIDTH}x{self.HEIGHT}+150+0')
 
 		self.resizable(False, False)
-		
-		self.Sales()    
-		#self.todayssales()
+
+		self.Sales()
+		Stock.checkstock()
 	#=================================================================================================================#
 
 	def ShopItems(self):
@@ -190,23 +213,23 @@ class ShopLogin(tk.Tk):
 		headingframe = Frame(bg="lightgrey",width=1920, height=200).place(x=0,y=0)
 
 		Shop_title = Label(headingframe,text="Welcome to Emt Shop Management System".upper(),bg="lightgrey",fg="green",font="time 14", bd=0,height=2,relief=None)
-		Shop_title.place(y=0, x=280)
+		Shop_title.place(y=0, x=300)
 
 		heading1 = tk.Label(headingframe,text="",bg="lightgrey",fg="blue",font=self.font, bd=0,pady=3,height=3, width=20, relief=None,)
 		heading1.grid(row=0, column=0)
 
-		buttonframe = Frame(bg="lightgrey", width=self.buttonsframewidth-282, height=self.buttonsframeheight, pady=3).place(x=1, y=210)
+		buttonframe = Frame(bg="lightgrey", width=self.buttonsframewidth-271, height=self.buttonsframeheight, pady=3).place(x=1, y=210)
 
 		maincanvas = Canvas(self,width=1920,height=231,bg="cadetblue")
 		maincanvas.place(x=0,y=50)
 		#Label to Warn user to not conflict with database   
-		Product = tk.Label(text="Product".upper(),bg="white",font="time 12 bold", height=self.labelheight, width=self.labelwidth, relief=RAISED)
+		Product = tk.Label(text="Product".upper(),bg="white",font="time 10 bold", height=self.labelheight, width=self.labelwidth, relief=RAISED)
 		Product.grid(row=1, column=0)
 
-		Quantity = tk.Label(text="Quantity".upper(),bg="white",font="time 12 bold", height=self.labelheight, width=self.labelwidth, relief=RAISED)
+		Quantity = tk.Label(text="Quantity".upper(),bg="white",font="time 10 bold", height=self.labelheight, width=self.labelwidth, relief=RAISED)
 		Quantity.grid(row=1, column=1)
 
-		Discount = tk.Label(text="Sell Price".upper(),bg="white",font="time 12 bold", height=self.labelheight, width=self.labelwidth, relief=RAISED)
+		Discount = tk.Label(text="Sell Price".upper(),bg="white",font="time 10 bold", height=self.labelheight, width=self.labelwidth, relief=RAISED)
 		Discount.grid(row=1, column=2)
 
 		# Price = tk.Label(text="Price".upper(),bg="white",font="time 11 bold", height=self.labelheight, width=self.labelwidth, relief=RAISED)
@@ -301,6 +324,18 @@ class ShopLogin(tk.Tk):
 		maincanvas.create_window(self.entrydx,self.entry8y-18,window=entryD8)
 		maincanvas.create_window(self.entrydx,self.entry9y-18,window=entryD9)
 		maincanvas.create_window(self.entrydx,self.entry10y-18,window=entryD10)
+
+		#=======bind comboboxes to events======================#
+		box1.bind("<<ComboboxSelected>>", self.modif1)
+		box2.bind("<<ComboboxSelected>>", self.modif2)
+		box3.bind("<<ComboboxSelected>>", self.modif3)
+		box4.bind("<<ComboboxSelected>>", self.modif4)
+		box5.bind("<<ComboboxSelected>>", self.modif5)
+		box6.bind("<<ComboboxSelected>>", self.modif6)
+		box7.bind("<<ComboboxSelected>>", self.modif7)
+		box8.bind("<<ComboboxSelected>>", self.modif8)
+		box9.bind("<<ComboboxSelected>>", self.modif9)
+		box10.bind("<<ComboboxSelected>>", self.modif10)
 	#===================================================================================================================================
 	#===================================================================================================================================
 		# GrandTotal Button
@@ -320,7 +355,7 @@ class ShopLogin(tk.Tk):
 		logout.place(x=320, y=self.btny-93)
 	#=================================================================================================================#
 				#We need name, item, debt
-		debtcanvas = Canvas(self,width=238,height=370,bg="lightgrey")
+		debtcanvas = Canvas(self,width=238,height=370,bg="lightgrey",highlightthickness=0)
 		debtcanvas.place(x=490,y=301)
 
 		madenilabel = Label(fg="cadetblue",text="Debt and Expenses")
@@ -338,7 +373,7 @@ class ShopLogin(tk.Tk):
 		self.debtview12 = ttk.Combobox(textvariable=self.majinacombo,postcommand=self.updatecomboboxlist,font="time 12")
 		debtcanvas.create_window(108, 200,window=self.debtview12)
 
-		self.submitbutton = Button(font=self.font,text="Add".upper(),bg="cadetblue",fg="white",command=self.submittodb,bd=0,height=1, width=6)
+		self.submitbutton = Button(font='time 11',text="Add".upper(),bg="cadetblue",fg="white",command=self.submittodb,bd=0,height=1, width=6)
 		self.submitbutton.place(x=560, y=self.entrydatey+10)
 
 	
@@ -357,11 +392,21 @@ class ShopLogin(tk.Tk):
 		self.debtcashentry12.bind("<Return>",self.submittodb)
 		self.daily.delete(1.0, END)
 
+		self.daily.insert(END,"Product\t\tQuantity\t\tTotal\n")
+		self.daily.insert(END, f'{40*"_"}')
+
+		self.debtnameentry12.config(state="disabled")
+		self.debtcashentry12.config(state="disabled")
+		self.debtview12.config(state="disabled")
+		self.submitbutton.config(state="disabled")
+		self.removebutton.config(state="disabled")
+		self.debtnameentry.set("Jina")
+
 	#=================================================================================================================#
 	def DebtFunction(self):
 		self.daily.delete(1.0, END)
 		self.daily.insert(END,f'Name\t\t\t\tTotal\n')
-		self.daily.insert(END, f'{45*"_"}')
+		self.daily.insert(END, f'{40*"_"}')
 
 		self.debtnameentry12.config(state="normal")
 		self.debtcashentry12.config(state="normal")
@@ -430,7 +475,7 @@ class ShopLogin(tk.Tk):
 		self.daily.delete(1.0, END)
 
 		self.daily.insert(END,"Product\t\tQuantity\t\tTotal\n")
-		self.daily.insert(END, f'{45*"_"}')
+		self.daily.insert(END, f'{40*"_"}')
 
 		valuestime = self.sale_date_entry.get()
 		
@@ -449,22 +494,13 @@ class ShopLogin(tk.Tk):
 			dtsales = {}    
 
 			#loop through the database values and append to dictionary
-			for row in stsales:
-
-				i = [i for i in range(0, len(row))]
-				j = [j for j in range(0, len(row))]
-
-				x = row[i[1]]
-				x2 = row[j[2]]
-				x3 = row[j[4]]
-
+			for row in self.stsales:
+				x = row[1]
+				x2 = row[2]
+				x3 = row[4]
 				if x in dtsales:
-					y = str(dtsales[x])
-					z = str(y).replace("(","")
-					zn = z.replace(")", "")
-					f = zn.replace(" ","")
-					p,n = f.split(",")
-					#print(p)
+					p = dtsales.get(x)[0]
+					n = dtsales.get(x)[1]
 					dtsales.update({x:(x2+int(p),x3+int(n))})
 				else:
 					dtsales.update({x:(x2,x3)})
@@ -472,17 +508,14 @@ class ShopLogin(tk.Tk):
 			profitn = []
 			#loop through the dictionary and get q and price
 			for k,v in dtsales.items():
-				newv = str(v).replace("(","")
-				newv = newv.replace(")", "")
+				q = dtsales.get(k)[0]
+				p = dtsales.get(k)[1]
 
-				q,p = newv.split(",")
-				finall = p.replace(" ","")
 				self.daily.insert(END, f'{k.upper()}\t\t    {q}\t\t{p}\n')
-				final.append(int(finall))
+				final.append(int(p))
 
 				x = self.c.execute("SELECT * FROM 'AddProducts'").fetchall()
 
-				
 				for i in range(0, len(x)):
 					productname = x[i][0]
 					if productname == k:
@@ -510,10 +543,7 @@ class ShopLogin(tk.Tk):
 			i = [i for i in range(0, len(stitem))]
 			
 			stprice.update({stitem[j[0]]:stitem[i[2]]})
-		
-		#============================================================================================================
-		
-		
+		#============================================================================================================		
 	#=================================================================================================================#
 		#Get combo box texts
 		f1 = self.box1.get()
@@ -526,187 +556,123 @@ class ShopLogin(tk.Tk):
 		f8 = self.box8.get()
 		f9 = self.box9.get()
 		f10 = self.box10.get()
-
 		#============================================================================================================
 		#This logic performs the desired calculations.
 		#First Row
 		#=========================================================================
 		for k,v in stprice.items():
 			if f1 == k :
-				if self.entryD1.get() != 0:
-					x = self.entryD1.get()
-					y = self.entryq1.get()
-					e =  y * x
-					self.entryP1.set(e)
-				else:
-					self.entryD1.set(v)
-					x = self.entryD1.get()
-					y = self.entryq1.get()
-					e =  y * x
-					self.entryP1.set(e)
-				
-				
+				self.entryD1.set(v)
+				x = self.entryD1.get()
+				y = self.entryq1.get()
+				e =  y * x
+				self.entryP1.set(e)				
 		#==========================================================================
 		#=========================================================================
 		for k,v in stprice.items():
 			if f2 == k:
-				if self.entryD2.get() != 0:
-					x = self.entryD2.get()
-					y = self.entryq2.get()
-					e =  y * x
-					self.entryP2.set(e)
-				else:
-					self.entryD2.set(v)
-					x = self.entryD2.get()
-					y = self.entryq2.get()
-					e =  y * x
-					self.entryP2.set(e)
+				self.entryD2.set(v)
+				x = self.entryD2.get()
+				y = self.entryq2.get()
+				e =  y * x
+				self.entryP2.set(e)
 				
 		#==========================================================================
 		#=========================================================================
 		for k,v in stprice.items():
 			if f3 == k:
-				if self.entryD3.get() != 0:
-					x = self.entryD3.get()
-					y = self.entryq3.get()
-					e =  y * x
-					self.entryP3.set(e)
-				else:
-					self.entryD3.set(v)
-					x = self.entryD3.get()
-					y = self.entryq3.get()
-					e =  y * x
-					self.entryP3.set(e)
+				self.entryD3.set(v)
+				x = self.entryD3.get()
+				y = self.entryq3.get()
+				e =  y * x
+				self.entryP3.set(e)
 				
 		#==========================================================================
 		#=========================================================================
 		for k,v in stprice.items():
 			if f4 == k:
-				if self.entryD4.get() != 0:
-					x = self.entryD4.get()
-					y = self.entryq4.get()
-					e =  y * x
-					self.entryP4.set(e)
-				else:
-					self.entryD4.set(v)
-					x = self.entryD4.get()
-					y = self.entryq4.get()
-					e =  y * x
-					self.entryP4.set(e)
+				self.entryD4.set(v)
+				x = self.entryD4.get()
+				y = self.entryq4.get()
+				e =  y * x
+				self.entryP4.set(e)
 				
 		#==========================================================================
 		#=========================================================================
 		for k,v in stprice.items():
 			if f5 == k :
-				if self.entryD5.get() != 0:
-					x = self.entryD5.get()
-					y = self.entryq5.get()
-					e =  y * x
-					self.entryP5.set(e)
-				else:
-					self.entryD5.set(v)
-					x = self.entryD5.get()
-					y = self.entryq5.get()
-					e =  y * x
-					self.entryP5.set(e)
-				
+				self.entryD5.set(v)
+				x = self.entryD5.get()
+				y = self.entryq5.get()
+				e =  y * x
+				self.entryP5.set(e)
+			
 				
 		#==========================================================================
 		#=========================================================================
 		for k,v in stprice.items():
 			if f6 == k:
-				if self.entryD6.get() != 0:
-					x = self.entryD6.get()
-					y = self.entryq6.get()
-					e =  y * x
-					self.entryP6.set(e)
-				else:
-					self.entryD6.set(v)
-					x = self.entryD6.get()
-					y = self.entryq6.get()
-					e =  y * x
-					self.entryP6.set(e)
+				self.entryD6.set(v)
+				x = self.entryD6.get()
+				y = self.entryq6.get()
+				e =  y * x
+				self.entryP6.set(e)
 				
 		#==========================================================================
 		#=========================================================================
 		for k,v in stprice.items():
 			if f7 == k:
-				if self.entryD7.get() != 0:
-					x = self.entryD7.get()
-					y = self.entryq7.get()
-					e =  y * x
-					self.entryP7.set(e)
-				else:
-					self.entryD7.set(v)
-					x = self.entryD7.get()
-					y = self.entryq7.get()
-					e =  y * x
-					self.entryP7.set(e)
+				self.entryD7.set(v)
+				x = self.entryD7.get()
+				y = self.entryq7.get()
+				e =  y * x
+				self.entryP7.set(e)
 				
 		#==========================================================================
 		#=========================================================================
 		for k,v in stprice.items():
 			if f8 == k:
-				if self.entryD8.get() != 0:
-					x = self.entryD8.get()
-					y = self.entryq8.get()
-					e =  y * x
-					self.entryP8.set(e)
-				else:
-					self.entryD8.set(v)
-					x = self.entryD8.get()
-					y = self.entryq8.get()
-					e =  y * x
-					self.entryP8.set(e)
+				self.entryD8.set(v)
+				x = self.entryD8.get()
+				y = self.entryq8.get()
+				e =  y * x
+				self.entryP8.set(e)
 				
 		#==========================================================================
 		#=========================================================================
 		for k,v in stprice.items():
 			if f9== k:
-				if self.entryD9.get() != 0:
-					x = self.entryD9.get()
-					y = self.entryq9.get()
-					e =  y * x
-					self.entryP9.set(e)
-				else:
-					self.entryD9.set(v)
-					x = self.entryD9.get()
-					y = self.entryq9.get()
-					e =  y * x
-					self.entryP9.set(e)
+				self.entryD9.set(v)
+				x = self.entryD9.get()
+				y = self.entryq9.get()
+				e =  y * x
+				self.entryP9.set(e)
 				
 		#==========================================================================
 		#=========================================================================
 		for k,v in stprice.items():
 			if f10 == k:
-				if self.entryD10.get() != 0:
-					x = self.entryD10.get()
-					y = self.entryq10.get()
-					e =  y * x
-					self.entryP10.set(e)
-				else:
-					self.entryD10.set(v)
-					x = self.entryD10.get()
-					y = self.entryq10.get()
-					e =  y * x
-					self.entryP10.set(e)
+				self.entryD10.set(v)
+				x = self.entryD10.get()
+				y = self.entryq10.get()
+				e =  y * x
+				self.entryP10.set(e)
 				
 		#==========================================================================
 		
-
 		#==================================Perfom Desired Mathematics q,d,p========================================
 		valuestime = f'{self.date.day}/{self.date.month}/{self.date.year}'
 
-		values1 = (valuestime,self.box1.get(), self.entryq1.get(), self.entryD1.get(), self.entryP1.get())
-		values2 = (valuestime,self.box2.get(), self.entryq2.get(), self.entryD2.get(), self.entryP2.get())
-		values3 = (valuestime,self.box3.get(), self.entryq3.get(), self.entryD3.get(), self.entryP3.get())
-		values4 = (valuestime,self.box4.get(), self.entryq4.get(), self.entryD4.get(), self.entryP4.get())
-		values5 = (valuestime,self.box5.get(), self.entryq5.get(), self.entryD5.get(), self.entryP5.get())
-		values6 = (valuestime,self.box6.get(), self.entryq6.get(), self.entryD6.get(), self.entryP6.get())
-		values7 = (valuestime,self.box7.get(), self.entryq7.get(), self.entryD7.get(), self.entryP7.get())
-		values8 = (valuestime,self.box8.get(), self.entryq8.get(), self.entryD8.get(), self.entryP8.get())
-		values9 = (valuestime,self.box9.get(), self.entryq9.get(), self.entryD9.get(), self.entryP9.get())
-		values10 = (valuestime,self.box10.get(), self.entryq10.get(), self.entryD10.get(), self.entryP10.get())
+		values1 = (valuestime,f1, self.entryq1.get(), self.entryD1.get(), self.entryP1.get())
+		values2 = (valuestime,f2, self.entryq2.get(), self.entryD2.get(), self.entryP2.get())
+		values3 = (valuestime,f3, self.entryq3.get(), self.entryD3.get(), self.entryP3.get())
+		values4 = (valuestime,f4, self.entryq4.get(), self.entryD4.get(), self.entryP4.get())
+		values5 = (valuestime,f5, self.entryq5.get(), self.entryD5.get(), self.entryP5.get())
+		values6 = (valuestime,f6, self.entryq6.get(), self.entryD6.get(), self.entryP6.get())
+		values7 = (valuestime,f7, self.entryq7.get(), self.entryD7.get(), self.entryP7.get())
+		values8 = (valuestime,f8, self.entryq8.get(), self.entryD8.get(), self.entryP8.get())
+		values9 = (valuestime,f9, self.entryq9.get(), self.entryD9.get(), self.entryP9.get())
+		values10 = (valuestime,f10, self.entryq10.get(), self.entryD10.get(), self.entryP10.get())
 	#=================================================================================================================#
 
 
@@ -715,11 +681,6 @@ class ShopLogin(tk.Tk):
 		 +self.entryP4.get() +self.entryP4.get()+self.entryP5.get() +self.entryP6.get() +self.entryP7.get()
 		 +self.entryP8.get() +self.entryP9.get()+self.entryP10.get())
 
-		values = (values1,values2,values3,values4,values5,values6,values7,values8,values9,values10)
-
-		self.c.executemany("INSERT INTO 'Daily Sales' VALUES (?,?,?,?,?)", values)
-		self.conn.commit()
-	#==================================After Executing Values Set Quantites to Zero===================================#
 		self.entryq1.set("0")
 		self.entryq2.set("0")
 		self.entryq3.set("0")
@@ -742,67 +703,41 @@ class ShopLogin(tk.Tk):
 		self.entryD9.set("0")
 		self.entryD10.set("0")
 
-		self.entryP1.set("0")
-		self.entryP2.set("0")
-		self.entryP3.set("0")
-		self.entryP4.set("0")
-		self.entryP5.set("0")
-		self.entryP6.set("0")
-		self.entryP7.set("0")
-		self.entryP8.set("0")
-		self.entryP9.set("0")
-		self.entryP10.set("0")
+		values = (values1,values2,values3,values4,values5,values6,values7,values8,values9,values10)
+
+		self.c.executemany("INSERT INTO 'Daily Sales' VALUES (?,?,?,?,?)", values)
+		self.conn.commit()
+	#=====================================================================#
+		self.c.executemany("INSERT INTO 'Daily Temp' VALUES (?,?,?,?,?)", values)
+		self.conn.commit()
 	#=================================================================================================================#
 	def todayssales(self, event=None):
 	#=================================================================================================================#
-		#self.Salesbtn.config(state=DISABLED)
 		self.gettotalsales()
-
-		self.debtnameentry12.config(state="disabled")
-		self.debtcashentry12.config(state="disabled")
-		self.debtview12.config(state="disabled")
-		self.submitbutton.config(state="disabled")
-		self.removebutton.config(state="disabled")
-		self.debtnameentry.set("Jina")
-
+		#self.Salesbtn.config(state=DISABLED)
+		valuestime = f'{self.date.day}/{self.date.month}/{self.date.year}' 
+		
 		self.daily.delete(1.0, END)
 
 		self.daily.insert(END,"Product\t\tQuantity\t\tTotal\n")
-
-		valuestime = f'{self.date.day}/{self.date.month}/{self.date.year}' 
+		self.daily.insert(END, f'{40*"_"}')
 		#self.daily.insert(END,f'{valuestime}')
-		self.daily.insert(END, f'{45*"_"}')
-
 		#===================Database delete all empty values==========================
-		var = "0"
-		self.c.executemany("DELETE FROM 'Daily Sales' WHERE Quantity=?", var)
-		self.conn.commit()
-
-		self.c.executemany("DELETE FROM 'Daily Sales' WHERE Price=?", var)
+		self.c.executemany("DELETE FROM 'Daily Sales' WHERE Price=?", '0')
+		self.c.executemany("DELETE FROM 'Daily Temp' WHERE Price=? ",'0')
 		self.conn.commit()
 		#===================Database delete all empty values==========================
-
 		self.stsales = self.c.execute("SELECT * FROM 'Daily Sales' WHERE Timed=?", (str(valuestime),)).fetchall()
 
 		dtsales = {}    
-
 		#loop through the database values and append to dictionary
 		for row in self.stsales:
-
-			i = [i for i in range(0, len(row))]
-			j = [j for j in range(0, len(row))]
-
-			x = row[i[1]]
-			x2 = row[j[2]]
-			x3 = row[j[4]]
-
+			x = row[1]
+			x2 = row[2]
+			x3 = row[4]
 			if x in dtsales:
-				y = str(dtsales[x])
-				z = str(y).replace("(","")
-				zn = z.replace(")", "")
-				f = zn.replace(" ","")
-				p,n = f.split(",")
-				#print(p)
+				p = dtsales.get(x)[0]
+				n = dtsales.get(x)[1]
 				dtsales.update({x:(x2+int(p),x3+int(n))})
 			else:
 				dtsales.update({x:(x2,x3)})
@@ -810,15 +745,12 @@ class ShopLogin(tk.Tk):
 		profitn = []
 		#loop through the dictionary and get q and price
 		for k,v in dtsales.items():
-			newv = str(v).replace("(","")
-			newv = newv.replace(")", "")
-
-			q,p = newv.split(",")
-			finall = p.replace(" ","")
+			q = dtsales.get(k)[0]
+			p = dtsales.get(k)[1]
 			self.daily.insert(END, f'{k.upper()}\t\t    {q}\t\t{p}\n')
-			final.append(int(finall))
+			final.append(int(p))
 
-			x = self.c.execute("SELECT * FROM 'AddProducts'").fetchall()
+			x = self.c.execute("SELECT * FROM 'AddTemp'").fetchall()
 			for i in range(0, len(x)):
 				productname = x[i][0]
 				if productname == k:
@@ -827,25 +759,98 @@ class ShopLogin(tk.Tk):
 	
 		self.entrytv.set(format(sum(final),","))
 		self.entrypv.set(format(sum(profitn),","))
-
-		# try:
-		# 	self.clicktoload.config(text="*Click Debts to Get Export Sales Functions".upper())
-		# 	self.fromdateEntry.config(state="disabled")
-		# 	self.todateEntry.config(state="disabled")
-		# 	self.exportsales.config(state="disabled")
-		# except:
-		# 	pass
 		
+		self.after(1,self.stock)
+
 	#=================================================================================================================#
 	def UndoLastSale(self):
+		#get last sold quantity value,
 		self.c.execute("DELETE FROM 'Daily Sales' WHERE ROWID = (SELECT MAX(ROWID) FROM 'Daily Sales');")
 		self.conn.commit()
+
+		self.c.execute("DELETE FROM 'Daily Temp' WHERE ROWID = (SELECT MAX(ROWID) FROM 'Daily Sales');")
+		self.conn.commit()
+
 		self.todayssales()
+		self.after(1,self.stock2)
+
+	def stock2(self):
+		
+		last = self.c.execute("SELECT * FROM 'Daily Sales' WHERE ROWID = (SELECT MAX(ROWID) FROM 'Daily Sales');").fetchone()
+		
+		wrongname = last[1]
+
+		oldquantity = getquantity(wrongname)
+
+		wrongquantity = last[2]
+
+		newquantity = int(oldquantity) + int(wrongquantity)
+
+		data = (newquantity,wrongname)
+
+		self.c.execute('UPDATE "main"."AddProducts" SET "Quantity"=? WHERE "Name"=?;',data)
+		self.conn.commit()
 	#=================================================================================================================#
 	#=================================================================================================================#
-	def stockleft(self):
-		pass
+	def stock(self):
+		#===================Database delete all empty values==========================
+		v = self.c.execute("SELECT * FROM 'Daily Temp' WHERE ROWID = (SELECT MAX(ROWID) FROM 'Daily Temp');").fetchone()
+		try:
+			oldquantity = getquantity(v[1])
+
+			newquantity = int(oldquantity) - int(v[2])
+
+			data = (newquantity,v[1])
+			self.c.execute('UPDATE "AddProducts" SET "Quantity"=? WHERE "Name"=?;',data)
+			self.conn.commit()
+
+			self.c.execute("DELETE FROM 'Daily Temp' WHERE ROWID = (SELECT MAX(ROWID) FROM 'Daily Temp');")
+			self.conn.commit()
+
+		except TypeError:
+			pass
+
 	#=================================================================================================================#
+	def modif1(self,event=None):
+		v = getprice(self.box1.get())
+		self.entryD1.set(v)
+
+	def modif2(self,event=None):
+		v = getprice(self.box2.get())
+		self.entryD2.set(v)
+
+	def modif3(self,event=None):
+		v = getprice(self.box3.get())
+		self.entryD3.set(v)
+
+	def modif4(self,event=None):
+		v = getprice(self.box4.get())
+		self.entryD4.set(v)
+
+	def modif5(self,event=None):
+		v = getprice(self.box5.get())
+		self.entryD5.set(v)
+
+	def modif6(self,event=None):
+		v = getprice(self.box6.get())
+		self.entryD6.set(v)
+
+	def modif7(self,event=None):
+		v = getprice(self.box7.get())
+		self.entryD7.set(v)
+
+	def modif8(self,event=None):
+		v = getprice(self.box8.get())
+		self.entryD8.set(v)
+
+	def modif9(self,event=None):
+		v = getprice(self.box9.get())
+		self.entryD9.set(v)
+
+	def modif10(self,event=None):
+		v = getprice(self.box10.get())
+		self.entryD10.set(v)
+
 	def logout(self):
 	#=================================================================================================================#
 		self.conn.commit()
@@ -854,10 +859,11 @@ class ShopLogin(tk.Tk):
 		from Admin import Admin
 		return Admin().mainloop()
 	#=================================================================================================================#
-	
 
-if __name__ == '__main__':
-	ShopLogin().mainloop()
+##
+# if __name__ == '__main__':
+# 	ShopLogin().mainloop()
+
 
 
 

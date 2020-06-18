@@ -1,4 +1,9 @@
+import os
+from numba import jit
 
-x = '{:1.30}'.format()
+@jit
+def walk():
+	for i in os.walk('.'):
+		print(i)
 
-print(x)
+walk()

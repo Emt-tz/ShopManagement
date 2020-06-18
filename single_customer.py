@@ -18,16 +18,39 @@ import tkinter as tk
 from tkinter import ttk
 import sqlite3 as sq
 import datetime as dt
+import os
+import sys
+import sqlite3
 
 
 import subprocess as s
 from tkinter import messagebox
 
+conn = sqlite3.connect('sales')
+c = conn.cursor()
+
+def getquantity(name):
+		data = (name,)
+		c.execute("CREATE INDEX IF NOT EXISTS Idx5 ON AddProducts(Name)")
+		v = c.execute("SELECT * FROM AddProducts WHERE Name=?",data)
+		for row in v:
+			z = row[3]
+		x = z
+		return x
+
+def shopname():
+	v = c.execute("SELECT * FROM 'shopdetails' ").fetchall()
+	return v[0][0]
+
+def shopno():
+	v = c.execute("SELECT * FROM 'shopdetails' ").fetchall()
+	return v[0][1]
 
 class Customer(tk.Tk):
 	def __init__(self):
 		super().__init__()
-		self.title("Emt Customer Mode")
+		self.title("Receipt Mode")
+		self.iconbitmap("sc.ico")
 		self.colors = ['cadetblue','white','lightgrey']
 
 		self.name = StringVar()
@@ -49,8 +72,11 @@ class Customer(tk.Tk):
 
 		self.time = str(self.curtime)
 
-		self.number = "0693677033"
+		self.number = shopno()
 		self.curtime = f'\nDate:\t\t   {self.time[0:10]}\nTime:\t\t   {self.time[11:19]}\nPhone:\t\t   {self.number}\n'
+
+		self.conn = sqlite3.connect('sales')
+		self.c = self.conn.cursor()
 
 
 	def exit(self):
@@ -100,7 +126,7 @@ class Customer(tk.Tk):
 		quantityentry = Entry(leftframe,width=21,bd=2,font=self.font,textvariable=self.quantity)
 		quantityentry.place(relx=0.3,rely=0.3)
 	#=======================Text Display==========================================================
-		displayreceipt = Text(rightframe,width=32,height=31,bd=8)
+		displayreceipt = Text(rightframe,width=33,height=33,bd=8)
 		displayreceipt.place(relx=0,rely=0)
 	#=======================Buttons===============================================================
 		def logic():
@@ -125,11 +151,11 @@ class Customer(tk.Tk):
 			stprice = {}
 
 			for stitem in stitems:
-			            #print(stitem)
-			            j = [j for j in range(0, len(stitem))]
-			            i = [i for i in range(0, len(stitem))]
-			            
-			            stprice.update({stitem[j[0]]:stitem[i[2]]})
+				    #print(stitem)
+				    j = [j for j in range(0, len(stitem))]
+				    i = [i for i in range(0, len(stitem))]
+				    
+				    stprice.update({stitem[j[0]]:stitem[i[2]]})
 			
 			for k,v in stprice.items():
 				if self.product.get() == k:
@@ -160,7 +186,7 @@ class Customer(tk.Tk):
 			
 			displayreceipt.delete(1.0,END)
 			displayreceipt.insert(END,
-				f'    Emt Stationery Receipt\n--------------------------------\n{self.curtime}\n--------------------------------\n')
+				f'    {shopname()} Receipt\n--------------------------------\n{self.curtime}\n--------------------------------\n')
 			x = f'--------------------------------\n'
 			message = f'From:\t{self.name.get().upper()}\n{x}Products\t\tQty\tTotal\n'
 			displayreceipt.insert(END,message)
@@ -197,10 +223,9 @@ class Customer(tk.Tk):
 			self.total = sum(final)
 
 		def printf():
+			file = open('me.txt','w')
 
-			import sys
-
-			if sys.platform == "linux" or "linux2":
+			if sys.platform == "linux":
 				conn = sq.connect('sales')
 				c = conn.cursor()
 				
@@ -220,9 +245,27 @@ class Customer(tk.Tk):
 					c.execute("INSERT INTO 'Daily Sales' VALUES (?,?,?,?,?)", self.values)
 					conn.commit()
 					stdout, stderr = lpr.communicate(input=total.encode())
+				self.after(1, self.stock)
 			elif sys.platform == 'win32':
 				# os.startfile("C:/Users/TestFile.txt", "print")
-				pass
+				conn = sq.connect('sales')
+				c = conn.cursor()
+				
+				newtime = f'{self.date.day}/{self.date.month}/{self.date.year}'
+
+				x = tk.messagebox.askyesno("Print Receipt","Do you wish to print the receipt?")
+				if x == False:
+					pass
+				if x == True:
+					#lpr.stdin.write(total.encode())
+					c.execute("INSERT INTO 'Daily Sales' VALUES (?,?,?,?,?)", self.values)
+					c.execute("INSERT INTO 'Daily Temp' VALUES (?,?,?,?,?)", self.values)
+					conn.commit()
+					file.write(displayreceipt.get('1.0',tk.END))
+					file.close()
+					os.startfile('me.txt','print')
+				self.after(1, self.stock)
+				#pass
 			else:
 				pass
 				
@@ -230,18 +273,35 @@ class Customer(tk.Tk):
 			conn.commit()
 
 
-		AddButton = Button(leftframe,text="Add",bg=self.colors[0],command=add)
+		AddButton = Button(leftframe,text="Add",bg=self.colors[0],command=add,width=10)
 		AddButton.place(relx=0.05,rely=0.905)
 
-		TotalButton = Button(leftframe,text="Total",bg=self.colors[0],command=logic)
+		TotalButton = Button(leftframe,text="Total",bg=self.colors[0],command=logic,width=10)
 		TotalButton.place(relx=0.35,rely=0.905)
 
-		PrintButton = Button(leftframe,text="Print",bg=self.colors[0],command=printf,state="disabled")
+		PrintButton = Button(leftframe,text="Print",bg=self.colors[0],command=printf,state="disabled",width=7)
 		PrintButton.place(relx=0.65,rely=0.905)
 
-		exitbutton = Button(leftframe,text="X",bg=self.colors[0],command=self.exit,state="normal")
-		exitbutton.place(relx=0.85,rely=0.905)
+		exitbutton = Button(leftframe,text="X",bg=self.colors[0],command=self.exit,state="normal",width=2)
+		exitbutton.place(relx=0.88,rely=0.905)
 
+	def stock(self):
+		#===================Database delete all empty values==========================
+		v = self.c.execute("SELECT * FROM 'Daily Temp' WHERE ROWID = (SELECT MAX(ROWID) FROM 'Daily Temp');").fetchone()
+		
+		try:
+			oldquantity = getquantity(v[1])
 
+			newquantity = int(oldquantity) - int(v[2])
+
+			data = (newquantity,v[1])
+			self.c.execute('UPDATE "AddProducts" SET "Quantity"=? WHERE "Name"=?;',data)
+			self.conn.commit()
+
+			self.c.execute("DELETE FROM 'Daily Temp' WHERE ROWID = (SELECT MAX(ROWID) FROM 'Daily Temp');")
+			self.conn.commit()
+
+		except TypeError:
+			pass
 # if __name__ == '__main__':
 # 	Customer().mainloop()

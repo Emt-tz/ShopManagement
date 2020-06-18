@@ -1,4 +1,4 @@
-
+from matplotlib import pyplot as plt
 import base64
 import os
 try:
@@ -12,6 +12,22 @@ from pandas import read_csv
 from tkinter import filedialog,messagebox
 import csv
 import sqlite3
+from tkinter import messagebox
+import tkinter as tk
+
+import itertools as IT
+
+
+def dicttable(dictn):
+
+	root = tk.Tk()
+	root.withdraw()
+	matrix = zip(*[value if isinstance(value, list) else IT.repeat(value) for key,value in dictn.items()])
+	v = (''.join(['{:10}'.format(key) for key in dictn.keys()]))
+	for row in matrix:
+		y = (''.join(['{:14}'.format(str(item)) for item in row]))
+		tk.messagebox.showinfo('Running Low',f'The Following products are running low\n\n\n{v}\n{y}')
+		break
 
 dailysales_table = """
 CREATE TABLE "Daily Sales" (
@@ -24,6 +40,14 @@ CREATE TABLE "Daily Sales" (
 
 addproducts_table = """
 CREATE TABLE "AddProducts" (
+	"Name"	TEXT,
+	"Buy_Price"	NUMERIC,
+	"Sell_Price"	NUMERIC,
+	"Quantity"	NUMERIC
+);"""
+
+addproducts_temp = """
+CREATE TABLE "AddTemp" (
 	"Name"	TEXT,
 	"Buy_Price"	NUMERIC,
 	"Sell_Price"	NUMERIC,
@@ -75,7 +99,36 @@ CREATE TABLE "Temp Sales" (
 );
 """
 
+daily_temp = """
+CREATE TABLE "Daily Temp" (
+	"Timed"	TEXT,
+	"Product"	TEXT,
+	"Quantity"	INTEGER,
+	"Buying Price"	INTEGER,
+	"Price"	NUMERIC
+);
+"""
 
+shopdetails = '''
+CREATE TABLE "shopdetails" (
+	"shopname"	TEXT,
+	"shopnumber"	INTEGER
+);
+'''
+
+class graph:
+	def plot(x, y,fromdate,todate,xpos,ypos,text):
+		plt.xlabel("Products Sold".upper())
+		plt.ylabel("Quantity Sold".upper())
+		plt.title(f'Shop Sales from {fromdate} to {todate}')
+		plt.xticks(rotation=90)
+		x_pos = xpos
+		y_pos = ypos
+		plt.text(x_pos,y_pos,text,transform=plt.gca().transAxes)
+		plt.gcf().subplots_adjust(bottom=0.3)
+		plt.bar(x,y)
+		plt.ylim(ymin=0)
+		plt.show()
 
 
 class MonthlySales:
@@ -120,6 +173,7 @@ class MonthlySales:
 			filename = 'csvf/Sales2.csv'
 
 			final = []
+			profitn = []
 
 			with open(filename,'w',newline='') as file:
 				w = csv.writer(file)
@@ -131,6 +185,12 @@ class MonthlySales:
 					finall = p.replace(" ","")
 					final.append(finall)
 					w.writerow(["",k.upper(),q,finall])
+					x = c.execute("SELECT * FROM 'AddTemp'").fetchall()
+					for i in range(0, len(x)):
+						productname = x[i][0]
+						if productname == k:
+							prof = (Profit.profit(int(x[i][1]),int(x[i][3]),int(x[i][2]),int(q)))
+							profitn.append(int(prof))
 
 				#loop through the list and and calculate total
 				totalsales = 0
@@ -141,6 +201,7 @@ class MonthlySales:
 						totalsales = totalsales + int(final[i])
 				w.writerow(["","","",""])
 				w.writerow(["Jumla","","",totalsales])
+				w.writerow(["Faida","","",sum(profitn)])
 
 		return ConvertCsvtoExcel.convertToExcel(filename)
 
@@ -189,6 +250,7 @@ class MonthlySales:
 			filename = 'csvf/Sales1.csv'
 
 			final = []
+			profitn = []
 
 			with open(filename,'w',newline='') as file:
 				w = csv.writer(file)
@@ -201,6 +263,13 @@ class MonthlySales:
 					final.append(finall)
 					w.writerow(["",k.upper(),q,finall])
 
+					x = c.execute("SELECT * FROM 'AddTemp'").fetchall()
+					for i in range(0, len(x)):
+						productname = x[i][0]
+						if productname == k:
+							prof = (Profit.profit(int(x[i][1]),int(x[i][3]),int(x[i][2]),int(q)))
+							profitn.append(int(prof))
+
 				#loop through the list and and calculate total
 				totalsales = 0
 				for i in range(0, len(final)):
@@ -210,6 +279,7 @@ class MonthlySales:
 						totalsales = totalsales + int(final[i])
 				w.writerow(["","","",""])
 				w.writerow(["Jumla","","",totalsales])
+				w.writerow(["Faida","","",sum(profitn)])
 				
 		return ConvertCsvtoExcel.convertToExcel(filename)
 
@@ -228,12 +298,15 @@ class InitializeDatabase:
 		conn = sqlite3.connect(dbname)
 		c = conn.cursor()
 		c.execute(dailysales_table)
+		c.execute(addproducts_temp)
 		c.execute(addproducts_table)
 		c.execute(login_table)
 		c.execute(madeni_table)
 		c.execute(openingstock_table)
 		c.execute(closingstock_table)
 		c.execute(tempsales_table)
+		c.execute(daily_temp)
+		c.execute(shopdetails)
 		conn.commit()
 		conn.close()
 
@@ -284,3 +357,24 @@ class ConvertCsvtoExcel:
 		except:
 			messagebox.showinfo("Speciy Directory","Please Specify Place To Save")
 			
+class Stock:
+
+	def checkstock():
+		conn = sqlite3.connect('sales')
+		c = conn.cursor()
+
+		v = c.execute("SELECT * FROM AddProducts").fetchall()
+
+		# try:
+		prod = {}
+
+		for row in v:
+			if row[3] <= 5:
+				prod.update({row[0]:row[3]})
+
+		if len(prod) != 0:
+			dicttable(prod)
+		else:
+			pass
+		# except:
+		# 	pass

@@ -21,6 +21,7 @@ class ProductManagement(tk.Tk):
 		#=============================================================================================
 		super().__init__()
 		self.title("Product Management")
+		self.iconbitmap("sc.ico")
 		self.turn = True
 		self.conn = sqlite3.connect('sales')
 		self.c = self.conn.cursor()
@@ -40,7 +41,7 @@ class ProductManagement(tk.Tk):
 
 		self.btncommands = []
 		self.btnstate = [None,None,None,None]
-		self.geometry('450x360+300+200')
+		self.geometry('450x366+300+200')
 		self.resizable(False, False)
 		self.Load()
 
@@ -74,7 +75,7 @@ class ProductManagement(tk.Tk):
 
 
 		for k, j in sorted(btn_dict.items()):
-			btns = Button(bottom_frame,text=j, width=12,height=1,pady=5,font=self.font, command=btncommands[k], state=self.btnstate[k])
+			btns = Button(bottom_frame,text=j, width=12,height=1,pady=4,font=self.font, command=btncommands[k], state=self.btnstate[k])
 			btns.grid()
 
 			self.btns.append(btns)
@@ -88,8 +89,8 @@ class ProductManagement(tk.Tk):
 		#Text Variables
 	
 		#Main Layout:
-		self.geometry('850x360+300+200')
-		editframe = Frame(bg="yellowgreen", width=450, height=360, pady=3).place(x=450,y=0)
+		self.geometry('850x366+300+200')
+		editframe = Frame(bg="yellowgreen", width=450, height=366, pady=3).place(x=450,y=0)
 		name = Label(editframe,text="Name", font=self.font).place(x=450,y=50)
 		buy_price = Label(editframe,text="Buy_Price", font=self.font).place(x=450,y=100)
 		sell_price = Label(editframe,text="Sell_Price", font=self.font).place(x=450,y=150)
@@ -133,6 +134,7 @@ class ProductManagement(tk.Tk):
 				tk.messagebox.showinfo("Collected", f'added = {added}')
 
 				self.c.executemany("INSERT INTO 'AddProducts' VALUES (?,?,?,?)", (values,))
+				self.c.executemany("INSERT INTO 'AddTemp' VALUES (?,?,?,?)", (values,))
 
 				self.namevar.set("")
 				self.buypricevar.set("") 
@@ -143,53 +145,55 @@ class ProductManagement(tk.Tk):
 				tk.messagebox.showinfo("Error","Try Again")
 
 		#self.c.executemany("INSERT INTO 'AddProducts' VALUES (?,?,?,?)", (values,))
-
-		
-
 		#=============================================================================================
 
 	def ListProducts(self):
-		self.geometry('850x360+300+200')
+		self.geometry('900x366+300+200')
 		#=============================================================================================
 		self.btns[0].config(state=tk.DISABLED)
 		self.btns[1].config(state=tk.DISABLED)
 		self.btns[3].config(state=tk.DISABLED)
 
-		editframe = Frame(bg="white", width=450, height=360, pady=3).place(x=450,y=0)
+		editframe = Frame(bg="white", width=450, height=366, pady=3).place(x=450,y=0)
 
-		products = self.c.execute("SELECT * FROM AddProducts").fetchall()
+		products = self.c.execute("SELECT * FROM AddProducts ORDER BY Quantity DESC").fetchall()
 
 		#Cerate 4 List Boxes to view the products 
-		textlist1 = Listbox(editframe,font="time 10", height=17,width=12, fg="yellowgreen")
-		textlist1.place(x=452)
-		textlist1.insert(END, "PRODUCTS")
-		textlist1.insert(END,"-------------------")
+		self.textlist1 = Listbox(editframe,font="time 8", height=20,width=21, fg="blue",yscrollcommand=self.yscroll2)
+		self.textlist1.place(x=452)
+		self.textlist1.insert(END, "  PRODUCTS")
+		self.textlist1.insert(END,"--------------------------------")
 
-		textlist2 = Listbox(editframe, height=17,width=12, fg="yellowgreen")
-		textlist2.place(x=550)
-		textlist2.insert(END, "BUYPRICE")
-		textlist2.insert(END,"-------------------")
+		self.textlist2 = Listbox(editframe,font="time 8", height=20,width=16, fg="blue",yscrollcommand=self.yscroll2)
+		self.textlist2.place(x=580)
+		self.textlist2.insert(END, "BUYPRICE")
+		self.textlist2.insert(END,"--------------------------------")
 
-		textlist3 = Listbox(editframe, height=17,width=12, fg="yellowgreen")
-		textlist3.place(x=650)
-		textlist3.insert(END, "SELLPRICE")
-		textlist3.insert(END,"-------------------")
+		self.textlist3 = Listbox(editframe,font="time 8", height=20,width=16, fg="blue")
+		self.textlist3.place(x=680)
+		self.textlist3.insert(END, "SELLPRICE")
+		self.textlist3.insert(END,"--------------------------------")
 
-		textlist4 = Listbox(editframe, height=17,width=12, fg="yellowgreen")
-		textlist4.place(x=750)
-		textlist4.insert(END, "QUANTITY")
-		textlist4.insert(END,"-------------------")
+		self.textlist4 = Listbox(editframe,font="time 8", height=20,width=16, fg="blue")
+		self.textlist4.place(x=780)
+		self.textlist4.insert(END, "QUANTITY")
+		self.textlist4.insert(END,"--------------------------------")
+
+		self.scrollbar = Scrollbar(self, orient='vertical')
+
+		self.scrollbar.config(command=self.yview)
+		self.scrollbar.place(x=880,height=310)
 		
 
-		for row in sorted(products):
-			textlist1.insert(END, '{:10.10}'.format(row[0].upper()))
-			textlist1.insert(END, "-------------------")
-			textlist2.insert(END, f'  {row[1]}')
-			textlist2.insert(END, "-------------------")
-			textlist3.insert(END, f'  {row[2]}')
-			textlist3.insert(END, "-------------------")
-			textlist4.insert(END, f'  {row[3]}')
-			textlist4.insert(END, "-------------------")
+		for row in products:
+			self.textlist1.insert(END, '{:10.16}'.format(row[0].upper()))
+			self.textlist1.insert(END, "--------------------------------")
+			self.textlist2.insert(END, f'  {row[1]}')
+			self.textlist2.insert(END, "--------------------------------")
+			self.textlist3.insert(END, f'  {row[2]}')
+			self.textlist3.insert(END, "--------------------------------")
+			self.textlist4.insert(END, f'  {row[3]}')
+			self.textlist4.insert(END, "--------------------------------")
 
 		
 		clearbtn = Button(editframe, text="Back",font="Verdana 10 bold", command=self.clearbtn).place(x=600, y=320)
@@ -197,12 +201,12 @@ class ProductManagement(tk.Tk):
 				
 		#=============================================================================================
 	def DeleteProducts(self):
-		self.geometry('850x360+300+200')
+		self.geometry('850x366+300+200')
 		self.btns[0].config(state=tk.DISABLED)
 		self.btns[2].config(state=tk.DISABLED)
 		self.btns[3].config(state=tk.DISABLED)
 
-		editframe = Frame(bg="white", width=450, height=360, pady=3).place(x=450,y=0)
+		editframe = Frame(bg="white", width=450, height=366, pady=3).place(x=450,y=0)
 
 		name = Label(editframe,text="Name", font=self.font).place(x=450,y=150)
 
@@ -230,14 +234,14 @@ class ProductManagement(tk.Tk):
 	
 		#=============================================================================================
 	def ModifyProducts(self):
-		self.geometry('850x360+300+200')
+		self.geometry('850x366+300+200')
 		self.btns[0].config(state=tk.DISABLED)
 		self.btns[1].config(state=tk.DISABLED)
 		self.btns[2].config(state=tk.DISABLED)
 
 		#Main UI
 
-		editframe = Frame(bg="yellowgreen", width=450, height=360, pady=3).place(x=450,y=0)
+		editframe = Frame(bg="yellowgreen", width=450, height=366, pady=3).place(x=450,y=0)
 
 		name = Label(editframe,text="Name", font=self.font).place(x=450,y=50)
 		buy_price = Label(editframe,text="Buy_Price", font=self.font).place(x=450,y=100)
@@ -259,25 +263,31 @@ class ProductManagement(tk.Tk):
 
 		def combo():
 			return [x for x in sorted(prod)]
-
-		name_entry = ttk.Combobox(font=self.font,textvariable=self.namevar1,values=combo(), width=19,height=19).place(x=590,y=50)
+		#display previous stock quantity
+		
+		name_entry = ttk.Combobox(font=self.font,textvariable=self.namevar1,values=combo(),width=19,height=19)
+		name_entry.place(x=590,y=50)
 		buy_price_entry = Entry(font=self.font,textvariable=self.buypricevar1).place(x=590, y=100)
 		sell_price_entry = Entry(font=self.font,textvariable=self.sellpricevar1).place(x=590, y=150)
 		quantity_entry = Entry(font=self.font,textvariable=self.quantityvar1).place(x=590, y=200)
 
 	
-		#Algorithm to Update Value
 	
 		updatebtn = Button(editframe, text="Update",font="Verdana 10 bold",command=self.checkcombo).place(x=455, y=320)
 		clearbtn = Button(editframe, text="Back",font="Verdana 10 bold", command=self.clearbtn).place(x=600, y=320)
 		exitbtn = Button(editframe, font=self.font, command=self.maingui, text="Exit").place(x=750,y=320)
 		#=============================================================================================
-
-		
-
-	
+		name_entry.bind("<<ComboboxSelected>>", self.modif)
 		#=============================================================================================
-		
+	def modif(self,event=None):
+
+			name = self.namevar1.get()
+			v = self.c.execute("SELECT * FROM AddProducts WHERE Name=?",(name,)).fetchall()
+
+			self.buypricevar1.set(v[0][1])
+			self.sellpricevar1.set(v[0][2])
+			self.quantityvar1.set(v[0][3])
+
 	def checkcombo(self):
 
 		x = self.namevar1.get()
@@ -299,10 +309,16 @@ class ProductManagement(tk.Tk):
 			values = (x, x2, x3, x4)
 			self.c.execute("DELETE FROM AddProducts where Name=?", (x,))
 			self.c.execute("INSERT INTO AddProducts VALUES (?,?,?,?)", values)
+
+			self.conn.commit()
+
+			self.c.execute("DELETE FROM AddTemp where Name=?", (x,))
+			self.c.execute("INSERT INTO AddTemp VALUES (?,?,?,?)", values)
+
 			self.conn.commit()
 			tk.messagebox.showinfo("Success", f'Succesfully Updated {x.upper()}')
 		else:
-			tk.messagebox.showinfo("Not Present", "Selected Item is Not Found")	
+			tk.messagebox.showinfo("Not Present", "Selected Item is Not Found") 
 		#=============================================================================================
 	def delcombo(self):
 		#=============================================================================================
@@ -320,15 +336,16 @@ class ProductManagement(tk.Tk):
 		
 		if x in prod:
 			self.c.execute("DELETE FROM AddProducts where Name=?", (x,))
+			self.c.execute("DELETE FROM AddTemp where Name=?", (x,))
 			self.conn.commit()
 			tk.messagebox.showinfo("Success", f'Succesfully Deleted {x.upper()}')
 		else:
-			tk.messagebox.showinfo("Not Present", "Selected Item is Not Found")	
+			tk.messagebox.showinfo("Not Present", "Selected Item is Not Found") 
 		self.after(1, self.DeleteProducts(),END)
 		#=============================================================================================
 
 	def clearbtn(self):
-		self.geometry('450x360+300+200')
+		self.geometry('450x366+300+200')
 		self.conn.commit()  
 		self.btns[0].config(state=tk.NORMAL)
 		self.btns[1].config(state=tk.NORMAL)
@@ -341,5 +358,31 @@ class ProductManagement(tk.Tk):
 		Tk.destroy(self)
 		from Admin import Admin
 		return Admin().mainloop()
+
+	def yscroll1(self, *args):
+		if self.textlist2.yview() != self.textlist1.yview():
+			self.textlist2.yview_moveto(args[0])
+		self.scrollbar.set(*args)
+
+	def yscroll2(self, *args):
+		if self.textlist1.yview() != self.textlist2.yview():
+			self.textlist1.yview_moveto(args[0])
+		self.scrollbar.set(*args)
+
+	def yscroll4(self, *args):
+		if self.textlist2.yview() != self.textlist1.yview():
+			self.textlist2.yview_moveto(args[0])
+		self.scrollbar.set(*args)
+
+	def yscroll3(self, *args):
+		if self.textlist1.yview() != self.textlist2.yview():
+			self.textlist1.yview_moveto(args[0])
+		self.scrollbar.set(*args)
+
+	def yview(self, *args):
+		self.textlist1.yview(*args)
+		self.textlist2.yview(*args)
+		self.textlist3.yview(*args)
+		self.textlist4.yview(*args)
 
 # ProductManagement().mainloop()

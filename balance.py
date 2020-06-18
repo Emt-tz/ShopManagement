@@ -5,26 +5,13 @@ from tkinter import messagebox
 import sqlite3 as sq
 import datetime as dt
 
-conn = sq.connect('sales')
-
-c = conn.cursor()
-
 timenow = str(dt.datetime.today())
-
-v = c.execute("SELECT * FROM 'openingstock' WHERE Timed=?",(timenow[0:10],)).fetchall()
-
-dates = []
-
-for i in range(0, len(v)):
-	try:
-		dates.append(v[0][i])
-	except:
-		pass
 
 class Balance(tk.Tk):
 	def __init__(self):
 		super().__init__()
 		self.title(f'Mobile Money System {timenow[0:10]}')
+		self.iconbitmap("sc.ico")
 		#Initiate connection to the database
 #====================================================================================================================
 		self.conn = sq.connect("sales")
@@ -98,16 +85,16 @@ class Balance(tk.Tk):
 #====================================================================================================================
 		self.initiate()
 
-		self.loadbutton = Button(text="Load Data", command=self.initiate)
-		self.loadbutton.place(relx=0, rely=0.9)
+		self.loadbutton = Button(text="Load Data", command=self.initiate,width=10)
+		self.loadbutton.place(relx=0.02, rely=0.9)
 
 		self.nettotallabel = Label(text="Net Total",fg="red")
 		self.nettotallabel.place(relx=0.69, rely=0.91)
 
-		self.nettotal = Entry(bd=2,textvariable=self.total,fg="red",justify="right")
+		self.nettotal = Entry(bd=2,textvariable=self.total,fg="red",justify="right",font='time 10 bold')
 		self.nettotal.place(relx=0.79, rely=0.9)
 
-		self.mainsystem = Button(text="Exit", command=self.exit)
+		self.mainsystem = Button(text="Exit", command=self.exit,width=10)
 		self.mainsystem.place(relx=0.5,rely=0.9)
 #====================================================================================================================
 		#Opening Stock 
@@ -134,7 +121,7 @@ class Balance(tk.Tk):
 
 		for k, j in variable_dict.items():
 			entries = tk.Entry(textvariable=j,fg=colors[k],font="time 12 bold", justify="right")
-			entries.grid(row=k,column=1)
+			entries.grid(row=k,column=1,padx=55)
 
 		#separate opening stock with closing stock
 		separation_frame1 = tk.Frame(bg="cadetblue",height=174,width=1)
@@ -144,8 +131,8 @@ class Balance(tk.Tk):
 		separation_frame2.place(relx=0,rely=0.48)
 
 		#Required buttons
-		add_button = Button(text="Add",height=1,width=5,bg="white",command=self.openstockbtn)
-		add_button.place(rely=0.38,relx=0.365)
+		add_button = Button(text="Add",height=1,width=10,bg="white",command=self.openstockbtn)
+		add_button.place(rely=0.4,relx=0.365)
 #====================================================================================================================
 
 #====================================================================================================================
@@ -162,7 +149,7 @@ class Balance(tk.Tk):
 
 		for k, j in Label_dict.items():
 			entries = tk.Label(text=j,width=12,fg=colors[k],height=1,font="time 12 bold", justify="left",pady=6,padx=0)
-			entries.grid(row=k,column=2,padx=34)
+			entries.grid(row=k,column=2,padx=0)
 		#Render all the main entries
 		variable_dict = {
 			0:self.cashin5,
@@ -175,15 +162,27 @@ class Balance(tk.Tk):
 
 		for k, j in variable_dict.items():
 			entries = tk.Entry(textvariable=j,fg=colors[k],font="time 12 bold", justify="right")
-			entries.grid(row=k, column=3)
+			entries.grid(row=k, column=3,padx=55)
 		#Required buttons
-		add_button = Button(text="Add",height=1,width=5,bg="white",command=self.closingstockbtn)
-		add_button.place(rely=0.38,relx=0.897)
+		add_button = Button(text="Add",height=1,width=10,bg="white",command=self.closingstockbtn)
+		add_button.place(rely=0.4,relx=0.897)
 #====================================================================================================================
 
 	def openstockbtn(self):
 		conn = sq.connect('sales')
 		c = conn.cursor()
+
+		timenow = str(dt.datetime.today())
+
+		v = c.execute("SELECT * FROM 'openingstock' WHERE Timed=?",(timenow[0:10],)).fetchall()
+
+		dates = []
+
+		for i in range(0, len(v)):
+			try:
+				dates.append(v[0][i])
+			except:
+				pass
 
 		cashin = self.cashin1.get()+self.cashin2.get()+self.cashin3.get()+self.cashin4.get()
 
@@ -221,6 +220,18 @@ class Balance(tk.Tk):
 		conn = sq.connect('sales')
 		c = conn.cursor()
 
+		timenow = str(dt.datetime.today())
+
+		v = c.execute("SELECT * FROM 'openingstock' WHERE Timed=?",(timenow[0:10],)).fetchall()
+
+		dates = []
+
+		for i in range(0, len(v)):
+			try:
+				dates.append(v[0][i])
+			except:
+				pass
+
 		cashout = self.cashin5.get()+self.cashin6.get()+self.cashin7.get()+self.cashin8.get()
 
 		values = (timenow[0:10],self.cashin5.get(),
@@ -232,6 +243,7 @@ class Balance(tk.Tk):
 			tk.messagebox.showinfo("Zero Values","Please input valid values")
 		else:
 			if str(timenow[0:10]) in dates:
+				tk.messagebox.askyesno("Reply","Do you want to overwrite")
 				c.execute("DELETE FROM closingstock WHERE ROWID = (SELECT MAX(ROWID) FROM 'closingstock');")
 				c.execute("INSERT INTO closingstock Values(?,?,?,?,?,?)",values)
 				conn.commit()
@@ -256,3 +268,4 @@ class Balance(tk.Tk):
 		Tk.destroy(self)
 		from Admin import Admin
 		return Admin().mainloop()
+# Balance().mainloop()

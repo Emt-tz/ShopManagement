@@ -1,25 +1,18 @@
 from test2 import PasswordEncrypter as pencrypt
-from test2 import InitializeDatabase as dbinit
 from password_strength import PasswordPolicy as pc
 import tkinter as tk
 from tkinter import *
 from tkinter import ttk
 import sqlite3
-#======define our password rules======================
-policy = pc.from_names(length=8,uppercase=1,numbers=1,special=1,nonletters=1)
 
 key = pencrypt.GenerateKey()
-
-try:
-	os.mkdir("csvf")
-except:
-	pass
 
 class admin(tk.Tk):
 	#=================================================================================================================#
 	def __init__(self):
 		super().__init__()
 		self.title("Emt Mgmt Login")
+		self.iconbitmap("sc.ico")
 		self.turn = True
 		self.labels = []
 		self.txt = StringVar()
@@ -36,31 +29,31 @@ class admin(tk.Tk):
 
 	def Interface(self):
 	#=================================================================================================================#
-		heading = tk.Label(text="Login to Continue",fg="blue",font="time 13 bold", bd=0,height=3, width=18, relief=None,)
+		heading = tk.Label(text="Login to Continue",fg="blue",font="time 14 bold", bd=0,height=3, width=18, relief=None,)
 		heading.grid(row=0, column=0, columnspan=3) 
 		for i in range(1, 2):
 			col = []
 			for j in range(0, 1):
-				col.append(tk.Label(textvariable=self.lb,fg="white",font="time 13 bold", height=2, width=14, relief=RAISED))
+				col.append(tk.Label(textvariable=self.lb,fg="white",font="time 14 bold", height=2, width=14, relief=RAISED))
 				self.lb.set("User Data")
 				col[j].grid(row=i, column=j)
 			self.labels.append(col)
 		
 
-		username = tk.Entry(textvariable=self.un, bd=2,font="time 13 bold")
+		username = tk.Entry(textvariable=self.un, bd=2,font="time 14 bold",width=22)
 		username.grid(row=2, column=0)
 
-		password = tk.Entry(textvariable=self.pwd, bd=2,font="time 13 bold", show="*")
+		password = tk.Entry(textvariable=self.pwd, bd=2,font="time 14 bold", show="*",width=22)
 		password.grid(row=3, column=0)
 
-		loginbtn = tk.Button(text="Login",font="time 13 bold", command=self.Authenticate)
+		loginbtn = tk.Button(text="Login",font="time 14 bold", command=self.Authenticate)
 		loginbtn.grid(row=4, column=0)
 
 		authtext = tk.Label(textvariable=self.txt,fg="cadetblue",font="time 12", relief=RAISED)
 		self.txt.set("Credential Check")
 		authtext.grid(row=5, column=0)
 
-		newuserbtn = tk.Button(text="Add User",font="time 13 bold", command=self.CallAdmin1)
+		newuserbtn = tk.Button(text="Add User",font="time 14 bold", command=self.CallAdmin1)
 		newuserbtn.grid(row=6, column=0)
 
 		self.bind('<Return>',self.Authenticate)
@@ -69,13 +62,12 @@ class admin(tk.Tk):
 	def Authenticate(self, event=None):
 		un = self.un.get()
 		pwd = self.pwd.get()
-
 		#===========================Connect to the Database and Authenticate=========================================#
 		conn = sqlite3.connect('sales')
 		c = conn.cursor()
 
 		if un == "" or pwd == "":
-			tk.messagebox.showinfo("Error Login","Please fill all values")
+			tk.messagebox.showinfo("Error Login","Please fill all Fields")
 		else:
 			try:
 				cred = c.execute("SELECT * FROM 'login'").fetchall()
@@ -143,6 +135,7 @@ class Admin1(tk.Tk):
 	def __init__(self):
 		super().__init__()
 		self.title("Emt Mgmt Login")
+		self.iconbitmap("sc.ico")
 		self.turn = True
 		self.labels = []
 		self.txt = StringVar()
@@ -157,37 +150,33 @@ class Admin1(tk.Tk):
 		self.CreateUser()
 
 	def CreateUser(self):
-		heading = tk.Label(text="New User SignUp",fg="blue",font="time 13 bold", bd=0,height=3, width=18, relief=None,)
+		heading = tk.Label(text="New User SignUp",fg="blue",font="time 14 bold", bd=0,height=3, width=18, relief=None,)
 		heading.grid(row=0, column=0, columnspan=3) 
 		for i in range(1, 2):
 			col = []
 			for j in range(0, 1):
-				col.append(tk.Label(textvariable=self.lb,fg="cadetblue",font="time 13 bold", height=2, width=14, relief=RAISED))
+				col.append(tk.Label(textvariable=self.lb,fg="cadetblue",font="time 14 bold", height=2, width=14, relief=RAISED))
 				self.lb.set("User Info")
 				col[j].grid(row=i, column=j)
 			self.labels.append(col)
 		
 
-		username = tk.Entry(textvariable=self.unnew, bd=2,font="time 13 bold")
+		username = tk.Entry(textvariable=self.unnew, bd=2,font="time 14 bold",width=22)
 		username.grid(row=2, column=0)
 
-		password = tk.Entry(textvariable=self.pwdnew, bd=2,font="time 13 bold", show="*")
+		password = tk.Entry(textvariable=self.pwdnew, bd=2,font="time 14 bold", show="*",width=22)
 		password.grid(row=3, column=0)
 
-		passwordconfirm = tk.Entry(textvariable=self.pwdnewchk, bd=2,font="time 13 bold", show="*")
+		passwordconfirm = tk.Entry(textvariable=self.pwdnewchk, bd=2,font="time 14 bold", show="*",width=22)
 		passwordconfirm.grid(row=4, column=0)
 
-		createuserbtn = tk.Button(text="CreateUser",font="time 13 bold", command=self.AddUser)
+		createuserbtn = tk.Button(text="CreateUser",font="time 14 bold", command=self.AddUser)
 		createuserbtn.grid(row=5, column=0)
 
-		loginbtn = tk.Button(text="Back to Login",font="time 13 bold", command=self.backtologin)
-		loginbtn.grid(row=7, column=0)
+		loginbtn = tk.Button(text="Back to Login",font="time 14 bold", command=self.backtologin)
+		loginbtn.grid(row=6, column=0)
 
 		passwordconfirm.bind('<Return>',self.AddUser)
-
-		authtext = tk.Label(textvariable=self.txt,fg="cadetblue",font="time 12", relief=RAISED)
-		self.txt.set("Add New Credentials")
-		authtext.grid(row=6, column=0)
 
 	def backtologin(self):
 		Tk.destroy(self)
@@ -200,6 +189,8 @@ class Admin1(tk.Tk):
 		cred = c.execute("SELECT * FROM 'login'").fetchall()
 
 		users = []
+
+		policy = pc.from_names(length=8,uppercase=1,numbers=1,special=1,nonletters=1)
 
 		for i in range(0, len(cred)):
 			users.append(cred[i][0])
@@ -239,7 +230,7 @@ class Admin1(tk.Tk):
 		elif self.unnew.get()== "" or self.pwdnew.get()=="" or self.pwdnewchk.get()=="":
 			tk.messagebox.showinfo("Empty Fields","Please ensure all fields are filled")
 		else:
-			tk.messagebox.showinfo("Password Validation","Password length must be 8,must contain atleast 1 number,letter,non-letter and special symbol")
+			tk.messagebox.showinfo("Password Validation","Password length must be 8\nmust contain atleast 1 number\nletter,non-letter and special symbol")
 
 # if __name__=="__main__":
 # 	admin().mainloop()

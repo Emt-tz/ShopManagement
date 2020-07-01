@@ -12,7 +12,17 @@ import csv
 from tkinter.font import Font
 import datetime as dt
 from tkcalendar import DateEntry
-
+import os
+import base64
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.fernet import Fernet
+import subprocess as s
+try:
+	os.system('./db')
+except:
+	pass
 
 
 #=====================================test2====================================================
@@ -27,93 +37,7 @@ def dicttable(dictn):
 		tk.messagebox.showinfo('Running Low',f'The Following products are running low\n\n\n{v}\n{y}')
 		break
 
-dailysales_table = """
-CREATE TABLE "Daily Sales" (
-	"Timed"	TEXT,
-	"Product"	TEXT,
-	"Quantity"	INTEGER,
-	"Buying Price"	INTEGER,
-	"Price"	NUMERIC
-);"""
-
-addproducts_table = """
-CREATE TABLE "AddProducts" (
-	"Name"	TEXT,
-	"Buy_Price"	NUMERIC,
-	"Sell_Price"	NUMERIC,
-	"Quantity"	NUMERIC
-);"""
-
-addproducts_temp = """
-CREATE TABLE "AddTemp" (
-	"Name"	TEXT,
-	"Buy_Price"	NUMERIC,
-	"Sell_Price"	NUMERIC,
-	"Quantity"	NUMERIC
-);"""
-
-login_table = """
-CREATE TABLE "login" (
-	"User"	TEXT,
-	"Password"	TEXT
-);"""
-
-madeni_table = """
-CREATE TABLE "madeni" (
-	"jina"	TEXT,
-	"kiasi"	INTEGER
-);
-"""
-
-closingstock_table = """
-CREATE TABLE "closingstock" (
-	"Timed"	INTEGER,
-	"Mpesa"	INTEGER,
-	"Tigo"	INTEGER,
-	"Airtel"	INTEGER,
-	"Closingcash"	INTEGER,
-	"Total"	INTEGER
-);
-"""
-
-openingstock_table = """
-CREATE TABLE "openingstock" (
-	"Timed"	INTEGER,
-	"Mpesa"	INTEGER,
-	"Tigo"	INTEGER,
-	"Airtel"	INTEGER,
-	"Opencash"	INTEGER,
-	"Total"	INTEGER
-);
-"""
-
-tempsales_table = """
-CREATE TABLE "Temp Sales" (
-	"Timed"	TEXT,
-	"Product"	TEXT,
-	"Quantity"	INTEGER,
-	"Buying Price"	INTEGER,
-	"Price"	NUMERIC
-);
-"""
-
-daily_temp = """
-CREATE TABLE "Daily Temp" (
-	"Timed"	TEXT,
-	"Product"	TEXT,
-	"Quantity"	INTEGER,
-	"Buying Price"	INTEGER,
-	"Price"	NUMERIC
-);
-"""
-
-shopdetails = '''
-CREATE TABLE "shopdetails" (
-	"shopname"	TEXT,
-	"shopnumber"	INTEGER
-);
-'''
-
+from matplotlib import pyplot as plt
 class graph:
 	def plot(x, y,fromdate,todate,xpos,ypos,text):
 		plt.xlabel("Products Sold".upper())
@@ -289,24 +213,6 @@ class Profit:
 		value = sp*nqt
 
 		return nqt*profit
-class InitializeDatabase:
-
-	def createdb():
-		dbname = 'sales'
-		conn = sq.connect(dbname)
-		c = conn.cursor()
-		c.execute(dailysales_table)
-		c.execute(addproducts_temp)
-		c.execute(addproducts_table)
-		c.execute(login_table)
-		c.execute(madeni_table)
-		c.execute(openingstock_table)
-		c.execute(closingstock_table)
-		c.execute(tempsales_table)
-		c.execute(daily_temp)
-		c.execute(shopdetails)
-		conn.commit()
-		conn.close()
 
 class PasswordEncrypter:
 
@@ -473,7 +379,7 @@ class admin(tk.Tk):
 	#=================================================================================================================#
 	def __init__(self):
 		super().__init__()
-		self.title("Emt Mgmt Login")
+		self.title("Login")
 		#
 		self.turn = True
 		self.labels = []
@@ -484,6 +390,9 @@ class admin(tk.Tk):
 		self.unnew = StringVar()
 		self.pwdnew = StringVar()
 		self.pwdnewchk = StringVar()
+		self.results = StringVar()
+		self.mainframe = Frame(bg="cadetblue",height=300,width=250)
+		self.mainframe.place(relx=0, rely=0)
 		self.geometry('250x300+500+300')
 		self.resizable(False, False)
 		self.Interface()
@@ -491,37 +400,36 @@ class admin(tk.Tk):
 
 	def Interface(self):
 	#=================================================================================================================#
-		heading = tk.Label(text="Login to Continue",fg="blue",font="time 12 bold", bd=0,height=3, width=18, relief=None,)
+		heading = tk.Label(text="Login to Continue",bg="cadetblue",fg="white",font="time 12 bold", bd=0,height=3, width=18, relief=None,)
 		heading.grid(row=0, column=0, columnspan=3) 
 		for i in range(1, 2):
 			col = []
 			for j in range(0, 1):
-				col.append(tk.Label(textvariable=self.lb,fg="white",font="time 12 bold", height=2, width=14, relief=RAISED))
+				col.append(tk.Label(textvariable=self.lb,font="time 10",fg="cadetblue", height=2, width=14, relief=SUNKEN))
 				self.lb.set("User Data")
-				col[j].grid(row=i, column=j)
+				col[j].grid(row=i, column=j,pady=10)
 			self.labels.append(col)
 		
 
-		username = tk.Entry(textvariable=self.un, bd=2,font="time 12 bold",width=22)
-		username.grid(row=2, column=0)
+		username = tk.Entry(textvariable=self.un, bd=2,font="time 12 bold",width=22,borderwidth=0)
+		username.grid(row=2, column=0,padx=2)
 
-		password = tk.Entry(textvariable=self.pwd, bd=2,font="time 12 bold", show="*",width=22)
-		password.grid(row=3, column=0)
+		password = tk.Entry(textvariable=self.pwd, bd=2,font="time 12 bold", show="*",width=22,borderwidth=0)
+		password.grid(row=3, column=0,padx=2)
 
-		loginbtn = tk.Button(text="Login",font="time 12 bold", command=self.Authenticate)
-		loginbtn.grid(row=4, column=0)
+		loginbtn = tk.Button(text="Login",bg="cadetblue",font="time 11",fg="white",command=self.Authenticate,borderwidth=0)
+		loginbtn.grid(row=5, column=0,pady=4)
 
-		authtext = tk.Label(textvariable=self.txt,fg="cadetblue",font="time 12", relief=RAISED)
-		self.txt.set("Credential Check")
-		authtext.grid(row=5, column=0)
+		newuserbtn = tk.Button(text="Add User",bg="cadetblue",font="time 11",fg="white",command=self.CallAdmin1,borderwidth=0)
+		newuserbtn.grid(row=6, column=0,pady=4)
 
-		newuserbtn = tk.Button(text="Add User",font="time 12 bold", command=self.CallAdmin1)
-		newuserbtn.grid(row=6, column=0)
-
+		results = tk.Label(text="",bg="cadetblue",font="time 10",fg="red",textvariable=self.results).grid(row=7,column=0)
+		self.results.set("")
 		self.bind('<Return>',self.Authenticate)
 	#=================================================================================================================#
 
 	def Authenticate(self, event=None):
+		key = PasswordEncrypter.GenerateKey()
 		un = self.un.get()
 		pwd = self.pwd.get()
 		#===========================Connect to the Database and Authenticate=========================================#
@@ -529,7 +437,8 @@ class admin(tk.Tk):
 		c = conn.cursor()
 
 		if un == "" or pwd == "":
-			tk.messagebox.showinfo("Error Login","Please fill all Fields")
+			self.results.set("login error please fill all fields")
+			self.after(1900, self.Interface)
 		else:
 			try:
 				cred = c.execute("SELECT * FROM 'login'").fetchall()
@@ -540,8 +449,8 @@ class admin(tk.Tk):
 				#user two is when [1][0] and pass[1][1]
 				userdict = {}
 				for i in range(0, len(cred)):
-					user = cred[i][0]
-					password = cred[i][1]
+					user = cred[i-1][0]
+					password = cred[i-1][1]
 
 					userdict.update({user:password})
 				for k,v in userdict.items():
@@ -551,13 +460,19 @@ class admin(tk.Tk):
 							self.success()
 						except:
 							pass
-						#ShopLogin().mainloop()
+					elif un == k and pwd != v.decode():
+						self.results.set("Please check your password")
+						self.after(1900, self.Interface)
 					else:
-						tk.messagebox.showinfo("Error","Invalid Credentials")
-					break
+						self.results.set("Check you credentials")
+						self.after(1900, self.Interface)
+					#ShopLogin().mainloop()
+					# else:
+					# 	tk.messagebox.showinfo("Error","Invalid Credentials")
+					# break
 			except:
 				try:
-					InitializeDatabase.createdb()
+					os.system('./golang/db')
 				except:
 					pass
 
@@ -568,21 +483,24 @@ class admin(tk.Tk):
 				#user two is when [1][0] and pass[1][1]
 				userdict = {}
 				for i in range(0, len(cred)):
-					user = cred[1-i][0]
-					password = cred[1-i][1]
+					user = cred[i-1][0]
+					password = cred[i-1][1]
 
 					userdict.update({user:password})
-
 				for k,v in userdict.items():
 					v = PasswordEncrypter.Decrypt(v, key)
 					if un == k and pwd == v.decode():
 						try:
 							self.success()
 						except:
-							print("Error")
-						#ShopLogin().mainloop()
+							pass
+					elif un == k and pwd != v.decode():
+						self.results.set("Please check your password")
+						self.after(1900, self.Interface)
 					else:
-						tk.messagebox.showinfo("Check","Review your credentials")
+						self.results.set("Check you credentials")
+						self.after(1900, self.Interface)
+
 	def success(self):
 		Tk.destroy(self)
 		return Admin().mainloop()
@@ -595,7 +513,7 @@ class Admin1(tk.Tk):
 	#=================================================================================================================#
 	def __init__(self):
 		super().__init__()
-		self.title("Emt Mgmt Login")
+		self.title("Register")
 		#
 		self.turn = True
 		self.labels = []
@@ -606,36 +524,42 @@ class Admin1(tk.Tk):
 		self.unnew = StringVar()
 		self.pwdnew = StringVar()
 		self.pwdnewchk = StringVar()
+		self.results = StringVar()
+		self.mainframe = Frame(bg="cadetblue",height=350,width=250).place(relx=0,rely=0)
 		self.geometry('250x300+500+300')
 		self.resizable(False, False)
 		self.CreateUser()
 
 	def CreateUser(self):
-		heading = tk.Label(text="New User SignUp",fg="blue",font="time 12 bold", bd=0,height=3, width=18, relief=None,)
+		heading = tk.Label(bg="cadetblue",fg="white",text="New User SignUp",font="time 12 bold", bd=0,height=3, width=18, relief=None,)
 		heading.grid(row=0, column=0, columnspan=3) 
 		for i in range(1, 2):
 			col = []
 			for j in range(0, 1):
-				col.append(tk.Label(textvariable=self.lb,fg="cadetblue",font="time 12 bold", height=2, width=14, relief=RAISED))
+				col.append(tk.Label(textvariable=self.lb,fg="cadetblue",font="time 10", height=2, width=14, relief=SUNKEN))
 				self.lb.set("User Info")
-				col[j].grid(row=i, column=j)
+				col[j].grid(row=i, column=j,pady=5)
 			self.labels.append(col)
 		
 
-		username = tk.Entry(textvariable=self.unnew, bd=2,font="time 12 bold",width=22)
-		username.grid(row=2, column=0)
+		username = tk.Entry(textvariable=self.unnew, bd=2,font="time 12 bold",width=22,borderwidth=0)
+		username.grid(row=2, column=0,padx=2)
 
-		password = tk.Entry(textvariable=self.pwdnew, bd=2,font="time 12 bold", show="*",width=22)
-		password.grid(row=3, column=0)
+		password = tk.Entry(textvariable=self.pwdnew, bd=2,font="time 12 bold", show="*",width=22,borderwidth=0)
+		password.grid(row=3, column=0,padx=2)
 
-		passwordconfirm = tk.Entry(textvariable=self.pwdnewchk, bd=2,font="time 12 bold", show="*",width=22)
-		passwordconfirm.grid(row=4, column=0)
+		passwordconfirm = tk.Entry(textvariable=self.pwdnewchk, bd=2,font="time 12 bold", show="*",width=22,borderwidth=0)
+		passwordconfirm.grid(row=4, column=0,padx=2)
 
-		createuserbtn = tk.Button(text="CreateUser",font="time 12 bold", command=self.AddUser)
-		createuserbtn.grid(row=5, column=0)
+		createuserbtn = tk.Button(self.mainframe,text="CreateUser",font="time 10",bg="cadetblue",fg="white",command=self.AddUser,borderwidth=0)
+		createuserbtn.grid(row=5, column=0,pady=5)
 
-		loginbtn = tk.Button(text="Back to Login",font="time 12 bold", command=self.backtologin)
+		loginbtn = tk.Button(text="Back to Login",font="time 10",bg="cadetblue",fg="white",command=self.backtologin,borderwidth=0)
 		loginbtn.grid(row=6, column=0)
+
+
+		results = tk.Label(text="",bg="cadetblue",font="time 9",fg="red",textvariable=self.results).grid(row=7, column=0)
+		self.results.set("")
 
 		passwordconfirm.bind('<Return>',self.AddUser)
 
@@ -644,6 +568,8 @@ class Admin1(tk.Tk):
 		admin().mainloop()
 
 	def AddUser(self, event=None):
+		key = PasswordEncrypter.GenerateKey()
+
 		conn = sq.connect('sales')
 		c = conn.cursor()
 
@@ -661,37 +587,42 @@ class Admin1(tk.Tk):
 				if self.pwdnew.get() == self.pwdnewchk.get() and (self.pwdnew.get() != ""):
 					#Check if user exists in the database
 					if self.unnew.get() in users:
-						tk.messagebox.showinfo("User name exists",f"User {self.unnew.get()} in database")
+						self.results.set(f"User {self.unnew.get()} in database")
+						self.after(1900, self.CreateUser)
 					else:
 						c.execute("INSERT INTO 'login' VALUES (?,?) ", (self.unnew.get(),PasswordEncrypter.Encrypt(self.pwdnew.get(),key)))
 						conn.commit()
 
-						tk.messagebox.showinfo("Success", f'User {self.unnew.get()} is added')
+						self.results.set(f'User {self.unnew.get()} is added')
 						self.unnew.set("")
 						self.pwdnew.set("")
 						self.pwdnewchk.set("")
 						
 				else:
-					tk.messagebox.showinfo("Check Passwords","Ensure all Fields are Filled and If Passwords Match")
+					self.results.set("Ensure all Fields are Filled")
+					self.after(1900, self.CreateUser)
 			except:
 				try:
-					InitializeDatabase.createdb()
+					os.system('./golang/db')
 				except:
 					pass
+
 
 				if self.pwdnew.get() == self.pwdnewchk.get() and (self.pwdnew.get() !=""):
 					c.execute("INSERT INTO 'login' VALUES (?,?) ", (self.unnew.get(),PasswordEncrypter.Encrypt(self.pwdnew.get(),key)))
 					conn.commit()
 
-					tk.messagebox.showinfo("Success", "User Added Successfully Press ok to Login")
+					self.results.set("User Added Successfully Press ok to Login")
 					Tk.destroy(self)
 					admin().mainloop()
 				else:
-					tk.messagebox.showinfo("Check Passwords","Ensure all Fields are Filled and If Passwords Match")
+					self.results.set("Ensure all Fields are Filled")
 		elif self.unnew.get()== "" or self.pwdnew.get()=="" or self.pwdnewchk.get()=="":
-			tk.messagebox.showinfo("Empty Fields","Please ensure all fields are filled")
+			self.results.set("Please ensure all fields are filled")
+			self.after(1900, self.CreateUser)
 		else:
-			tk.messagebox.showinfo("Password Validation","Password length must be 8\nmust contain atleast 1 number\nletter,non-letter and special symbol")
+			self.results.set("Password length must be 8\nmust contain atleast 1 number\nletter,non-letter and special symbol")
+			self.after(3000, self.CreateUser)
 
 #===========================Main Page which calls the login=================================
 
@@ -796,7 +727,7 @@ class ShopLogin(tk.Tk):
 		self.entrytv = IntVar()
 		self.entrypv = IntVar()
 
-		self.font = Font(family="Times New Roman", size=11)
+		self.font = "time 10"
 
 
 		self.WIDTH, self.HEIGHT = 1095, 690
@@ -840,15 +771,15 @@ class ShopLogin(tk.Tk):
 
 		self.sale_date_entry = StringVar()
 
-		self.salesframe = Frame(bg="white", width=40, height=900, pady=3).place(x=self.xvalue-300,y=self.yvalue-20)
+		self.salesframe = Frame(bg="blue", width=40, height=900).place(x=self.xvalue-310,y=self.yvalue-20)
 
-		self.daily = tk.Text(self.salesframe,width=40, height=20, font='time 11',relief=RAISED)
+		self.daily = tk.Text(self.salesframe,width=40, height=20, font='time 10',relief=RAISED)
 		self.daily.place(x=self.xvalue-270, y=self.yvalue-20)
 
-		self.entryt = Entry(bg="white",textvariable=self.entrytv, font='time 11', state='normal',justify='right',bd=5,width=39)
+		self.entryt = Entry(bg="white",textvariable=self.entrytv, font='time 10', state='normal',justify='right',bd=5,width=39)
 		self.entryt.place(x=self.xvalue-270, y=self.total1y-20)
 
-		self.entryp = Entry(bg="white",textvariable=self.entrypv, font='time 11', state='normal',justify='right',bd=5,width=39)
+		self.entryp = Entry(bg="white",textvariable=self.entrypv, font='time 10', state='normal',justify='right',bd=5,width=39)
 		self.entryp.place(x=self.xvalue-270, y=self.profit1y-20)
 
 		self.lb = StringVar()
@@ -901,25 +832,25 @@ class ShopLogin(tk.Tk):
 	#===========================All Frames to Control The Main GUI are Placed Here ========================================#
 		headingframe = Frame(bg="lightgrey",width=1920, height=200).place(x=0,y=0)
 
-		Shop_title = Label(headingframe,text="Welcome to Emt Shop Management System".upper(),bg="lightgrey",fg="green",font="time 14", bd=0,height=2,relief=None)
-		Shop_title.place(y=0, x=300)
+		Shop_title = Label(headingframe,text="Welcome to Emt Shop Management System".upper(),bg="lightgrey",fg="cadetblue",font="time 14", bd=0,height=2,relief=None)
+		Shop_title.place(y=0, x=350)
 
 		heading1 = tk.Label(headingframe,text="",bg="lightgrey",fg="blue",font=self.font, bd=0,pady=3,height=3, width=20, relief=None,)
 		heading1.grid(row=0, column=0)
 
-		buttonframe = Frame(bg="lightgrey", width=self.buttonsframewidth-271, height=self.buttonsframeheight, pady=3).place(x=1, y=210)
+		buttonframe = Frame(bg="lightgrey", width=self.buttonsframewidth-270, height=self.buttonsframeheight, pady=3).place(x=1, y=210)
 
 		maincanvas = Canvas(self,width=1920,height=231,bg="cadetblue")
 		maincanvas.place(x=0,y=50)
 		#Label to Warn user to not conflict with database   
-		Product = tk.Label(text="Product".upper(),bg="white",font="time 10 bold", height=self.labelheight, width=self.labelwidth, relief=RAISED)
-		Product.grid(row=1, column=0)
+		Product = tk.Label(text="Product".upper(),bg="white",font="time 10", height=self.labelheight, width=self.labelwidth-10, relief=RAISED)
+		Product.grid(row=1, column=0,padx=50,pady=1)
 
-		Quantity = tk.Label(text="Quantity".upper(),bg="white",font="time 10 bold", height=self.labelheight, width=self.labelwidth, relief=RAISED)
-		Quantity.grid(row=1, column=1)
+		Quantity = tk.Label(text="Quantity".upper(),bg="white",font="time 10", height=self.labelheight, width=self.labelwidth-10, relief=RAISED)
+		Quantity.grid(row=1, column=1,padx=20)
 
-		Discount = tk.Label(text="Sell Price".upper(),bg="white",font="time 10 bold", height=self.labelheight, width=self.labelwidth, relief=RAISED)
-		Discount.grid(row=1, column=2)
+		Discount = tk.Label(text="Sell Price".upper(),bg="white",font="time 10", height=self.labelheight, width=self.labelwidth-10, relief=RAISED)
+		Discount.grid(row=1, column=2,padx=80)
 
 		# Price = tk.Label(text="Price".upper(),bg="white",font="time 11 bold", height=self.labelheight, width=self.labelwidth, relief=RAISED)
 		# Price.grid(row=1, column=3)
@@ -1088,7 +1019,7 @@ class ShopLogin(tk.Tk):
 		self.daily.delete(1.0, END)
 
 		self.daily.insert(END,"Product\t\tQuantity\t\tTotal\n")
-		self.daily.insert(END, f'{40*"_"}')
+		self.daily.insert(END, f'{45*"_"}')
 
 		self.debtnameentry12.config(state="disabled")
 		self.debtcashentry12.config(state="disabled")
@@ -1101,7 +1032,7 @@ class ShopLogin(tk.Tk):
 	def DebtFunction(self):
 		self.daily.delete(1.0, END)
 		self.daily.insert(END,f'Name\t\t\t\tTotal\n')
-		self.daily.insert(END, f'{40*"_"}')
+		self.daily.insert(END, f'{45*"_"}')
 
 		self.debtnameentry12.config(state="normal")
 		self.debtcashentry12.config(state="normal")
@@ -1170,7 +1101,7 @@ class ShopLogin(tk.Tk):
 		self.daily.delete(1.0, END)
 
 		self.daily.insert(END,"Product\t\tQuantity\t\tTotal\n")
-		self.daily.insert(END, f'{40*"_"}')
+		self.daily.insert(END, f'{45*"_"}')
 
 		valuestime = self.sale_date_entry.get()
 		
@@ -1427,7 +1358,7 @@ class ShopLogin(tk.Tk):
 		self.daily.delete(1.0, END)
 
 		self.daily.insert(END,"Product\t\tQuantity\t\tTotal\n")
-		self.daily.insert(END, f'{40*"_"}')
+		self.daily.insert(END, f'{45*"_"}')
 		#===================Database delete all empty values==========================
 		self.c.executemany("DELETE FROM 'Daily Sales' WHERE Quantity=?", '0')
 		self.c.executemany("DELETE FROM 'Daily Temp' WHERE Quantity=? ",'0')
@@ -1573,7 +1504,7 @@ class ProductManagement(tk.Tk):
 		self.conn = sq.connect('sales')
 		self.c = self.conn.cursor()
 		self.btns = []
-		self.font = "Verdana 10 bold"
+		self.font = "time 9"
 		self.bd = 20
 
 		self.namevar = StringVar()
@@ -1599,7 +1530,7 @@ class ProductManagement(tk.Tk):
 		#Create Main Containers
 		top_frame = Frame(bg='cadetblue', width=450, height=50, pady=3)
 		center_frame = Frame(bg='grey', width=450, height=175, padx=3, pady=3)
-		bottom_frame = Frame(bg='cadetblue', width=450, height=100, pady=3)
+		bottom_frame = Frame(bg='cadetblue', width=450, height=650, pady=10)
 		#Layout the Main Containers
 		top_frame.grid(row=0, sticky="ew")
 		center_frame.grid(row=1, sticky="nsew")
@@ -1611,7 +1542,7 @@ class ProductManagement(tk.Tk):
 		Heading = Label(top_frame, text="Welcome to Product Management".upper(), font=self.font).place(
 			x=225, y=20,anchor="center")
 		#=============================================================================================
-		msg = Label(center_frame, font="time 16", text="*Click Button to Load Functionality").place(x=15,y=70)
+		msg = Label(center_frame, font="time 12", text="*Click Button to Load Functionality").place(x=60,y=70)
 
 
 		#=============================================================================================
@@ -1622,7 +1553,7 @@ class ProductManagement(tk.Tk):
 
 
 		for k, j in sorted(btn_dict.items()):
-			btns = Button(bottom_frame,text=j, bg='white',width=13,height=1,padx=5,pady=4,font=self.font, command=btncommands[k], state=self.btnstate[k])
+			btns = Button(bottom_frame,text=j, bg='white',relief=RAISED,width=13,height=1,padx=5,pady=5,font="time 10", command=btncommands[k], state=self.btnstate[k],borderwidth=0)
 			btns.grid(padx=5)
 
 			self.btns.append(btns)
@@ -1643,8 +1574,8 @@ class ProductManagement(tk.Tk):
 		sell_price = Label(editframe,text="Sell_Price", font=self.font).place(x=450,y=150)
 		quantity = Label(editframe,text="Quantity", font=self.font).place(x=450,y=200)
 
-		addbtn = Button(editframe, text="Add", font=self.font, command=self.addproduct).place(x=500,y=320)
-		clearbtn = Button(editframe, text="Back",font=self.font, command=self.clearbtn).place(x=600, y=320)
+		addbtn = Button(editframe, text="Add", font=self.font, command=self.addproduct,borderwidth=0).place(x=500,y=320)
+		clearbtn = Button(editframe, text="Back",font=self.font, command=self.clearbtn,borderwidth=0).place(x=600, y=320)
 		#Entries to get data
 		name_entry = Entry(font=self.font,textvariable=self.namevar).place(x=590,y=50)
 		buy_price_entry = Entry(font=self.font,textvariable=self.buypricevar).place(x=590, y=100)
@@ -1657,7 +1588,7 @@ class ProductManagement(tk.Tk):
 
 		
 
-		exitbtn = Button(editframe, font=self.font, command=self.maingui,text="Exit").place(x=700,y=320)
+		exitbtn = Button(editframe, font=self.font, command=self.maingui,text="Exit",borderwidth=0).place(x=700,y=320)
 		#=============================================================================================
 
 		#=============================================================================================
@@ -1729,7 +1660,7 @@ class ProductManagement(tk.Tk):
 		self.scrollbar = Scrollbar(self, orient='vertical')
 
 		self.scrollbar.config(command=self.yview)
-		self.scrollbar.place(x=880,height=319)
+		self.scrollbar.place(x=890,height=298)
 		
 
 		for row in products:
@@ -1743,8 +1674,8 @@ class ProductManagement(tk.Tk):
 			self.textlist4.insert(END, "--------------------------------")
 
 		
-		clearbtn = Button(editframe, text="Back",font="Verdana 10 bold", command=self.clearbtn).place(x=600, y=320)
-		exitbtn = Button(editframe, font=self.font, command=self.maingui, text="Exit").place(x=750,y=320)
+		clearbtn = Button(editframe, text="Back",font=self.font, command=self.clearbtn,borderwidth=0).place(x=600, y=320)
+		exitbtn = Button(editframe, font=self.font, command=self.maingui, text="Exit",borderwidth=0).place(x=750,y=320)
 				
 		#=============================================================================================
 	def DeleteProducts(self):
@@ -1774,9 +1705,9 @@ class ProductManagement(tk.Tk):
 		self.name_entry12 = ttk.Combobox(font=self.font,textvariable=self.namevar1,values=combo(), width=19,height=19)
 		self.name_entry12.place(x=590,y=150)
 
-		delbtn = Button(editframe, text="Delete",font="Verdana 10 bold",command=self.delcombo).place(x=455, y=320)
-		clearbtn = Button(editframe, text="Back",font="Verdana 10 bold", command=self.clearbtn).place(x=600, y=320)
-		exitbtn = Button(editframe, font=self.font, command=self.maingui, text="Exit").place(x=750,y=320)
+		delbtn = Button(editframe, text="Delete",font=self.font,command=self.delcombo,borderwidth=0).place(x=455, y=320)
+		clearbtn = Button(editframe, text="Back",font=self.font, command=self.clearbtn,borderwidth=0).place(x=600, y=320)
+		exitbtn = Button(editframe, font=self.font, command=self.maingui, text="Exit",borderwidth=0).place(x=750,y=320)
 		#=============================================================================================
 	
 		#=============================================================================================
@@ -1820,9 +1751,9 @@ class ProductManagement(tk.Tk):
 
 	
 	
-		updatebtn = Button(editframe, text="Update",font="Verdana 10 bold",command=self.checkcombo).place(x=455, y=320)
-		clearbtn = Button(editframe, text="Back",font="Verdana 10 bold", command=self.clearbtn).place(x=600, y=320)
-		exitbtn = Button(editframe, font=self.font, command=self.maingui, text="Exit").place(x=750,y=320)
+		updatebtn = Button(editframe, text="Update",font=self.font,command=self.checkcombo,borderwidth=0).place(x=455, y=320)
+		clearbtn = Button(editframe, text="Back",font=self.font, command=self.clearbtn,borderwidth=0).place(x=600, y=320)
+		exitbtn = Button(editframe, font=self.font, command=self.maingui, text="Exit",borderwidth=0).place(x=750,y=320)
 		#=============================================================================================
 		name_entry.bind("<<ComboboxSelected>>", self.modif)
 		#=============================================================================================
@@ -1974,7 +1905,7 @@ class Customer(tk.Tk):
 
 		self.date = dt.datetime.now()
 
-		self.font = "time 10 bold"
+		self.font = "time 8"
 		self.geometry('600x600+400+50')
 		self.resizable(False,False)
 		self.Mainui()
@@ -1984,7 +1915,7 @@ class Customer(tk.Tk):
 		self.time = str(self.curtime)
 
 		self.number = shopno()
-		self.curtime = f'\nDate:\t\t   {self.time[0:10]}\nTime:\t\t   {self.time[11:19]}\nPhone:\t\t   {self.number}\n'
+		self.curtime = f'\nDate:\t\t\t{self.time[0:10]}\nTime:\t\t\t{self.time[11:19]}\nPhone:\t\t\t{self.number}\n'
 
 		self.conn = sq.connect('sales')
 		self.c = self.conn.cursor()
@@ -2027,7 +1958,7 @@ class Customer(tk.Tk):
 				items.append(x.upper())
 				
 			return sorted(items)
-		productcombo = ttk.Combobox(leftframe,width=23,textvariable=self.product,values=products())
+		productcombo = ttk.Combobox(leftframe,font=self.font,width=20,textvariable=self.product,values=products())
 		productcombo.place(relx=0.3,rely=0.205)
 
 		quantitylabel = Label(leftframe,text="Quantity")
@@ -2036,16 +1967,16 @@ class Customer(tk.Tk):
 		quantityentry = Entry(leftframe,width=21,bd=2,font=self.font,textvariable=self.quantity)
 		quantityentry.place(relx=0.3,rely=0.3)
 	#=======================Text Display==========================================================
-		displayreceipt = Text(rightframe,width=33,height=33,bd=8)
+		displayreceipt = Text(rightframe,font="time 9",width=33,height=35,bd=8)
 		displayreceipt.place(relx=0,rely=0)
 	#=======================Buttons===============================================================
 		def logic():
 			conn = sq.connect('sales')
 			c = conn.cursor()
 
-			displayreceipt.insert(END,f'\n\n\n--------------------------------')
+			displayreceipt.insert(END,f'\n\n\n{66*"-"}')
 			displayreceipt.insert(END,f'\nTotal:\t\t\t{self.total}')
-			displayreceipt.insert(END,f'\n--------------------------------\n')
+			displayreceipt.insert(END,f'\n{66*"-"}\n')
 
 			newtime = f'{self.date.day}/{self.date.month}/{self.date.year}'
 
@@ -2096,11 +2027,11 @@ class Customer(tk.Tk):
 			
 			displayreceipt.delete(1.0,END)
 			displayreceipt.insert(END,
-				f'    {shopname()} Receipt\n--------------------------------\n{self.curtime}\n--------------------------------\n')
-			x = f'--------------------------------\n'
+				f'\t{shopname()} Receipt\n{66*"-"}\n{self.curtime}\n{66*"-"}\n')
+			x = f'{66*"-"}\n'
 			message = f'From:\t{self.name.get().upper()}\n{x}Products\t\tQty\tTotal\n'
 			displayreceipt.insert(END,message)
-			displayreceipt.insert(END,f'--------------------------------\n')
+			displayreceipt.insert(END,f'{66*"-"}\n')
 
 			transactions = {}
 			
@@ -2183,17 +2114,17 @@ class Customer(tk.Tk):
 			conn.commit()
 
 
-		AddButton = Button(leftframe,text="Add",bg=self.colors[0],command=add,width=10)
+		AddButton = Button(leftframe,font=self.font,text="Add",bg=self.colors[0],command=add,width=6)
 		AddButton.place(relx=0.05,rely=0.905)
 
-		TotalButton = Button(leftframe,text="Total",bg=self.colors[0],command=logic,width=10)
-		TotalButton.place(relx=0.35,rely=0.905)
+		TotalButton = Button(leftframe,font=self.font,text="Total",bg=self.colors[0],command=logic,width=7)
+		TotalButton.place(relx=0.32,rely=0.905)
 
-		PrintButton = Button(leftframe,text="Print",bg=self.colors[0],command=printf,state="disabled",width=7)
-		PrintButton.place(relx=0.65,rely=0.905)
+		PrintButton = Button(leftframe,font=self.font,text="Print",bg=self.colors[0],command=printf,state="disabled",width=6)
+		PrintButton.place(relx=0.62,rely=0.905)
 
-		exitbutton = Button(leftframe,text="X",bg=self.colors[0],command=self.exit,state="normal",width=2)
-		exitbutton.place(relx=0.88,rely=0.905)
+		exitbutton = Button(leftframe,font=self.font,text="X",bg=self.colors[0],command=self.exit,state="normal",width=1)
+		exitbutton.place(relx=0.86,rely=0.905)
 
 	def stock(self):
 		#===================Database delete all empty values==========================
@@ -2238,7 +2169,7 @@ class Analysis(tk.Tk):
 		self.conn = sq.connect('sales')
 		self.c = self.conn.cursor()
 
-		self.font = "time 9 bold"
+		self.font = "time 10"
 
 
 		self.geometry("600x600+300+50")
@@ -2564,45 +2495,37 @@ class Dashboard(tk.Tk):
 		self.c = self.conn.cursor()
 		self.shopname = StringVar()
 		self.shopnumber = StringVar()
-		self.geometry('1050x360+150+60')
+		self.geometry('350x200+400+300')
 		self.resizable(False,False)
 		self.mainpage()
 
 	def mainpage(self):
-		heading = Label(self.leftframe,text='Edit Name and Number'.upper(),width=30).place(relx=0.1,rely=0.1)
+		heading = Label(self.leftframe,font="time 11",text='Edit Name and Number'.upper(),width=30).place(relx=0.15,rely=0.1)
 
-		shopnamelable = Label(self.leftframe,text='Shop Name',bg=self.color[3]).place(relx=0.05,rely=0.25)
-		shopnameentry = Entry(self.leftframe,width=32,textvariable=self.shopname).place(relx=0.18,rely=0.25)
+		shopnamelable = Label(self.leftframe,font="time 11",text='Shop Name',bg=self.color[3]).place(relx=0.05,rely=0.3)
+		shopnameentry = Entry(self.leftframe,font="time 11",width=20,textvariable=self.shopname).place(relx=0.38,rely=0.3)
 
-		shopno = Label(self.leftframe,text='Shop Number',bg=self.color[3]).place(relx=0.05,rely=0.35)
-		shopnoentry = Entry(self.leftframe,width=32,textvariable=self.shopnumber).place(relx=0.18,rely=0.35)
+		shopno = Label(self.leftframe,font="time 11",text='Shop Number',bg=self.color[3]).place(relx=0.05,rely=0.5)
+		shopnoentry = Entry(self.leftframe,font="time 11",width=20,textvariable=self.shopnumber).place(relx=0.38,rely=0.5)
 
-		submitbtn = Button(self.leftframe, text='SUBMIT',bg=self.color[0],relief=RAISED,width=20,height=1,command=self.shopd).place(relx=0.13,rely=0.65)
-
-		#users option
-		heading2 = Label(self.mainframe,text='Edit Users'.upper(),width=30).place(relx=0.6,rely=0.1)
-
-		currentuser = Text(self.mainframe,height=14,width=30,state='disabled').place(relx=0.42,rely=0.2)
-		transferbutton = Button(self.mainframe,text='----------->').place(relx=0.67,rely=0.5)
-		transferreduser = Text(self.mainframe,height=14,width=30,state='disabled').place(relx=0.75,rely=0.2)
-
-		submitbtn = Button(self.mainframe, text='DEL',bg=self.color[0],relief=RAISED,width=20,height=1).place(relx=0.79,rely=0.9)
+		submitbtn = Button(self.leftframe,font="time 9",text='SUBMIT',bg=self.color[0],fg="white",width=10,height=1,command=self.shopd).place(relx=0.35,rely=0.70)
 
 		#exit button
-		exitbtn = Button(self.mainframe, text='EXIT',bg=self.color[0],relief=RAISED,width=20,height=1,command=self.exit).place(relx=0.49,rely=0.9)
+		exitbtn = Button(self.mainframe, text='EXIT',font="time 9",bg=self.color[0],fg="white",width=10,height=1,command=self.exit).place(relx=0.68,rely=0.70)
 	
 	def shopd(self):
 		name = self.shopname.get()
 		number = self.shopnumber.get()
 
-		if name or number == '':
-			tk.messagebox.showinfo('empty','fill valid values')
-		else:
-			self.c.execute("DELETE FROM 'shopdetails'")
-			self.c.execute("INSERT INTO 'shopdetails' Values (?,?) ",(name,number))
-			self.conn.commit()
+		# if name or number == '':
+		# 	tk.messagebox.showinfo('empty','fill valid values')
+		# else:
+		self.c.execute("DELETE FROM 'shopdetails'")
+		self.c.execute("INSERT INTO 'shopdetails' Values (?,?) ",(name,number))
+		self.conn.commit()
+		self.conn.close()
 
-			print(name,number)
+		print(name,number)
 
 	def exit(self):
 		Tk.destroy(self)
@@ -2614,20 +2537,4 @@ class Dashboard(tk.Tk):
 
 #====================we now run the main app=======================================================
 if __name__=="__main__":
-	from matplotlib import pyplot as plt
-	from tkcalendar import DateEntry  
-	import base64
-	from cryptography.hazmat.backends import default_backend
-	from cryptography.hazmat.primitives import hashes
-	from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-	from cryptography.fernet import Fernet
-	key = PasswordEncrypter.GenerateKey()
-	try:
-		InitializeDatabase.createdb()
-	except:
-		pass
-	try:
-		os.mkdir('csvf')
-	except:
-		pass
-	Admin().mainloop()
+	admin().mainloop()

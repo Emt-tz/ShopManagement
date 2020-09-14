@@ -217,7 +217,7 @@ class Profit:
 class PasswordEncrypter:
 
 	def GenerateKey():
-		password_provided = "Windows78!" # This is input in the form of a string
+		password_provided = "password" # This is input in the form of a string
 		password = password_provided.encode() # Convert to type bytes
 		salt = b'salt_' # CHANGE THIS - recommend using a key from os.urandom(16), must be of type bytes
 		kdf = PBKDF2HMAC(

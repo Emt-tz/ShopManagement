@@ -24,6 +24,10 @@ try:
 except:
 	pass
 
+try:
+	os.mkdir('csvf')
+except:
+	pass
 
 #=====================================test2====================================================
 def dicttable(dictn):
@@ -83,11 +87,8 @@ class MonthlySales:
 					quan = row[2]
 					total = row[4]
 					if prod in dtsales:
-						y = str(dtsales[prod])
-						z = str(y).replace("(","")
-						zn = z.replace(")", "")
-						f = zn.replace(" ","")
-						p,n = f.split(",")
+						p = dtsales.get(prod)[0]
+						n = dtsales.get(prod)[1]
 						#print(p)
 						dtsales.update({prod:(quan+int(p),total+int(n))})
 					else:
@@ -125,7 +126,7 @@ class MonthlySales:
 				w.writerow(["Jumla","","",totalsales])
 				w.writerow(["Faida","","",sum(profitn)])
 
-		return ConvertCsvtoExcel.convertToExcel(filename)
+				return ConvertCsvtoExcel.convertToExcel(filename)
 
 	def salesbymonth(fromdate, todate):
 		conn = sq.connect('sales')
@@ -159,10 +160,8 @@ class MonthlySales:
 					price = row[4]
 
 					if product in dtsales:
-						y = str(dtsales[product])
-						z = str(y).replace("(","")
-						zn = z.replace(")","")
-						f = zn.replace(" ","")
+						p = dtsales.get(product)[0]
+						n = dtsales.get(product)[1]
 						p,n = f.split(",")
 						dtsales.update({product:(quantity+int(p),price+int(n))})
 					else:
@@ -260,7 +259,7 @@ class ConvertCsvtoExcel:
 			x.to_excel(export_file_path, index=None, header=True)
 			messagebox.showinfo("Success",f'exported successfully')
 		except:
-			messagebox.showinfo("Speciy Directory","Please Specify Place To Save")
+			messagebox.showinfo("Data Error","An error has occurred")
 			
 class Stock:
 
@@ -270,7 +269,6 @@ class Stock:
 
 		v = c.execute("SELECT * FROM AddProducts").fetchall()
 
-		# try:
 		prod = {}
 
 		for row in v:
@@ -281,9 +279,6 @@ class Stock:
 			dicttable(prod)
 		else:
 			pass
-		# except:
-		# 	pass
-
 #=====================================test2====================================================
 
 
@@ -441,60 +436,39 @@ class admin(tk.Tk):
 			self.after(1900, self.Interface)
 		else:
 			try:
-				cred = c.execute("SELECT * FROM 'login'").fetchall()
+				cred = c.execute("SELECT * FROM login WHERE User=?", (un,)).fetchall()
+				if cred == []:
+					self.results.set("user does not exist")
+					self.after(1900, self.Interface)
+				else:
+					username = cred[0][0]
+					password = cred[0][1]
 
-				#loop through the database and check for user if exists
-
-				#user one is when [0][0] and pass [0][1]
-				#user two is when [1][0] and pass[1][1]
-				userdict = {}
-				for i in range(0, len(cred)):
-					user = cred[i-1][0]
-					password = cred[i-1][1]
-
-					userdict.update({user:password})
-				for k,v in userdict.items():
-					v = PasswordEncrypter.Decrypt(v, key)
-					if un == k and pwd == v.decode():
-						try:
-							self.success()
-						except:
-							pass
-					elif un == k and pwd != v.decode():
+					v = PasswordEncrypter.Decrypt(password, key)
+					if un == username and pwd == v.decode():
+						self.success()
+					elif un == username and pwd != v.decode():
 						self.results.set("Please check your password")
 						self.after(1900, self.Interface)
 					else:
 						self.results.set("Check you credentials")
 						self.after(1900, self.Interface)
-					#ShopLogin().mainloop()
-					# else:
-					# 	tk.messagebox.showinfo("Error","Invalid Credentials")
-					# break
 			except:
 				try:
-					os.system('./golang/db')
+					os.system('./db')
 				except:
 					pass
-
-				cred = c.execute("SELECT * FROM 'login'").fetchall()
-				#loop through the database and check for user if exists
-
-				#user one is when [0][0] and pass [0][1]
-				#user two is when [1][0] and pass[1][1]
-				userdict = {}
-				for i in range(0, len(cred)):
-					user = cred[i-1][0]
-					password = cred[i-1][1]
-
-					userdict.update({user:password})
-				for k,v in userdict.items():
-					v = PasswordEncrypter.Decrypt(v, key)
-					if un == k and pwd == v.decode():
-						try:
-							self.success()
-						except:
-							pass
-					elif un == k and pwd != v.decode():
+				cred = c.execute("SELECT * FROM login WHERE User=?", (un,)).fetchall()
+				if cred == []:
+					self.results.set("user does not exist")
+					self.after(1900, self.Interface)
+				else:
+					username = cred[0][0]
+					password = cred[0][1]
+					v = PasswordEncrypter.Decrypt(password, key)
+					if un == username and pwd == v.decode():
+						self.success()
+					elif un == username and pwd != v.decode():
 						self.results.set("Please check your password")
 						self.after(1900, self.Interface)
 					else:

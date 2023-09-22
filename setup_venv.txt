@@ -1,0 +1,11 @@
+sudo apt-get install python3.8-dev python3.8-venv
+
+apt update
+
+sudo apt install software-properties-common
+
+sudo add-apt-repository ppa:deadsnakes/ppa
+
+source ~/virtual_env/venv_with_python3.8/bin/activate
+
+

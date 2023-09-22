@@ -19,6 +19,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.fernet import Fernet
 import subprocess as s
+import customtkinter as ctk
 try:
 	os.system('./db')
 except:
@@ -114,7 +115,6 @@ class MonthlySales:
 						if productname == k:
 							prof = (Profit.profit(int(x[i][1]),int(x[i][3]),int(x[i][2]),int(q)))
 							profitn.append(int(prof))
-
 				#loop through the list and and calculate total
 				totalsales = 0
 				for i in range(0, len(final)):
@@ -2452,9 +2452,6 @@ class Analysis(tk.Tk):
 
 #===========================analysis===============================================================
 
-
-
-
 #===========================dashboard===============================================================
 class Dashboard(tk.Tk):
 
@@ -2504,10 +2501,7 @@ class Dashboard(tk.Tk):
 	def exit(self):
 		Tk.destroy(self)
 		return Admin().mainloop()
-
 #===========================dashboard===============================================================
-
-
 
 #====================we now run the main app=======================================================
 if __name__=="__main__":

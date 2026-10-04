@@ -117,3 +117,11 @@ environment. They would call the same REST and WebSocket API; the web client is 
 Also not built: Stripe, StoreKit and Play receipt verification for the subscription itself (a plan is recorded with its channel
 but nothing is charged), mobile money for Tanzanian networks (above), card payments, and multi-node realtime fan-out
 (use Redis pub/sub or Kafka to run more than one instance).
+
+## Month-in-the-life showcase
+
+`POST /api/shops/{id}/demo-month` (owner only) replaces a shop's data with 30 days of trading: a retail shop gets a 56-item standard
+stationery catalogue and about 1000 customers (term-start and month-end surges, quieter Sundays, cash / Lipa Namba / card mix, 3 staff
+on different devices, restocks, a few voids); a mobile money shop gets about 1000 cash in / cash out / airtime transactions with daily float
+top-ups. Seed sales are written directly, not through live payments, so no provider is contacted.
+`node e2e/month.js` (server with `EMTSHOP_SANDBOX=true`) seeds both shops and records `e2e/out/month.mp4`.

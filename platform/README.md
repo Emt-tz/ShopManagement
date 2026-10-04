@@ -125,3 +125,15 @@ stationery catalogue and about 1000 customers (term-start and month-end surges, 
 on different devices, restocks, a few voids); a mobile money shop gets about 1000 cash in / cash out / airtime transactions with daily float
 top-ups. Seed sales are written directly, not through live payments, so no provider is contacted.
 `node e2e/month.js` (server with `EMTSHOP_SANDBOX=true`) seeds both shops and records `e2e/out/month.mp4`.
+
+## Native apps (`ios/`, `android/`)
+
+Both talk to the same `/api` as the web client: sign in or sign up (3 months free), shop switcher, then Sell (idempotent, one key per cart),
+Products, Insights, Receipts for stores, and Float, History for mobile money agents. Amounts honour the shop's currency decimals.
+
+- **iOS** (SwiftUI, iOS 17): `brew install xcodegen && cd ios && xcodegen && open EmtShop.xcodeproj`. Simulator talks to `http://localhost:8080`; set `EMTSHOP_URL` for another server.
+- **Android** (Jetpack Compose, Material 3): open `android/` in Android Studio, or `./gradlew :app:installDebug` (needs a Gradle wrapper, which Android Studio creates). Emulator talks to `http://10.0.2.2:8080`; use `-PemtshopUrl=...` otherwise.
+
+Status: written but **not compiled or run** (this build environment has no Xcode or Android SDK). Not yet in the native apps: the live Lipa Namba / M-Pesa
+payment request flow (the server rejects an unconfirmed mobile-money sale with `PAYMENT_REQUIRED`, so only cash and card complete today), offline queue,
+live activity feed, team management, push notifications, and sign-in storage in Keychain/EncryptedSharedPreferences (the token is in UserDefaults / SharedPreferences for now).

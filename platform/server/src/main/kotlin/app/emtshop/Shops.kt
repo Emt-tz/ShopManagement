@@ -23,7 +23,7 @@ data class InviteReq(val name: String = "", val email: String = "", val password
 @RestController
 @RequestMapping("/api")
 class AuthController(
-    val auth: AuthService, val access: Access, val billing: BillingService, val config: ConfigService
+    val auth: AuthService, val access: Access, val billing: BillingService, val config: ConfigService, val jdbc: JdbcTemplate
 ) {
     @PostMapping("/auth/signup")
     @ResponseStatus(HttpStatus.CREATED)
@@ -51,7 +51,8 @@ class AuthController(
             "user" to user,
             "subscription" to billing.current(user.id)?.let { billing.view(it) },
             "shops" to shops.map { (s, role) ->
-                mapOf("id" to s.id, "name" to s.name, "type" to s.type, "country" to s.country, "currency" to s.currency, "role" to role, "owner" to (s.ownerId == user.id))
+                mapOf("id" to s.id, "name" to s.name, "type" to s.type, "country" to s.country, "currency" to s.currency, "role" to role, "owner" to (s.ownerId == user.id),
+                    "members" to jdbc.queryForObject("select count(*) from members where shop_id=?", Long::class.java, s.id))
             }
         )
     }

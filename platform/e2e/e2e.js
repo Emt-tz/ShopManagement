@@ -186,12 +186,38 @@ const addItems = async (p, items, desktop) => {
       await waitText(P, /Stapler/);
     });
 
+    await step('4.3 Product table: category chips, sorting and bulk price change', async () => {
+      await tap(D, 'a[href="#/products"]'); await waitText(D, /Notebook A4/);
+      await tap(D, '.chip:has-text("Stationery")'); const t = await body(D);
+      ok(/Stapler/.test(t) && !/Rice 5 kg/.test(t), 'chip filters to stationery'); await shot(D, '12b-chip-filter');
+      await tap(D, '.th-b:has-text("Price")'); await tap(D, '.th-b:has-text("Price")');
+      const first = await D.locator('.tbl .tr[role=row]:not(.th)').first().innerText(); ok(/Ballpoint pens/.test(first), 'sorted by price descending, first row: ' + first.replace(/\s+/g, ' '));
+      await tap(D, '.tr.th input[type=checkbox]'); await waitText(D, /3 selected/); await shot(D, '12c-bulk');
+      await fill(D, '#bk-pct', '10'); await tap(D, '[data-act=bulkPrice]'); await waitText(D, /3 products updated/);
+      const prods = (await api(token, 'GET', `/shops/${shopId}/products`)).json.products;
+      ok(prods.find(p => p.name === 'Notebook A4').price === 2200 && prods.find(p => p.name === 'Stapler').price === 4950, 'prices raised 10 percent');
+      await tap(D, '.chip:has-text("All")');
+    });
+    await step('4.4 Category chips also filter the phone sell screen', async () => {
+      await P.goto(BASE + '/#/sell'); await waitText(P, /Rice 5 kg/); await tap(P, '.chip:has-text("Drinks")');
+      const t = await body(P); ok(/Bottled water/.test(t) && !/Rice 5 kg/.test(t), 'drinks only'); await shot(P, '12d-phone-chip'); await tap(P, '.chip:has-text("All")');
+    });
+
     /* ---------- Flow 4: insights ---------- */
     await step('5.1 Insights show revenue, top products and payment mix', async () => {
       await tap(D, 'a[href="#/insights"]'); const t = await waitText(D, /Top products/);
       ok(/Revenue/.test(t) && /Payment methods/.test(t) && /Lipa Namba/.test(t) && /Cash/.test(t), 'insights content'); ok(/Busiest hour/.test(t), 'busiest hour');
       await tap(D, '[data-act=setRange][data-id=month]'); await beat(500); await tap(D, '[data-act=setRange][data-id=week]'); await beat(800); await shot(D, '14-insights-desktop');
       await P.goto(BASE + '/#/insights'); await waitText(P, /Top products/); await shot(P, '15-insights-phone'); await beat(1200);
+    });
+
+    await step('5.2 Dashboard: recommended actions, shop metrics, bell badge', async () => {
+      await tap(D, 'a[href="#/shops"]'); const t = await waitText(D, /Recommended actions/);
+      ok(/Restock Mikocheni Stationery: \d+ items? (is|are) low/.test(t), 'restock action'); ok(/Free trial ends in \d+ days?/.test(t), 'trial action');
+      ok(/Sales today/.test(t) && /Average sale/.test(t) && /Low stock/.test(t) && /Online/.test(t), 'metric row');
+      ok(Number(await D.locator('#bell-n').innerText()) >= 2, 'bell badge counts the actions'); await shot(D, '14b-dashboard'); await beat(1800);
+      await P.goto(BASE + '/#/shops'); await waitText(P, /Recommended actions/); await shot(P, '14c-dashboard-phone'); await beat(1500);
+      await tap(D, '.act:has-text("Restock")'); await waitText(D, /Low stock/); ok(D.url().endsWith('#/products'), 'action opens products');
     });
 
     /* ---------- Flow 5: team and devices ---------- */
@@ -277,6 +303,14 @@ const addItems = async (p, items, desktop) => {
     await step('10.4 Overview shows both shops with alerts', async () => {
       await tap(D, 'a[href="#/shops"]'); const t = await waitText(D, /Kariakoo Mobile Money/);
       ok(/Mikocheni Stationery/.test(t) && /float is low/.test(t), 'both shops and the float alert'); await shot(D, '25-overview-two-shops'); await beat(2200);
+    });
+    await step('10.4b Shop switcher in the sidebar and language selector in the header', async () => {
+      await tap(D, '.switch'); const t = await waitText(D, /Add shop/); ok(/Mikocheni Stationery/.test(t) && /Kariakoo Mobile Money/.test(t), 'both shops listed'); await shot(D, '25b-switcher'); await beat(1200);
+      await tap(D, '.menu .si:has-text("Mikocheni")'); await waitText(D, /Register/);
+      await D.locator('.hdr-lang').selectOption('sw'); const s = await waitText(D, /Dashibodi/); ok(/Mauzo|Uza/.test(s), 'Swahili chrome'); await shot(D, '25c-desktop-sw'); await beat(1500);
+      await D.locator('.hdr-lang').selectOption('en'); await waitText(D, /Dashboard/);
+      await tap(D, 'a[href="#/shops"]'); await waitText(D, /Kariakoo Mobile Money/);
+      await tap(D, '.chip:has-text("Mobile money")'); const f = await body(D); ok(!/Mikocheni Stationery\s+Stationery and retail/.test(f), 'filter chip hides stores'); await tap(D, '.chip:has-text("All")');
     });
     await step('10.5 Mobile money on the phone', async () => {
       await P.goto(BASE + '/#/shops'); await waitText(P, /Kariakoo Mobile Money/);

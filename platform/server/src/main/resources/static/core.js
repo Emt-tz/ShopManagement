@@ -15,7 +15,8 @@ const S = {
   token: ls.get('token'), user: null, sub: null, shops: [], shopId: ls.get('shopId'), cfg: null,
   products: [], cart: {}, strings: {}, lang: ls.get('lang'), locale: 'en', feed: [], regions: null,
   range: 'week', period: 'monthly', selPlan: 'business', offline: false, route: { name: '', params: [] },
-  pay: null, lastSale: null, selProduct: null, search: '', plansData: null, after: null, country: null
+  pay: null, lastSale: null, selProduct: null, search: '', plansData: null, after: null, country: null,
+  cat: '', sort: { key: 'name', dir: 1 }, sel: new Set(), actions: [], menuOpen: false, dashFilter: 'all'
 };
 const LANGS = { en: 'English', sw: 'Kiswahili' };
 const DEC = { TZS: 0, KES: 2, INR: 2, BRL: 2, USD: 2 };
@@ -40,7 +41,8 @@ const ICON = {
   shield: 'M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6zM9 12l2 2 4-4',
   down: 'M12 5v14M5 12l7 7 7-7',
   up: 'M12 19V5M5 12l7-7 7 7',
-  phone: 'M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM11 18h2'
+  phone: 'M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM11 18h2',
+  bell: 'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21a2 2 0 0 0 4 0'
 };
 const ic = (n, size, sw) => `<svg width="${size || 24}" height="${size || 24}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw || 1.7}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ICON[n]}"/></svg>`;
 const chev = '<i class="chev"></i>';
@@ -165,6 +167,7 @@ async function bootstrap() {
   await loadStrings();
   connectWS();
   flushOutbox();
+  if (S.shops.length) refreshActions();
 }
 async function loadCfg() {
   try {
@@ -217,6 +220,7 @@ function netName(id) {
 }
 function onActivity(a) {
   S.feed.unshift(a); S.feed = S.feed.slice(0, 100);
+  refreshActions();
   if (S.user && a.userName !== S.user.name && a.kind !== 'low_stock') toast(activityText(a));
   softRefresh();
 }
@@ -275,18 +279,35 @@ function phone(o) {
     ${tabs ? `<nav class="tab" aria-label="Main">${tabLinks().map(([k, h, l]) => `<a href="${h}" class="${o.active === k ? 'on' : ''}" ${o.active === k ? 'aria-current="page"' : ''}>${ic(k, 25, 1.6)}<span>${t(l)}</span></a>`).join('')}</nav>` : ''}
   </div>`;
 }
+function switcher() {
+  if (!S.cfg) return '<div class="brand">Emt Shop</div>';
+  const cur = S.shops.find(s => s.id === S.shopId);
+  const sub = (S.sub ? t('plan.' + S.sub.plan) : t('role.' + myRole())) + ' · ' + tn('team.count', cur ? cur.members : 1);
+  const menu = S.menuOpen ? `<div class="menu" role="menu" aria-label="${t('switch.menu')}">${S.shops.map(s => `<button class="si ${s.id === S.shopId ? 'cur' : ''}" role="menuitem" data-act="switchShop" data-id="${s.id}"><span class="dot ${s.id === S.shopId ? '' : 'off'}"></span>${esc(s.name)}</button>`).join('')}
+    <button class="si tint" role="menuitem" data-act="addShop">${ic('plus', 14, 2.4)}${t('shops.add')}</button></div>` : '';
+  return `<button class="switch" data-act="toggleSwitch" aria-haspopup="menu" aria-expanded="${S.menuOpen}"><span class="sw-av" style="background:${hue(S.cfg.shop.name)}">${initial(S.cfg.shop.name)}</span><span class="grow"><b>${esc(S.cfg.shop.name)}</b><span>${sub}</span></span><svg width="10" height="14" viewBox="0 0 10 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5l3-3 3 3M2 9l3 3 3-3"/></svg></button>${menu}`;
+}
+const bellHtml = () => `<a class="bell" href="#/shops" aria-label="${t('bell')}">${ic('bell', 20, 1.7)}<i id="bell-n" class="${S.actions.length ? '' : 'hide'}">${S.actions.length}</i></a>`;
+function refreshBell() {
+  const el = $('#bell-n'); if (!el) return;
+  el.textContent = S.actions.length; el.classList.toggle('hide', !S.actions.length);
+}
+let actionsTimer;
+function refreshActions() {
+  clearTimeout(actionsTimer);
+  actionsTimer = setTimeout(() => { api('/overview').then(o => { S.actions = o.actions; refreshBell(); }).catch(() => {}); }, 500);
+}
 function desk(o) {
-  const shopBtns = S.shops.map(s => `<button class="si" data-act="switchShop" data-id="${s.id}" ${s.id === S.shopId ? 'style="font-weight:600"' : ''}><span class="dot ${s.id === S.shopId ? '' : 'off'}"></span>${esc(s.name)}</button>`).join('');
-  return `<div class="win"><aside class="side"><div class="brand">Emt Shop</div>
+  const langSel = `<select class="hdr-lang" data-change="pickLang" aria-label="${t('field.language')}">${Object.entries(LANGS).map(([k, v]) => `<option value="${k}" ${k === S.lang ? 'selected' : ''}>${v}</option>`).join('')}</select>`;
+  return `<div class="win"><aside class="side">${switcher()}
     ${S.cfg ? `<div class="sg">${esc(S.cfg.shop.name).toUpperCase()}</div>${sideLinks().map(([k, h, l]) => `<a href="${h}" class="${o.active === k ? 'on' : ''}">${ic(k, 16, 1.8)}${t(l)}</a>`).join('')}` : ''}
     <div class="sg">${t('nav.allShops').toUpperCase()}</div>
     <a href="#/shops" class="${o.active === 'shops' ? 'on' : ''}">${ic('overview', 16, 1.8)}${t('nav.overview')}</a>
     <a href="#/team" class="${o.active === 'team' ? 'on' : ''}">${ic('team', 16, 1.8)}${t('nav.team')}</a>
-    ${S.shops.length > 1 ? `<div class="sg">${t('nav.shops').toUpperCase()}</div>${shopBtns}` : ''}
     <div class="foot"><a href="#/account" class="${o.active === 'account' ? 'on' : ''}" style="margin-bottom:8px">${ic('account', 16, 1.8)}${t('nav.account')}</a>
       ${S.user ? esc(S.user.name) : ''}<br>${S.sub ? t('plan.' + S.sub.plan) : ''}</div></aside>
     <div class="mainw">${offlineBar()}
-      <header class="tbar"><div><h1>${o.title}</h1>${o.sub ? `<div class="sub">${o.sub}</div>` : ''}</div><div class="grow"></div>${o.tools || ''}</header>
+      <header class="tbar"><div><h1>${o.title}</h1>${o.sub ? `<div class="sub">${o.sub}</div>` : ''}</div><div class="grow"></div>${o.tools || ''}<div class="hdr">${langSel}${bellHtml()}</div></header>
       <div class="content"><main class="pane" id="body">${o.body}</main>${o.insp ? `<aside class="insp" id="insp">${o.insp}</aside>` : ''}</div>
     </div></div>${o.overlay || ''}`;
 }

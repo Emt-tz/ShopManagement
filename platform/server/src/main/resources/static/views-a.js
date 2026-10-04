@@ -182,8 +182,17 @@ const vatOf = total => { const b = S.cfg.tax.bps; return b > 0 ? Math.floor((tot
 const stockLine = p => `<span class="${p.stock <= p.lowAt ? 'red' : 'sec'}">${p.stock <= 0 ? t('stock.out') : tn('stock.left', p.stock)}</span>`;
 const filtered = () => {
   const q = S.search.trim().toLowerCase();
-  return q ? S.products.filter(p => p.name.toLowerCase().includes(q) || (p.barcode || '').includes(q)) : S.products;
+  let list = S.products;
+  if (S.cat) list = list.filter(p => p.category === S.cat);
+  return q ? list.filter(p => p.name.toLowerCase().includes(q) || (p.barcode || '').includes(q)) : list;
 };
+const chipsHtml = (items, cur, act) => `<div class="chips" role="tablist">${items.map(([k, l]) => `<button class="chip ${k === cur ? 'on' : ''}" role="tab" aria-selected="${k === cur}" data-act="${act}" data-id="${k}">${l}</button>`).join('')}</div>`;
+const catChips = () => {
+  const cs = [...new Set(S.products.map(p => p.category))].sort();
+  if (S.cat && !cs.includes(S.cat)) S.cat = '';
+  return cs.length > 1 ? chipsHtml([['', t('chip.all')]].concat(cs.map(c => [c, esc(c)])), S.cat, 'setCat') : '';
+};
+ACT.setCat = el => { S.cat = el.dataset.id; render(true); };
 function stepper(p) {
   const q = S.cart[p.id] || 0;
   if (!q) return `<button class="add" data-act="inc" data-id="${p.id}" aria-label="${t('sell.add')} ${esc(p.name)}" ${p.stock <= 0 ? 'disabled' : ''}>+</button>`;
@@ -208,7 +217,7 @@ VIEWS.sell = async () => {
     return desk({
       active: 'sell', title: t('sell.register'), sub: esc(S.cfg.shop.name),
       tools: search.replace('class="search"', 'class="search" style="width:240px"'),
-      body: `<div class="tiles" id="list">${sellTiles()}</div>`, insp: `<div id="order">${orderPanel()}</div>`,
+      body: `${catChips()}<div class="tiles" id="list">${sellTiles()}</div>`, insp: `<div id="order">${orderPanel()}</div>`,
       overlay: S.route.name === 'sell' ? '' : ''
     });
   }
@@ -216,7 +225,7 @@ VIEWS.sell = async () => {
   return phone({
     active: 'sell', title: t('nav.sell'),
     left: `<a href="#/shops" class="b" aria-label="${t('nav.shops')}">${esc(S.cfg.shop.name)}<svg width="10" height="14" viewBox="0 0 10 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5l3-3 3 3M2 9l3 3 3-3"/></svg></a>`,
-    body: `${search}<div class="grp" id="list">${sellRows()}</div>`,
+    body: `${search}${catChips()}<div class="grp" id="list">${sellRows()}</div>`,
     float: n ? `<button class="cartbar" data-act="checkout"><span>${tn('sell.review', n)}</span><span>${money(cartTotal())}</span></button>` : ''
   });
 };

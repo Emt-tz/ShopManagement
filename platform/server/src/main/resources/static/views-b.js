@@ -18,10 +18,25 @@ function productRowsPhone() {
     return canManage() ? `<a class="row thumbs" href="#/product/${p.id}" style="color:inherit">${inner}</a>` : `<div class="row thumbs">${inner}</div>`;
   }).join('');
 }
+const SORTS = { name: p => p.name.toLowerCase(), category: p => p.category.toLowerCase(), price: p => p.price, stock: p => p.stock, status: p => p.stock - p.lowAt };
+function sortedProducts() {
+  const f = SORTS[S.sort.key], d = S.sort.dir;
+  return [...filtered()].sort((x, y) => (f(x) > f(y) ? 1 : f(x) < f(y) ? -1 : 0) * d);
+}
+const COLS = 'grid-template-columns:24px 2.2fr 1.3fr 1.2fr .8fr 1fr';
 function productTable() {
-  const cols = 'grid-template-columns:2.2fr 1.3fr 1.2fr .8fr 1fr';
-  return `<div class="tbl"><div class="tr th" style="${cols}"><span>${t('col.name')}</span><span>${t('col.category')}</span><span>${t('col.price')}</span><span>${t('col.stock')}</span><span>${t('col.status')}</span></div>
-    ${filtered().map(p => `<button class="tr ${S.selProduct === p.id ? 'sel' : ''}" style="${cols}" data-act="selProduct" data-id="${p.id}"><span class="b">${esc(p.name)}</span><span class="sec">${esc(p.category)}</span><span>${money(p.price)}</span><span>${p.stock}</span><span class="${p.stock <= p.lowAt ? (S.selProduct === p.id ? 'b' : 'red b') : (S.selProduct === p.id ? '' : 'green')}">${p.stock <= p.lowAt ? t('stock.low') : t('stock.ok')}</span></button>`).join('')}</div>`;
+  const rows = sortedProducts();
+  const allOn = rows.length && rows.every(p => S.sel.has(p.id));
+  const th = (k, label) => `<button class="th-b ${S.sort.key === k ? 'on' : ''}" data-act="sortBy" data-id="${k}" aria-sort="${S.sort.key === k ? (S.sort.dir > 0 ? 'ascending' : 'descending') : 'none'}">${label}${S.sort.key === k ? (S.sort.dir > 0 ? ' ▲' : ' ▼') : ''}</button>`;
+  return `<div class="tbl" role="table"><div class="tr th" role="row" style="${COLS}"><input type="checkbox" data-act="toggleAll" aria-label="${t('col.select')}" ${allOn ? 'checked' : ''}>${th('name', t('col.name'))}${th('category', t('col.category'))}${th('price', t('col.price'))}${th('stock', t('col.stock'))}${th('status', t('col.status'))}</div>
+    ${rows.map(p => `<div class="tr ${S.selProduct === p.id ? 'sel' : ''}" role="row" tabindex="0" style="${COLS}" data-act="selProduct" data-id="${p.id}"><input type="checkbox" data-act="toggleSel" data-id="${p.id}" aria-label="${t('col.select')} ${esc(p.name)}" ${S.sel.has(p.id) ? 'checked' : ''}><span class="b">${esc(p.name)}</span><span class="sec">${esc(p.category)}</span><span>${money(p.price)}</span><span>${p.stock}</span><span class="${p.stock <= p.lowAt ? (S.selProduct === p.id ? 'b' : 'red b') : (S.selProduct === p.id ? '' : 'green')}">${p.stock <= p.lowAt ? t('stock.low') : t('stock.ok')}</span></div>`).join('')}</div>`;
+}
+function bulkBar() {
+  if (!S.sel.size || !canManage()) return '';
+  return `<div class="bulk" role="region" aria-label="${tn('bulk.selected', S.sel.size)}"><b>${tn('bulk.selected', S.sel.size)}</b>
+    <label>${t('bulk.price')} <input id="bk-pct" inputmode="decimal" placeholder="+5"></label><button class="p" data-act="bulkPrice">${t('bulk.apply')}</button>
+    <label>${t('bulk.stock')} <input id="bk-stock" inputmode="numeric" placeholder="+10"></label><button class="p" data-act="bulkStock">${t('bulk.apply')}</button>
+    <button class="d" data-act="bulkDelete" data-label="${t('bulk.delete')}">${t('bulk.delete')}</button><button data-act="clearSel">${t('bulk.clear')}</button></div>`;
 }
 function productForm(p) {
   const isNew = !p.id;
@@ -50,14 +65,14 @@ VIEWS.products = async () => {
     return desk({
       active: 'products', title: t('nav.products'), sub: tn('products.count', S.products.length) + ' · ' + tn('products.low', S.products.filter(p => p.stock <= p.lowAt).length),
       tools: search.replace('class="search"', 'class="search" style="width:220px"') + (canManage() ? `<button class="tbtn" data-act="newProduct">${ic('plus', 14, 2.4)}${t('product.add')}</button>` : ''),
-      body: `<div id="list">${productTable()}</div>`,
+      body: `${catChips()}${bulkBar()}<div id="list">${productTable()}</div>`,
       insp: sel ? `<div class="b" style="font-size:15px;margin-bottom:4px">${sel.id ? esc(sel.name) : t('product.add')}</div>${canManage() ? productForm(sel) : ''}` : `<p class="sec sm">${t('products.select')}</p>`
     });
   }
   return phone({
     active: 'products', title: t('nav.products'),
     right: canManage() ? `<a href="#/product/new" aria-label="${t('product.add')}">${ic('plus', 24, 2)}</a>` : '',
-    body: `${search}<div class="grp" id="list">${productRowsPhone()}</div>`
+    body: `${search}${catChips()}<div class="grp" id="list">${productRowsPhone()}</div>`
   });
 };
 function refreshProducts() {
@@ -65,6 +80,37 @@ function refreshProducts() {
   l.innerHTML = isDesk() ? productTable() : productRowsPhone();
 }
 ACT.selProduct = el => { S.selProduct = el.dataset.id; render(true); };
+ACT.sortBy = el => { const k = el.dataset.id; S.sort = { key: k, dir: S.sort.key === k ? -S.sort.dir : 1 }; render(true); };
+ACT.toggleSel = el => { if (S.sel.has(el.dataset.id)) S.sel.delete(el.dataset.id); else S.sel.add(el.dataset.id); render(true); };
+ACT.toggleAll = el => { const rows = sortedProducts(); if (el.checked) rows.forEach(p => S.sel.add(p.id)); else rows.forEach(p => S.sel.delete(p.id)); render(true); };
+ACT.clearSel = () => { S.sel.clear(); render(true); };
+const putProduct = (p, patch) => api('/products/' + p.id, { method: 'PUT', body: Object.assign({ name: p.name, category: p.category, price: p.price, stock: p.stock, barcode: p.barcode }, patch) });
+ACT.bulkPrice = async () => {
+  const pct = parseFloat(val('bk-pct').replace(/[^0-9.\-]/g, ''));
+  if (!pct) return showErr(t('error.INVALID_AMOUNT'));
+  try {
+    const list = S.products.filter(p => S.sel.has(p.id));
+    for (const p of list) await putProduct(p, { price: Math.max(0, Math.round(p.price * (1 + pct / 100))) });
+    toast(tn('bulk.done', list.length)); S.sel.clear(); render(true);
+  } catch (e) { showErr(errMsg(e)); }
+};
+ACT.bulkStock = async () => {
+  const d = parseInt(val('bk-stock'), 10);
+  if (!d) return showErr(t('error.INVALID_AMOUNT'));
+  try {
+    const list = S.products.filter(p => S.sel.has(p.id));
+    for (const p of list) await putProduct(p, { stock: Math.max(0, p.stock + d) });
+    toast(tn('bulk.done', list.length)); S.sel.clear(); render(true);
+  } catch (e) { showErr(errMsg(e)); }
+};
+ACT.bulkDelete = async el => {
+  if (!confirmTap(el, t('bulk.delete.confirm'))) return;
+  try {
+    const ids = [...S.sel];
+    for (const id of ids) await api('/products/' + id, { method: 'DELETE' });
+    toast(tn('bulk.deleted', ids.length)); S.sel.clear(); S.selProduct = null; render(true);
+  } catch (e) { showErr(errMsg(e)); }
+};
 ACT.newProduct = () => { S.selProduct = 'new'; render(true); };
 VIEWS.product = async params => {
   const id = params[0];
@@ -171,26 +217,56 @@ function shopAlerts(s) {
   return out.length ? out.join(' · ') : `<span class="green b">${t('alert.clear')}</span>`;
 }
 const netNameFor = () => id => (id === 'cash' ? t('float.cash') : ({ mpesa: 'M-Pesa', mixx: 'Mixx by Yas', airtel: 'Airtel Money', halopesa: 'HaloPesa' }[id] || id));
+const ACTION_ICON = { topup: 'float', restock: 'products', limit: 'shield', trial: 'account' };
+function actionCard(a) {
+  const nets = (a.networks || []).map(netNameFor()).join(', ');
+  const c = {
+    topup: [t('action.topup.title', { shop: a.shopName }), t('action.topup.d', { networks: nets }), t('action.topup.cta'), '#/float'],
+    restock: [tn('action.restock.title', a.count, { shop: a.shopName }), t('action.restock.d', { items: (a.items || []).join(', ') }), t('action.restock.cta'), '#/products'],
+    limit: [t('action.limit.title'), t('action.limit.d', { shop: a.shopName, used: a.used, max: a.max }), t('action.limit.cta'), '#/plans'],
+    trial: [tn('action.trial.title', a.days), t('action.trial.d'), t('action.trial.cta'), '#/plans']
+  }[a.kind];
+  return `<button class="act ${a.kind === 'topup' || a.kind === 'restock' ? 'warn' : ''}" data-act="doAction" data-shop="${a.shopId || ''}" data-route="${c[3]}"><span class="act-ic">${ic(ACTION_ICON[a.kind], 20, 1.8)}</span><span class="grow"><b>${c[0]}</b><span>${c[1]}</span></span><span class="act-cta">${c[2]}</span></button>`;
+}
+ACT.doAction = async el => {
+  const id = el.dataset.shop;
+  if (id && id !== S.shopId) { S.shopId = id; ls.set('shopId', id); S.cart = {}; S.cat = ''; S.sel.clear(); await loadCfg(); await loadStrings(); }
+  location.hash = el.dataset.route;
+};
+ACT.toggleSwitch = () => { S.menuOpen = !S.menuOpen; render(true); };
+ACT.setDashFilter = el => { S.dashFilter = el.dataset.id; render(true); };
 VIEWS.shops = async () => {
   const [ov, fd] = await Promise.all([api('/overview'), api('/activity?limit=30')]);
-  S.feed = fd.activity;
-  const totals = ov.totals.map(x => `<div class="grow"><div class="xs sec">${t('shops.today')} · ${x.currency}</div><div style="font-size:26px;line-height:32px;font-weight:700">${money(x.today, x.currency)}</div><div class="xs">${delta(x.today, x.yesterday)}</div></div>`).join('');
+  S.feed = fd.activity; S.actions = ov.actions;
+  const agents = ov.shops.filter(s => s.type === 'mobile_money').length, stores = ov.shops.length - agents;
+  const filter = agents && stores ? S.dashFilter : 'all';
+  const shown = ov.shops.filter(s => filter === 'all' || (filter === 'agent') === (s.type === 'mobile_money'));
+  const chips = agents && stores ? chipsHtml([['all', t('chip.all')], ['store', t('chip.stores')], ['agent', t('chip.agents')]], filter, 'setDashFilter') : '';
+  const totals = ov.totals.map(x => `<div class="grow"><div class="xs sec">${t('dash.today')} · ${x.currency}</div><div style="font-size:26px;line-height:32px;font-weight:700">${money(x.today, x.currency)}</div><div class="xs">${delta(x.today, x.yesterday)}</div></div>`).join('');
+  const metric = (label, v) => `<div>${label}<b>${v}</b></div>`;
+  const metricsOf = s => (s.floatTotal != null
+    ? metric(t('metric.float'), moneyShort(s.floatTotal, s.currency)) + metric(t('metric.lowfloat'), s.lowFloat.length) + metric(t('metric.online'), s.online)
+    : metric(t('metric.sales'), s.todayCount) + metric(t('metric.avg'), s.todayCount ? moneyShort(Math.round(s.todayRevenue / s.todayCount), s.currency) : '—') + metric(t('metric.low'), s.lowStock) + metric(t('metric.online'), s.online));
   const cardHtml = s => `<button class="card" data-act="openShop" data-id="${s.id}" style="text-align:left;width:100%"><div style="display:flex;justify-content:space-between;align-items:baseline"><b style="font-size:15px">${esc(s.name)}</b><span class="sec">${t('type.' + s.type)}</span></div>
-    <div class="num" style="font-size:24px;line-height:30px;font-weight:700">${s.floatTotal != null ? money(s.floatTotal, s.currency) : money(s.todayRevenue, s.currency)}</div>
-    <div class="sec">${s.floatTotal != null ? t('shops.float') : tn('shops.sales', s.todayCount)} · ${tn('shops.online', s.online)}</div>${spark(s.spark)}<div>${shopAlerts(s)}</div></button>`;
+    <div style="font-size:24px;line-height:30px;font-weight:700">${s.floatTotal != null ? money(s.floatTotal, s.currency) : money(s.todayRevenue, s.currency)}</div>${spark(s.spark)}<div>${shopAlerts(s)}</div><div class="metrics">${metricsOf(s)}</div></button>`;
   const rowHtml = s => `<button class="row" data-act="openShop" data-id="${s.id}"><span class="dot ${s.online ? '' : 'off'}"></span><span class="grow"><div>${esc(s.name)}</div><div class="sm sec">${t('type.' + s.type)} · ${tn('shops.online', s.online)}</div><div class="xs">${shopAlerts(s)}</div></span><span class="right"><div class="b">${s.floatTotal != null ? money(s.floatTotal, s.currency) : money(s.todayRevenue, s.currency)}</div></span>${chev}</button>`;
   const feed = S.feed.map(feedRow).join('') || `<div class="row sec">${t('feed.empty')}</div>`;
+  const actions = ov.actions.length ? ov.actions.map(actionCard).join('') : '';
   if (isDesk()) {
     return desk({
       active: 'shops', title: t('nav.overview'), sub: `<span class="green">● ${t('live')}</span> · ${tn('shops.count', ov.shops.length)}`,
       tools: `<button class="tbtn" data-act="addShop">${ic('plus', 14, 2.4)}${t('shops.add')}</button>`,
-      body: `<div class="card" style="flex-direction:row;gap:24px;margin-bottom:14px">${totals}</div><div class="cards2">${ov.shops.map(cardHtml).join('')}</div>`,
+      body: `<div class="card" style="flex-direction:row;gap:24px;margin-bottom:14px">${totals}</div>
+        <div class="sectitle">${t('dash.actions')}</div>${actions ? `<div class="acts">${actions}</div>` : `<p class="sec sm" style="margin-bottom:14px">${t('dash.none')}</p>`}
+        <div class="sectitle">${t('dash.shops')}</div>${chips}<div class="cards2">${shown.map(cardHtml).join('')}</div>`,
       insp: `<div class="b" style="font-size:15px;margin-bottom:6px">${t('feed.title')}</div><div id="feed" class="grp" style="background:transparent">${feed}</div>`
     });
   }
   return phone({
     active: 'shops', title: t('nav.shops'), right: `<button data-act="addShop" aria-label="${t('shops.add')}">${ic('plus', 24, 2)}</button>`,
-    body: `<div class="grp" style="padding:14px 16px;display:flex;gap:16px">${totals}</div><div class="sh">${t('nav.shops')}</div><div class="grp">${ov.shops.map(rowHtml).join('')}</div>
+    body: `<div class="grp" style="padding:14px 16px;display:flex;gap:16px">${totals}</div>
+      ${actions ? `<div class="sh">${t('dash.actions')}</div><div class="acts" style="padding:0 16px;grid-template-columns:1fr">${actions}</div>` : ''}
+      <div class="sh">${t('nav.shops')}</div>${chips}<div class="grp">${shown.map(rowHtml).join('')}</div>
       <div class="sh" style="display:flex;justify-content:space-between"><span>${t('feed.title')}</span><span class="green">● ${t('live')}</span></div><div class="grp" id="feed">${feed}</div>
       <div class="sh"></div><div class="grp"><a class="row" href="#/team" style="color:inherit">${ic('team', 22, 1.7)}<span class="grow">${t('nav.team')}</span>${chev}</a></div>`
   });
@@ -199,7 +275,7 @@ ACT.addShop = () => { S.setup = null; location.hash = '#/setup'; };
 ACT.openShop = async el => { await switchShop(el.dataset.id); };
 ACT.switchShop = async el => { await switchShop(el.dataset.id); };
 async function switchShop(id) {
-  S.shopId = id; ls.set('shopId', id); S.cart = {}; S.search = ''; S.selProduct = null;
+  S.shopId = id; ls.set('shopId', id); S.cart = {}; S.search = ''; S.selProduct = null; S.cat = ''; S.sel.clear(); S.menuOpen = false;
   await loadCfg(); await loadStrings();
   location.hash = homeRoute();
   if (location.hash === homeRoute()) render();

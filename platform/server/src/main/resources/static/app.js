@@ -1,6 +1,7 @@
 'use strict';
 /* Boot and event delegation. */
 document.addEventListener('click', e => {
+  if (S.menuOpen && !e.target.closest('.switch, .menu')) { S.menuOpen = false; render(true); }
   const el = e.target.closest('[data-act]');
   if (!el || el.disabled) return;
   const fn = ACT[el.dataset.act];
@@ -15,6 +16,7 @@ document.addEventListener('change', e => {
   if (k && ACT[k]) ACT[k](e.target);
 });
 document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.getAttribute && e.target.getAttribute('role') === 'row' && e.target.dataset.act) { e.preventDefault(); ACT[e.target.dataset.act](e.target); return; }
   if (e.key !== 'Enter' || e.target.tagName !== 'INPUT') return;
   const c = e.target.closest('[data-enter]');
   if (c && ACT[c.dataset.enter]) { e.preventDefault(); ACT[c.dataset.enter](); }

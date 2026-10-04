@@ -18,7 +18,7 @@ private data class Span(val start: Long, val bucketMs: Long, val buckets: Int) {
 }
 
 @Service
-class InsightService(val jdbc: JdbcTemplate, val access: Access, val hub: Hub) {
+class InsightService(val jdbc: JdbcTemplate, val access: Access, val hub: Hub, val billing: BillingService) {
     private fun span(kind: String, offsetMin: Int, nowMs: Long): Span {
         val off = offsetMin * 60_000L
         val dayStart = Math.floorDiv(nowMs + off, DAY_MS) * DAY_MS - off
@@ -88,10 +88,37 @@ class InsightService(val jdbc: JdbcTemplate, val access: Access, val hub: Hub) {
                 "lowStock" to low, "online" to online, "lowFloat" to lowFloat, "floatTotal" to floatTotal
             )
         }
+        val actions = recommendedActions(user, shops, cards)
         val totals = cards.groupBy { it["currency"] as String }.map { (cur, list) ->
             mapOf("currency" to cur, "today" to list.sumOf { it["todayRevenue"] as Long }, "yesterday" to list.sumOf { it["yesterdayRevenue"] as Long })
         }
-        return mapOf("shops" to cards, "totals" to totals)
+        return mapOf("shops" to cards, "totals" to totals, "actions" to actions)
+    }
+
+    /** What the owner should do next, most urgent first. The client turns each kind into translated copy and a link. */
+    private fun recommendedActions(user: AuthUser, shops: List<Pair<Shop, String>>, cards: List<Map<String, Any?>>): List<Map<String, Any?>> {
+        val out = ArrayList<Map<String, Any?>>()
+        for (c in cards) {
+            val low = c["lowFloat"] as List<*>
+            if (low.isNotEmpty()) out.add(mapOf("kind" to "topup", "shopId" to c["id"], "shopName" to c["name"], "networks" to low))
+        }
+        for (c in cards) {
+            val n = c["lowStock"] as Long
+            if (n > 0) {
+                val items = jdbc.queryForList("select name from products where shop_id=? and active=true and stock<=low_at order by stock,name limit 3", String::class.java, c["id"])
+                out.add(mapOf("kind" to "restock", "shopId" to c["id"], "shopName" to c["name"], "count" to n, "items" to items))
+            }
+        }
+        val ent = billing.current(user.id)
+        if (ent != null) {
+            val max = ent.limits.products
+            if (max != null) for ((s, role) in shops) if (role == "owner") {
+                val used = jdbc.queryForObject("select count(*) from products where shop_id=? and active=true", Long::class.java, s.id)!!
+                if (used * 10 >= max * 8L) out.add(mapOf("kind" to "limit", "shopId" to s.id, "shopName" to s.name, "used" to used, "max" to max))
+            }
+            if (ent.status == "trialing") out.add(mapOf("kind" to "trial", "days" to ((ent.renewsAt - now() + DAY_MS - 1) / DAY_MS)))
+        }
+        return out
     }
 }
 

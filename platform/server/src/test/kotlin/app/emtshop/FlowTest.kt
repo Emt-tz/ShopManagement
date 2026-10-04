@@ -202,6 +202,10 @@ class FlowTest(@Autowired val mvc: MockMvc, @Autowired val mapper: ObjectMapper,
         assertTrue(week["busiestHour"].asInt() in 0..23)
         val ov = call(get("/api/overview"), token).second
         assertEquals(2, ov["shops"].size()); assertEquals(setOf("TZS", "KES"), ov["totals"].map { it["currency"].asText() }.toSet())
+        // Recommended actions: the demo catalogue has low-stock items, and a new plan is still on trial.
+        val kinds = call(get("/api/overview"), token).second["actions"].map { it["kind"].asText() }
+        assertTrue("restock" in kinds && "trial" in kinds, kinds.toString())
+        assertEquals(2, call(get("/api/me"), token).second["shops"][0]["members"].asInt() + 1)
         // Product availability across shops with the same currency is rejected; other currency copies are not allowed.
         val rice = call(get("/api/shops/$a/products"), token).second["products"][0]["id"].asText()
         assertEquals(400, call(put("/api/products/$rice/availability"), token, mapOf("shopId" to b, "available" to true)).first)

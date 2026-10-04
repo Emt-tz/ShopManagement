@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController
 data class SignupReq(val email: String = "", val password: String = "", val name: String = "")
 data class LoginReq(val email: String = "", val password: String = "")
 data class CreateShopReq(val name: String = "", val type: String = "", val country: String = "", val till: String? = null, val locale: String? = null)
-data class UpdateShopReq(val name: String? = null, val till: String? = null, val locale: String? = null)
+data class UpdateShopReq(val name: String? = null, val till: String? = null, val locale: String? = null, val aiExternal: Boolean? = null)
 data class InviteReq(val name: String = "", val email: String = "", val password: String = "", val role: String = "cashier")
 
 @RestController
@@ -29,6 +29,7 @@ class AuthController(
     @ResponseStatus(HttpStatus.CREATED)
     fun signup(@RequestBody req: SignupReq): Map<String, Any?> {
         val user = auth.createUser(req.email, req.name, req.password)
+        billing.startFreePeriod(user.id)
         return mapOf("token" to auth.issueToken(user.id), "user" to user)
     }
 
@@ -101,10 +102,14 @@ class ShopController(
 
     @PutMapping("/{id}")
     fun update(@PathVariable id: String, @RequestAttribute("user") user: AuthUser, @RequestBody req: UpdateShopReq): Map<String, Any?> {
-        val (shop, _) = access.need(id, user, "owner", "manager")
+        val (shop, role) = access.need(id, user, "owner", "manager")
         val region = Regions.get(shop.country)
         req.name?.let { if (it.isBlank()) bad("INVALID_NAME", "Enter a shop name"); jdbc.update("update shops set name=? where id=?", it.trim(), id) }
         req.till?.let { jdbc.update("update shops set till=? where id=?", it.trim().ifBlank { null }, id) }
+        req.aiExternal?.let {
+            if (role != "owner") throw ApiException(HttpStatus.FORBIDDEN, "FORBIDDEN", "Only the owner can change this")
+            jdbc.update("update shops set ai_external=? where id=?", it, id)
+        }
         req.locale?.let { if (it !in region.locales) bad("INVALID_LOCALE", "Language not available in this region"); jdbc.update("update shops set locale=? where id=?", it, id) }
         configCache.evict(id)
         return config.full(id)

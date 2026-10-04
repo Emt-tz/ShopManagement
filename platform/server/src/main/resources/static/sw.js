@@ -1,6 +1,6 @@
 /* Service worker: network-first for the app shell so updates arrive immediately, cache fallback so the app opens offline. */
-const CACHE = 'emtshop-shell-v1';
-const SHELL = ['/', '/index.html', '/styles.css', '/core.js', '/views-a.js', '/views-b.js', '/app.js', '/icon.svg', '/manifest.webmanifest',
+const CACHE = 'emtshop-shell-v2';
+const SHELL = ['/', '/index.html', '/styles.css', '/core.js', '/views-a.js', '/views-b.js', '/views-c.js', '/app.js', '/icon.svg', '/manifest.webmanifest',
   '/fonts/inter-latin-wght-normal.woff2', '/fonts/inter-latin-ext-wght-normal.woff2'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => {

@@ -18,7 +18,7 @@ private data class Span(val start: Long, val bucketMs: Long, val buckets: Int) {
 }
 
 @Service
-class InsightService(val jdbc: JdbcTemplate, val access: Access, val hub: Hub, val billing: BillingService) {
+class InsightService(val jdbc: JdbcTemplate, val access: Access, val hub: Hub, val billing: BillingService, val payments: PaymentService, val forecast: ForecastService) {
     private fun span(kind: String, offsetMin: Int, nowMs: Long): Span {
         val off = offsetMin * 60_000L
         val dayStart = Math.floorDiv(nowMs + off, DAY_MS) * DAY_MS - off
@@ -105,10 +105,14 @@ class InsightService(val jdbc: JdbcTemplate, val access: Access, val hub: Hub, v
         for (c in cards) {
             val n = c["lowStock"] as Long
             if (n > 0) {
-                val items = jdbc.queryForList("select name from products where shop_id=? and active=true and stock<=low_at order by stock,name limit 3", String::class.java, c["id"])
+                val shop = shops.first { it.first.id == c["id"] }.first
+                val items = forecast.forecast(shop).take(3).map { mapOf("name" to it["name"], "daysLeft" to it["daysLeft"]) }
                 out.add(mapOf("kind" to "restock", "shopId" to c["id"], "shopName" to c["name"], "count" to n, "items" to items))
             }
         }
+        val owned = shops.filter { it.second == "owner" || it.second == "manager" }.map { it.first.id }
+        val issues = payments.openIssues(owned)
+        if (issues > 0) out.add(0, mapOf("kind" to "payments", "count" to issues))
         val ent = billing.current(user.id)
         if (ent != null) {
             val max = ent.limits.products
@@ -116,7 +120,9 @@ class InsightService(val jdbc: JdbcTemplate, val access: Access, val hub: Hub, v
                 val used = jdbc.queryForObject("select count(*) from products where shop_id=? and active=true", Long::class.java, s.id)!!
                 if (used * 10 >= max * 8L) out.add(mapOf("kind" to "limit", "shopId" to s.id, "shopName" to s.name, "used" to used, "max" to max))
             }
-            if (ent.status == "trialing") out.add(mapOf("kind" to "trial", "days" to ((ent.renewsAt - now() + DAY_MS - 1) / DAY_MS)))
+            // Payments only show up in the last two weeks of the free period.
+            if (ent.free && ent.plansOpen && ent.status == "trialing") out.add(mapOf("kind" to "trial", "days" to ((ent.trialEndsAt - now() + DAY_MS - 1) / DAY_MS)))
+            if (!ent.free && ent.status == "trialing") out.add(mapOf("kind" to "trial_over", "days" to 0))
         }
         return out
     }

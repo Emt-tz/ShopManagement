@@ -115,20 +115,23 @@ const addItems = async (p, items, desktop) => {
       await P.goto(BASE + '/'); await waitText(P, /Welcome to\s+Emt Shop/);
       const t = await body(P); ok(/Sell anywhere/.test(t) && /Lipa Namba/.test(t), 'feature list'); await shot(P, '01-welcome'); await beat(1800);
     });
-    await step('1.2 Create an account', async () => {
+    await step('1.2 Create an account: straight to the shop, no plan or payment', async () => {
+      const w = await body(P); ok(/Free for 3 months/.test(w), 'welcome promises 3 free months');
       await tap(P, 'a[href="#/signup"]'); await waitText(P, /Create your account/);
       await fill(P, '#f-name', OWNER.name); await fill(P, '#f-email', OWNER.email); await fill(P, '#f-pass', OWNER.pass);
-      await shot(P, '02-signup'); await tap(P, '[data-act=doSignup]'); await waitText(P, /Choose your plan/);
+      await shot(P, '02-signup'); await tap(P, '[data-act=doSignup]'); await waitText(P, /What do you sell\?/);
+      ok(!/Choose your plan/.test(await body(P)), 'no plan screen at sign-up');
     });
-    await step('1.3 Pick a plan and start the free trial', async () => {
-      await P.locator('#pl-country').selectOption('TZ'); await beat(400);
-      await tap(P, '[data-act=setPeriod][data-id=yearly]'); await tap(P, '[data-act=setPeriod][data-id=monthly]');
-      await tap(P, '[data-act=selPlan][data-id=business]'); const t = await body(P);
-      ok(/(?:TZS|TSh)\s*49,900/.test(t), 'Business price in TZS'); await shot(P, '03-plans'); await beat(1200);
-      await tap(P, '[data-act=subscribe]'); await waitText(P, /What do you sell\?/);
+    await step('1.3 Payments stay out of sight: the plans page says the platform is free for now', async () => {
+      await P.goto(BASE + '/#/plans'); const t = await waitText(P, /You are in your free period/);
+      ok(/Plans appear 14 days before it ends/.test(t), 'explains when plans appear'); await shot(P, '03-plans-early'); await beat(1800);
+      const sub = (await api(await tokenOf(P), 'GET', '/billing/subscription')).json.subscription;
+      ok(sub.free && !sub.plansOpen && sub.freeDaysLeft >= 89, 'server agrees: free, plans closed, ~90 days left');
+      await P.goto(BASE + '/#/setup'); await waitText(P, /What do you sell\?/);
     });
     await step('1.4 Set up the shop with sample data', async () => {
       await fill(P, '#s-name', 'Mikocheni Stationery'); await tap(P, '[data-act=setType][data-id=retail]');
+      await P.locator('#s-country').selectOption('TZ'); await beat(400);
       await fill(P, '#s-till', '5123 4567'); await shot(P, '04-setup'); await beat(900);
       await tap(P, '[data-act=createShop]'); await waitText(P, /Rice 5 kg/); await shot(P, '05-sell-phone');
     });
@@ -138,11 +141,13 @@ const addItems = async (p, items, desktop) => {
       await addItems(P, [['Rice 5 kg', 2], ['Cooking oil 1 L', 1], ['Soap bar', 1]], false);
       const t = await waitText(P, /Review Order · 4 items/); ok(/(?:TZS|TSh)\s*46,000/.test(t), 'cart total TZS 46,000'); await shot(P, '06-cart'); await beat(900);
     });
-    await step('2.2 Pay with Lipa Namba (M-Pesa)', async () => {
+    await step('2.2 Pay with Lipa Namba: request on the customer phone, approve, sale completes itself', async () => {
       await tap(P, '.cartbar'); await waitText(P, /Pay with/);
       await tap(P, '[data-act=setTender][data-id=lipa_namba]'); await tap(P, '[data-act=setNetwork][data-id=mpesa]');
-      const t = await body(P); ok(/5123 4567/.test(t) && /Waiting for the customer/.test(t), 'till number and waiting state'); await shot(P, '07-pay'); await beat(1200);
-      await tap(P, '[data-act=confirmPay]'); const d = await waitText(P, /Payment Complete/);
+      await fill(P, '#p-phone', '0712 345 678'); await shot(P, '07-pay'); await beat(1000);
+      await tap(P, '[data-act=confirmPay]'); await waitText(P, /Request sent to/); await shot(P, '07b-pay-waiting'); await beat(1500);
+      await tap(P, '[data-act=simApprove]');
+      const d = await waitText(P, /Payment Complete/, 10000);
       base = parseInt(/Receipt #(\d+)/i.exec(d)[1], 10); ok(base >= 1 && /(?:TZS|TSh)\s*7,017/.test(d), 'receipt number and VAT 7,017'); await shot(P, '08-done'); await beat(1500);
     });
     token = await tokenOf(P);
@@ -151,6 +156,21 @@ const addItems = async (p, items, desktop) => {
       const prods = (await api(token, 'GET', `/shops/${id}/products`)).json.products;
       ok(prods.find(p => p.name === 'Rice 5 kg').stock === 22, 'rice 24 -> 22');
       const sales = (await api(token, 'GET', `/shops/${id}/sales`)).json.sales; ok(sales[0].total === 46000 && sales[0].tender === 'lipa_namba' && sales[0].tenderRef === 'mpesa' && sales[0].number === base, 'latest sale is the 46,000 M-Pesa sale');
+    });
+    await step('2.4 Mobile money cannot be claimed without money: the server refuses a sale with no payment', async () => {
+      const prods = (await api(token, 'GET', `/shops/${shopId}/products`)).json.products;
+      const r = await api(token, 'POST', `/shops/${shopId}/sales`, { lines: [{ productId: prods[0].id, qty: 1 }], tender: 'lipa_namba', tenderRef: 'mpesa', idempotencyKey: 'cheat-' + stamp });
+      ok(r.status === 400 && r.json.error.code === 'PAYMENT_REQUIRED', 'PAYMENT_REQUIRED, got ' + JSON.stringify(r.json));
+    });
+    await tap(P, '[data-act=newSale], a[href="#/sell"]');
+    await step('2.5 A declined payment shows clearly and a retry works', async () => {
+      await waitText(P, /Rice 5 kg/); await addItems(P, [['Bread', 1]], false);
+      await tap(P, '.cartbar'); await tap(P, '[data-act=setTender][data-id=lipa_namba]'); await fill(P, '#p-phone', '0712 345 678');
+      await tap(P, '[data-act=confirmPay]'); await waitText(P, /Request sent to/); await tap(P, '[data-act=simDecline]');
+      await waitText(P, /did not go through/); await shot(P, '08b-pay-declined'); await beat(1200);
+      await tap(P, '[data-act=confirmPay]'); await waitText(P, /Request sent to/); await tap(P, '[data-act=simApprove]'); await waitText(P, /Payment Complete/, 10000);
+      const pays = (await api(token, 'GET', `/shops/${shopId}/payments`)).json.payments;
+      ok(pays.filter(p => p.status === 'failed').length === 1 && pays.filter(p => p.status === 'succeeded').length === 2 && pays.every(p => p.status !== 'succeeded' || p.saleId), 'one failed, two succeeded, all successes tied to a sale');
     });
     await tap(P, '[data-act=newSale], a[href="#/sell"]');
 
@@ -211,13 +231,44 @@ const addItems = async (p, items, desktop) => {
       await P.goto(BASE + '/#/insights'); await waitText(P, /Top products/); await shot(P, '15-insights-phone'); await beat(1200);
     });
 
-    await step('5.2 Dashboard: recommended actions, shop metrics, bell badge', async () => {
+    await step('5.2 Dashboard: next actions, AI insight and bell. No payment nag in the free period', async () => {
       await tap(D, 'a[href="#/shops"]'); const t = await waitText(D, /Recommended actions/);
-      ok(/Restock Mikocheni Stationery: \d+ items? (is|are) low/.test(t), 'restock action'); ok(/Free trial ends in \d+ days?/.test(t), 'trial action');
+      ok(/Restock Mikocheni Stationery: \d+ items? (is|are) low/.test(t), 'restock action'); ok(!/Free trial ends/.test(t), 'no trial or payment reminder in the first weeks');
+      ok(/\(\d+ d\)/.test(t) || /Running low/.test(t), 'restock action carries the forecast');
+      ok(/typical/.test(t), 'AI insight compares today with a typical day');
       ok(/Sales today/.test(t) && /Average sale/.test(t) && /Low stock/.test(t) && /Online/.test(t), 'metric row');
-      ok(Number(await D.locator('#bell-n').innerText()) >= 2, 'bell badge counts the actions'); await shot(D, '14b-dashboard'); await beat(1800);
+      ok(Number(await D.locator('#bell-n').innerText()) >= 1, 'bell badge'); await shot(D, '14b-dashboard'); await beat(1800);
       await P.goto(BASE + '/#/shops'); await waitText(P, /Recommended actions/); await shot(P, '14c-dashboard-phone'); await beat(1500);
       await tap(D, '.act:has-text("Restock")'); await waitText(D, /Low stock/); ok(D.url().endsWith('#/products'), 'action opens products');
+    });
+    /* ---------- AI assistant ---------- */
+    await step('5.3 Ask your shop: answers come from real data, in the owner\'s language', async () => {
+      await tap(D, 'a[href="#/assistant"]'); await waitText(D, /Ask your shop/);
+      await tap(D, '.chip:has-text("What sold best this week?")'); const t = await waitText(D, /Best sellers in the last 7 days/);
+      ok(/1\. /.test(t) && /Answered from your shop data/.test(t), 'ranked list from the shop'); await shot(D, '14d-assistant'); await beat(1500);
+      await tap(D, '.chip:has-text("What should I restock?")'); const r = await waitText(D, /need restocking soon/);
+      ok(/about \d+ days at the current pace/.test(r) || /not selling lately/.test(r), 'forecast based advice'); await beat(1500);
+      await D.locator('.hdr-lang').selectOption('sw'); await waitText(D, /Uliza duka lako/);
+      await fill(D, '#q-ask', 'Mauzo yakoje leo?'); await tap(D, '[data-act=askNow]');
+      const sw = await waitText(D, /Mapato leo/); ok(/TSh/.test(sw), 'Kiswahili answer with local currency'); await shot(D, '14e-assistant-sw'); await beat(1800);
+      await D.locator('.hdr-lang').selectOption('en');
+    });
+    await step('5.4 Assistant on the phone, and the cloud AI switch is honest about the missing key', async () => {
+      await P.goto(BASE + '/#/assistant'); await waitText(P, /Ask your shop/);
+      await fill(P, '#q-ask', 'How are sales today?'); await tap(P, '[data-act=askNow]'); const t = await waitText(P, /Revenue today|No sales today/);
+      await shot(P, '14f-assistant-phone'); await beat(1200);
+      await P.goto(BASE + '/#/account'); const a = await waitText(P, /Answer open questions with Claude/);
+      ok(/Not available: this server has no Claude key/.test(a), 'toggle explains why it is off');
+    });
+    await step('5.5 Reconciliation: a payment with the wrong amount is held and shown for a person', async () => {
+      const prods = (await api(token, 'GET', `/shops/${shopId}/products`)).json.products;
+      const pay = (await api(token, 'POST', `/shops/${shopId}/payments`, { lines: [{ productId: prods[0].id, qty: 1 }], network: 'mpesa', phone: '0755 000 111' })).json.payment;
+      const held = (await api(token, 'POST', `/dev/payments/${pay.id}/approve`, { amount: 100 })).json.payment;
+      ok(held.status === 'mismatch', 'wrong amount is not accepted as paid, status ' + held.status);
+      await D.goto(BASE + '/#/shops'); const t = await waitText(D, /1 payment needs attention/); await shot(D, '14g-payment-attention'); await beat(1500);
+      await tap(D, '.act:has-text("Review payments")'); const p = await waitText(D, /Amount differs from the request/);
+      ok(/Matched to sales/.test(p) && /Confirmed by the networks/.test(p), 'daily proof is shown'); await shot(D, '14h-payments'); await beat(2000);
+      await tap(D, '[data-act=payAck]'); await waitText(D, /Nothing needs attention/); await beat(800);
     });
 
     /* ---------- Flow 5: team and devices ---------- */
@@ -241,7 +292,7 @@ const addItems = async (p, items, desktop) => {
 
     /* ---------- Flow 6: receipts and void ---------- */
     await step('7.1 Void a sale from the receipt list', async () => {
-      await tap(D, 'a[href="#/history"]'); await waitText(D, new RegExp('Receipt #' + (base + 2))); await tap(D, 'a[href^="#/receipt/"]');
+      await tap(D, 'a[href="#/history"]'); await waitText(D, new RegExp('Receipt #' + (base + 3))); await tap(D, 'a[href^="#/receipt/"]');
       await waitText(D, /Void Sale/); await shot(D, '17-receipt'); await tap(D, '[data-act=voidSale]'); await tap(D, '[data-act=voidSale]');
       await waitText(D, /Sale voided/); await beat(800); await tap(D, '.modal a[href="#/history"]');
       const prods = (await api(token, 'GET', `/shops/${shopId}/products`)).json.products;
@@ -276,13 +327,22 @@ const addItems = async (p, items, desktop) => {
       await P.goto(BASE + '/#/account'); await waitText(P, /Subscription/);
       await P.locator('#a-lang').selectOption('sw'); const t = await waitText(P, /Usajili/);
       ok(/Akaunti/.test(t), 'Swahili account title'); await shot(P, '19-account-sw');
-      await P.goto(BASE + '/#/sell'); const s = await waitText(P, /Zimebaki/); ok(/Zimebaki/.test(s) && /Bidhaa/.test(s), 'Swahili sell screen'); ok(/TSh/.test(s), 'currency formatted by CLDR as TSh'); await shot(P, '20-sell-sw'); await beat(1800);
+      await P.goto(BASE + '/#/sell'); const s = await waitText(P, /Zimebaki \d+/); ok(/Zimebaki/.test(s) && /Bidhaa/.test(s), 'Swahili sell screen'); ok(/TSh/.test(s), 'currency formatted by CLDR as TSh: ' + s.replace(/\s+/g, ' ').slice(0, 400)); await shot(P, '20-sell-sw'); await beat(1800);
       await P.goto(BASE + '/#/account'); await P.locator('#a-lang').selectOption('en'); await waitText(P, /Subscription/);
     });
 
     /* ---------- Flow 9: second shop (mobile money agent) ---------- */
-    await step('10.1 Plan limit: Business includes one shop', async () => {
-      await tap(D, 'a[href="#/shops"]'); await tap(D, '[data-act=addShop]'); await waitText(D, /What do you sell\?/);
+    await step('10.0 Last two weeks of the free period: plans appear and the owner picks Starter', async () => {
+      const f = await api(token, 'POST', '/dev/billing/fast-forward', { days: 80 }); ok(f.status === 200, 'sandbox clock moved 80 days');
+      await D.goto(BASE + '/#/shops'); const t = await waitText(D, /Free trial ends in 10 days/); await shot(D, '24a-trial-action'); await beat(1500);
+      await tap(D, '.act:has-text("See plans")'); await waitText(D, /Choose your plan/);
+      await tap(D, '[data-act=selPlan][data-id=starter]'); const p = await body(D); ok(/Your plan starts after your free period ends/.test(p), 'nothing is charged before the free period ends'); await shot(D, '24b-plans-open'); await beat(1500);
+      await tap(D, '[data-act=subscribe]'); await waitText(D, /Choose Plan|Free until|free period/i);
+      const sub = (await api(token, 'GET', '/billing/subscription')).json.subscription; ok(sub.plan === 'starter' && sub.free && sub.status === 'active', 'starter chosen, still free until day 90');
+      await api(token, 'POST', '/dev/billing/fast-forward', { days: 12 });
+    });
+    await step('10.1 After the free period the plan limits apply: Starter includes one shop', async () => {
+      await D.goto(BASE + '/#/shops'); await waitText(D, /Kariakoo|Mikocheni/); await tap(D, '[data-act=addShop]'); await waitText(D, /What do you sell\?/);
       await fill(D, '#s-name', 'Kariakoo Mobile Money'); await tap(D, '[data-act=setType][data-id=mobile_money]'); await tap(D, '[data-act=createShop]');
       const t = await waitText(D, /includes one shop/); ok(/Upgrade/.test(t), 'upgrade hint'); await shot(D, '21-plan-limit'); await beat(1500);
     });

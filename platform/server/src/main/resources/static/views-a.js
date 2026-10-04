@@ -20,6 +20,7 @@ VIEWS.welcome = async () => {
   const feats = [['sell', '#0071E3', 'welcome.f1'], ['shops', '#E07B00', 'welcome.f2'], ['float', '#248A3D', 'welcome.f3']];
   return `<div class="welcome"><div>
     <h1>${t('welcome.title')}</h1>
+    <p class="b tint" style="text-align:center;margin:-16px 0 24px">${t('welcome.free')}</p>
     ${feats.map(([i, c, k]) => `<div class="feat"><div class="ic" style="color:${c}">${ic(i, 34, 1.6)}</div><div><b>${t(k + '.t')}</b><span>${t(k + '.d')}</span></div></div>`).join('')}
     <div class="stack" style="margin-top:auto;align-items:center;padding-top:24px">
       <span class="tint">${ic('shield', 26, 1.6)}</span>
@@ -81,7 +82,16 @@ VIEWS.plans = async () => {
   S.regions = S.regions || await api('/regions');
   S.plansData = await api('/billing/plans?country=' + country);
   const d = S.plansData;
-  const active = S.sub && S.sub.active;
+  if (S.token) { const me = await api('/me'); S.sub = me.subscription; }
+  // Payment stays out of sight until the last two weeks of the free period.
+  if (S.sub && S.sub.free && !S.sub.plansOpen) {
+    return `<div class="center"><div class="auth"><p style="margin-bottom:16px">${backLink('#/account', t('back'))}</p>
+      <div class="okmark" style="background:var(--tint)">${ic('sparkle', 30, 2)}</div>
+      <h1 class="plansh1" style="margin:16px 0 8px">${t('plans.early.title')}</h1>
+      <p class="sec" style="text-align:center">${t('plans.early.d', { date: fmtDate(S.sub.trialEndsAt), days: d.plansOpenDays })}</p>
+      <a class="btn" style="margin-top:24px" href="${homeRoute()}">${t('done')}</a></div></div>`;
+  }
+  const active = S.sub && S.sub.status === 'active';
   if (active && !S.planInit) { S.selPlan = S.sub.plan; S.planInit = true; }
   const price = p => money(S.period === 'yearly' ? Math.round(p.yearly / 12) : p.monthly, d.currency);
   const cards = d.plans.map(p => {
@@ -93,14 +103,15 @@ VIEWS.plans = async () => {
       <span class="right"><b>${price(p)}</b><br><span class="xs sec">${t('plans.permonth')}</span></span></button>`;
   }).join('');
   const sel = d.plans.find(p => p.id === S.selPlan);
-  const cta = active ? (S.sub.plan === S.selPlan && S.sub.period === S.period ? t('plans.current') : t('plans.switch')) : t('plans.trial', { days: d.trialDays });
-  const body = `<div class="plans"><div class="pad" style="padding-top:8px"><h1 class="plansh1">${t('plans.title')}</h1><p class="sec" style="text-align:center;margin:6px 0 16px">${t('plans.sub', { days: d.trialDays })}</p></div>
+  const cta = active ? (S.sub.plan === S.selPlan && S.sub.period === S.period ? t('plans.current') : t('plans.switch')) : t('plans.choose');
+  const expired = S.sub && !S.sub.free && !S.sub.active;
+  const body = `<div class="plans"><div class="pad" style="padding-top:8px"><h1 class="plansh1">${expired ? t('plans.expired.title') : t('plans.title')}</h1><p class="sec" style="text-align:center;margin:6px 0 16px">${t('plans.sub')}</p></div>
     <div style="max-width:320px;margin:0 auto 12px;width:calc(100% - 32px)"><div class="grp" style="margin:0"><label class="row"><span>${t('field.country')}</span><select id="pl-country" data-change="planCountry">${S.regions.regions.map(r => `<option value="${r.code}" ${r.code === country ? 'selected' : ''}>${esc(r.name)}</option>`).join('')}</select></label></div></div>
     <div style="max-width:320px;margin:0 auto 4px;width:calc(100% - 32px)">${segHtml([['monthly', t('plans.monthly')], ['yearly', t('plans.yearly') + ' · ' + t('plans.save')]], S.period, 'setPeriod')}</div>
     <div class="cards" role="radiogroup">${cards}</div>
     <div id="err"></div>
     <div class="pad" style="max-width:420px;margin:20px auto 0;width:100%"><button class="btn" data-act="subscribe" ${active && S.sub.plan === S.selPlan && S.sub.period === S.period ? 'disabled' : ''}>${cta}</button>
-    <p class="xs sec" style="text-align:center;margin-top:10px">${t('plans.legal')}</p></div></div>`;
+    <p class="sm sec" style="text-align:center;margin-top:10px">${S.sub && S.sub.free ? t('plans.free.note', { date: fmtDate(S.sub.trialEndsAt) }) : t('plans.legal')}</p></div></div>`;
   return `<div style="height:100%;overflow:auto;background:var(--bg)"><div style="padding:max(env(safe-area-inset-top),10px) 16px 0">${backLink(S.shops.length ? '#/account' : '#/welcome', t('back'))}</div>${body}</div>`;
 };
 ACT.planCountry = el => { S.country = el.value; render(true); };
@@ -110,7 +121,7 @@ ACT.subscribe = async () => {
   try {
     const r = await api('/billing/subscribe', { method: 'POST', body: { plan: S.selPlan, period: S.period, channel: 'web' } });
     S.sub = r.subscription;
-    toast((t('plans.done', { plan: t('plan.' + S.sub.plan) })));
+    toast(t('plans.done', { plan: t('plan.' + S.sub.plan) }));
     location.hash = S.shops.length ? '#/account' : '#/setup';
   } catch (e) { showErr(errMsg(e)); }
 };
@@ -141,7 +152,7 @@ VIEWS.setup = async () => {
     <div id="err"></div>
     <div class="pad" style="margin-top:20px;max-width:420px"><button class="btn" data-act="createShop">${t('setup.create')}</button></div></div>`;
   if (isDesk()) return `<div style="height:100%;overflow:auto"><div style="max-width:560px;margin:0 auto;padding:32px 24px"><h1 class="plansh1" style="text-align:left;font-size:34px;margin-bottom:8px">${t('setup.title')}</h1>${body}</div></div>`;
-  return `<div class="scr">${offlineBar()}<div class="nav">${S.shops.length ? backLink('#/shops', t('back')) : backLink('#/plans', t('nav.plans'))}<span></span></div><h1 class="lt">${t('setup.title')}</h1><div class="body">${body}</div></div>`;
+  return `<div class="scr">${offlineBar()}<div class="nav">${S.shops.length ? backLink('#/shops', t('back')) : '<span></span>'}<span></span></div><h1 class="lt">${t('setup.title')}</h1><div class="body">${body}</div></div>`;
 };
 INPUT['setup.name'] = v => { S.setup.name = v; };
 INPUT['setup.till'] = v => { S.setup.till = v; };
@@ -260,31 +271,55 @@ ACT.checkout = () => {
 };
 
 /* ---------- Payment ---------- */
+const netLive = () => { const x = S.cfg.tenders.find(t0 => t0.id === S.pay.tender); const n = x && x.networks.find(n0 => n0.id === S.pay.network); return !!(n && n.live); };
+function livePanel() {
+  const p = S.pay.payment;
+  if (!p) return `<div class="sh">${t('pay.phone')}</div><div class="grp"><label class="row"><span>${t('pay.phone')}</span><input id="p-phone" type="tel" data-input="pay.phone" value="${esc(S.pay.phone || '')}" placeholder="${t('pay.phone.ph')}" inputmode="tel" autocomplete="tel"></label></div>`;
+  const sand = S.sandbox && p.status === 'pending' ? `<div class="sh">${t('pay.sandbox')}</div><div class="grp"><div class="row" style="gap:10px"><button class="btn" style="height:40px" data-act="simApprove">${t('pay.sandbox.approve')}</button><button class="btn sec2" style="height:40px" data-act="simDecline">${t('pay.sandbox.decline')}</button></div></div>` : '';
+  const row = {
+    created: `<span class="spin" aria-hidden="true"></span><span class="sec">${t('pay.sent', { phone: p.phone })}</span>`,
+    pending: `<span class="spin" aria-hidden="true"></span><span class="sec">${t('pay.sent', { phone: p.phone })}</span>`,
+    succeeded: `<span class="green">${ic('check', 20, 2.6)}</span><span class="green b">${t('pay.approved')}</span><span class="val sec">${t('pay.finishing')}</span>`,
+    failed: `<span class="red b">${t('pay.failed')}</span>`,
+    expired: `<span class="red b">${t('pay.expired')}</span>`,
+    mismatch: `<span class="red b">${t('payments.issue.mismatch')}</span>`
+  }[p.status];
+  return `<div class="sh">${t('payments.title')}</div><div class="grp"><div class="row" role="status">${row}</div>${p.receipt ? `<div class="row"><span>${t('receipt')}</span><span class="val">${esc(p.receipt)}</span></div>` : ''}</div>${sand}`;
+}
 function payBody() {
   const p = S.pay, total = cartTotal(), tenders = S.cfg.tenders;
   const cur = tenders.find(x => x.id === p.tender);
+  const live = cur.networks.length && netLive();
+  const pm = p.payment;
   let panel = '';
   if (p.tender === 'cash') {
     const recv = toMinor(p.cash || '0');
     panel = `<div class="sh">${t('pay.cash')}</div><div class="grp"><label class="row"><span>${t('pay.received')}</span><input id="p-cash" data-input="pay.cash" value="${esc(p.cash)}" inputmode="decimal" placeholder="${fromMinor(total)}"></label>
       <div class="row"><span>${t('pay.change')}</span><span class="val ${recv >= total && p.cash ? 'green b' : ''}">${p.cash && recv >= total ? money(recv - total) : '—'}</span></div></div>`;
   } else if (cur.networks.length) {
-    panel = `<div class="sh">${t('tender.' + p.tender)}</div><div class="grp" role="radiogroup">${cur.networks.map(n => `<button class="row" role="radio" aria-checked="${p.network === n.id}" data-act="setNetwork" data-id="${n.id}">${radio(p.network === n.id)}<span class="grow">${esc(n.name)}</span></button>`).join('')}</div>
+    const nets = cur.networks.map(n => `<button class="row" role="radio" aria-checked="${p.network === n.id}" data-act="setNetwork" data-id="${n.id}" ${pm && ['pending', 'created', 'succeeded'].includes(pm.status) ? 'disabled' : ''}>${radio(p.network === n.id)}<span class="grow">${esc(n.name)}</span></button>`).join('');
+    panel = `<div class="sh">${t('tender.' + p.tender)}</div><div class="grp" role="radiogroup">${nets}</div>` + (live ? livePanel() : `
       <div class="grp" style="margin-top:12px"><div class="row"><span>${t('pay.to')}</span><span class="val b" style="letter-spacing:1px;color:var(--label)">${esc(S.cfg.shop.till || t('pay.till.none'))}</span></div>
       <div class="row"><span>${t('pay.business')}</span><span class="val">${esc(S.cfg.shop.name)}</span></div>
-      <div class="row"><span class="spin" aria-hidden="true"></span><span class="sec">${t('pay.waiting')}</span></div></div><div class="sf">${t('pay.waiting.foot')}</div>`;
+      <div class="row"><span class="spin" aria-hidden="true"></span><span class="sec">${t('pay.waiting')}</span></div></div><div class="sf">${t('pay.manual')}</div>`);
   } else if (p.tender === 'card') {
     panel = `<div class="sh">${t('tender.card')}</div><div class="grp"><div class="row"><span class="spin" aria-hidden="true"></span><span class="sec">${t('pay.card.wait')}</span></div></div>`;
   } else {
     panel = `<div class="sh">${t('tender.credit')}</div><div class="grp"><label class="row"><span>${t('field.customer')}</span><input id="p-cust" placeholder="${t('field.customer.ph')}"></label></div>`;
   }
   const short = p.tender === 'cash' && p.cash && toMinor(p.cash) < total;
+  let action, off = false;
+  if (live) {
+    if (!pm) { action = t('pay.request'); off = p.busy; }
+    else if (['failed', 'expired', 'mismatch'].includes(pm.status)) action = t('pay.retry');
+    else { action = t('pay.finishing'); off = true; }
+  } else { action = t('pay.confirm'); off = p.busy || short; }
   return `<div data-enter="confirmPay">
     <div class="bigamt"><div class="sm sec">${t('pay.due')}</div><div class="n">${money(total)}</div><div class="sm sec">${tn('pay.items', cartCount())} · ${t('tax.included', { name: S.cfg.tax.name, rate: S.cfg.tax.bps / 100 })} ${money(vatOf(total))}</div></div>
     <div class="sh">${t('pay.with')}</div>
-    <div class="grp" role="radiogroup">${tenders.map(x => `<button class="row" role="radio" aria-checked="${p.tender === x.id}" data-act="setTender" data-id="${x.id}">${radio(p.tender === x.id)}<span class="grow"><div>${t('tender.' + x.id)}</div><div class="sm sec">${x.networks.length ? x.networks.map(n => esc(n.name)).join(', ') : t('tender.' + x.id + '.sub')}</div></span></button>`).join('')}</div>
+    <div class="grp" role="radiogroup">${tenders.map(x => `<button class="row" role="radio" aria-checked="${p.tender === x.id}" data-act="setTender" data-id="${x.id}" ${pm && ['pending', 'created', 'succeeded'].includes(pm.status) ? 'disabled' : ''}>${radio(p.tender === x.id)}<span class="grow"><div>${t('tender.' + x.id)}</div><div class="sm sec">${x.networks.length ? x.networks.map(n => esc(n.name)).join(', ') : t('tender.' + x.id + '.sub')}</div></span></button>`).join('')}</div>
     ${panel}<div id="err"></div>
-    <div class="pad" style="margin-top:20px"><button class="btn" data-act="confirmPay" ${p.busy || short ? 'disabled' : ''}>${t('pay.confirm')}</button></div></div>`;
+    <div class="pad" style="margin-top:20px"><button class="btn" data-act="confirmPay" ${off ? 'disabled' : ''}>${action}</button></div></div>`;
 }
 function payShell(inner, title) {
   if (isDesk()) return `<div class="overlay"><div class="modal" role="dialog" aria-modal="true" aria-label="${title}"><div style="height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 16px"><a href="#/sell">${t('cancel')}</a><b>${title}</b><span style="width:60px"></span></div>${inner}</div></div>`;
@@ -309,11 +344,52 @@ function rerenderPay() {
 ACT.setTender = el => { const x = S.cfg.tenders.find(t0 => t0.id === el.dataset.id); S.pay.tender = x.id; S.pay.network = (x.networks[0] || {}).id || null; rerenderPay(); };
 ACT.setNetwork = el => { S.pay.network = el.dataset.id; rerenderPay(); };
 INPUT['pay.cash'] = v => { S.pay.cash = v; rerenderPay(); };
+INPUT['pay.phone'] = v => { S.pay.phone = v; };
+const saleLines = () => cartLines().map(l => ({ productId: l.p.id, qty: l.qty }));
+async function requestPayment() {
+  const p = S.pay; if (p.busy) return;
+  if (p.payment) p.payment = null;
+  p.phone = p.phone || val('p-phone');
+  p.busy = true; rerenderPay();
+  try {
+    const r = await api('/shops/' + S.shopId + '/payments', { method: 'POST', body: { lines: saleLines(), network: p.network, phone: p.phone } });
+    p.payment = r.payment; p.busy = false; rerenderPay(); watchPayment();
+  } catch (e) { p.busy = false; rerenderPay(); showErr(errMsg(e)); }
+}
+let payTimer;
+function watchPayment() {
+  clearInterval(payTimer);
+  payTimer = setInterval(async () => {
+    if (!S.pay || !S.pay.payment || S.route.name !== 'pay') return clearInterval(payTimer);
+    try { onPayment((await api('/payments/' + S.pay.payment.id)).payment); } catch (e) { /* offline: keep waiting */ }
+  }, 2000);
+}
+/** Called by the 2-second poll and by the live WebSocket event, whichever sees the change first. */
+function onPayment(pm) {
+  if (!S.pay || !S.pay.payment || S.pay.payment.id !== pm.id) return;
+  const before = S.pay.payment.status;
+  S.pay.payment = pm;
+  if (pm.status === before) return;
+  rerenderPay();
+  if (pm.status === 'succeeded') { clearInterval(payTimer); finalizePay(); }
+  else if (['failed', 'expired', 'mismatch'].includes(pm.status)) clearInterval(payTimer);
+}
+async function finalizePay() {
+  const p = S.pay; if (!p || p.finalizing) return;
+  p.finalizing = true;
+  try {
+    const r = await api('/shops/' + S.shopId + '/sales', { method: 'POST', body: { lines: saleLines(), tender: p.tender, tenderRef: p.network, idempotencyKey: p.key, paymentId: p.payment.id } });
+    S.lastSale = r.sale; S.cart = {}; S.pay = null; location.hash = '#/done';
+  } catch (e) { p.finalizing = false; showErr(errMsg(e)); }
+}
+ACT.simApprove = async () => { try { await api('/dev/payments/' + S.pay.payment.id + '/approve', { method: 'POST', body: {} }); } catch (e) { showErr(errMsg(e)); } };
+ACT.simDecline = async () => { try { await api('/dev/payments/' + S.pay.payment.id + '/decline', { method: 'POST' }); } catch (e) { showErr(errMsg(e)); } };
 ACT.confirmPay = async () => {
   const p = S.pay; if (!p || p.busy) return;
+  if (netLive()) { if (!p.payment || ['failed', 'expired', 'mismatch'].includes(p.payment.status)) await requestPayment(); return; }
   const lines = cartLines();
   const body = {
-    lines: lines.map(l => ({ productId: l.p.id, qty: l.qty })), tender: p.tender, tenderRef: p.tender === 'lipa_namba' || p.tender === 'mpesa_till' ? p.network : null,
+    lines: saleLines(), tender: p.tender, tenderRef: p.tender === 'lipa_namba' || p.tender === 'mpesa_till' ? p.network : null,
     idempotencyKey: p.key, cashReceived: p.tender === 'cash' && p.cash ? toMinor(p.cash) : null
   };
   p.busy = true;

@@ -35,12 +35,16 @@ object Plans {
 
 data class Entitlement(
     val plan: String, val period: String, val status: String, val channel: String,
-    val trialEndsAt: Long, val renewsAt: Long, val active: Boolean, val limits: Limits
+    val trialEndsAt: Long, val renewsAt: Long, val active: Boolean, val limits: Limits,
+    val free: Boolean, val plansOpen: Boolean
 )
 
 data class SubscribeReq(val plan: String, val period: String = "monthly", val channel: String = "web")
 
-const val TRIAL_DAYS = 14L
+/** Every new account gets the whole platform free for 90 days. Plans and payment only open in the last PLANS_OPEN_DAYS. */
+const val TRIAL_DAYS = 90L
+const val PLANS_OPEN_DAYS = 14L
+const val GRACE_DAYS = 7L
 const val DAY_MS = 86_400_000L
 
 @Service
@@ -48,13 +52,29 @@ class BillingService(val jdbc: JdbcTemplate) {
     private val mapper = RowMapper<Entitlement> { rs, _ ->
         val plan = rs.getString(1)
         val status = rs.getString(3)
+        val trialEnds = rs.getLong(5)
         val renews = rs.getLong(6)
-        Entitlement(plan, rs.getString(2), status, rs.getString(4), rs.getLong(5), renews,
-            status in setOf("trialing", "active", "canceled") && now() < renews, Plans.limits[plan]!!)
+        val t = now()
+        val free = t < trialEnds
+        // During the free period everything is unlocked, whatever plan was picked for later.
+        Entitlement(plan, rs.getString(2), status, rs.getString(4), trialEnds, renews,
+            status in setOf("trialing", "active", "canceled") && t < renews + GRACE_DAYS * DAY_MS,
+            if (free) Plans.limits["multi"]!! else Plans.limits[plan]!!, free,
+            !free || trialEnds - t <= PLANS_OPEN_DAYS * DAY_MS)
     }
 
     fun current(userId: String): Entitlement? =
         jdbc.query("select plan,period,status,channel,trial_ends_at,renews_at from subscriptions where user_id=?", mapper, userId).firstOrNull()
+
+    /** Called at sign-up: the full platform, free, for 90 days. */
+    fun startFreePeriod(userId: String) {
+        val t = now()
+        val ends = t + TRIAL_DAYS * DAY_MS
+        jdbc.update(
+            "insert into subscriptions(user_id,plan,period,status,channel,trial_ends_at,renews_at,created_at) values(?,?,?,?,?,?,?,?)",
+            userId, "multi", "monthly", "trialing", "free", ends, ends, t
+        )
+    }
 
     fun requireActive(userId: String): Entitlement {
         val e = current(userId) ?: planLimit("SUBSCRIPTION_REQUIRED", "Choose a plan to continue")
@@ -66,23 +86,15 @@ class BillingService(val jdbc: JdbcTemplate) {
         if (req.plan !in Plans.ids) bad("INVALID_PLAN", "Unknown plan")
         if (req.period !in listOf("monthly", "yearly")) bad("INVALID_PERIOD", "Unknown billing period")
         if (req.channel !in listOf("web", "appstore", "play")) bad("INVALID_CHANNEL", "Unknown billing channel")
-        val existing = current(userId)
+        val existing = current(userId) ?: notFound("NO_SUBSCRIPTION", "No account period found")
+        if (!existing.plansOpen) throw ApiException(HttpStatus.CONFLICT, "PLANS_NOT_OPEN", "Plans open ${PLANS_OPEN_DAYS} days before your free period ends")
         val t = now()
         val periodMs = if (req.period == "yearly") 365 * DAY_MS else 30 * DAY_MS
-        val trialEnds: Long
-        val renews: Long
-        val status: String
-        if (existing == null) {
-            trialEnds = t + TRIAL_DAYS * DAY_MS; renews = trialEnds; status = "trialing"
-        } else {
-            trialEnds = existing.trialEndsAt
-            status = if (t < trialEnds) "trialing" else "active"
-            renews = if (t < trialEnds) trialEnds else t + periodMs
-        }
-        jdbc.update("delete from subscriptions where user_id=?", userId)
+        // Billing starts when the free period ends, never earlier.
+        val renews = maxOf(t, existing.trialEndsAt) + periodMs
         jdbc.update(
-            "insert into subscriptions(user_id,plan,period,status,channel,trial_ends_at,renews_at,created_at) values(?,?,?,?,?,?,?,?)",
-            userId, req.plan, req.period, status, req.channel, trialEnds, renews, t
+            "update subscriptions set plan=?,period=?,status='active',channel=?,renews_at=? where user_id=?",
+            req.plan, req.period, req.channel, renews, userId
         )
         return current(userId)!!
     }
@@ -96,6 +108,8 @@ class BillingService(val jdbc: JdbcTemplate) {
     fun view(e: Entitlement): Map<String, Any?> = mapOf(
         "plan" to e.plan, "period" to e.period, "status" to e.status, "channel" to e.channel,
         "trialEndsAt" to e.trialEndsAt, "renewsAt" to e.renewsAt, "active" to e.active,
+        "free" to e.free, "plansOpen" to e.plansOpen, "freeDaysLeft" to if (e.free) (e.trialEndsAt - now() + DAY_MS - 1) / DAY_MS else 0L,
+        "graceUntil" to e.renewsAt + GRACE_DAYS * DAY_MS,
         "limits" to mapOf("products" to e.limits.products, "shops" to e.limits.shops, "registers" to e.limits.registers, "staff" to e.limits.staff)
     )
 }
@@ -107,7 +121,7 @@ class BillingController(val billing: BillingService) {
     fun plans(@RequestParam(defaultValue = "US") country: String): Map<String, Any?> {
         val r = Regions.get(country.uppercase())
         return mapOf(
-            "currency" to r.currency, "decimals" to r.decimals, "trialDays" to TRIAL_DAYS,
+            "currency" to r.currency, "decimals" to r.decimals, "trialDays" to TRIAL_DAYS, "plansOpenDays" to PLANS_OPEN_DAYS,
             "plans" to Plans.ids.map { id ->
                 val l = Plans.limits[id]!!
                 mapOf(

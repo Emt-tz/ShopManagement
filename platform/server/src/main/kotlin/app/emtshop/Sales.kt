@@ -20,22 +20,42 @@ import org.springframework.web.bind.annotation.RestController
 data class SaleLineReq(val productId: String = "", val qty: Int = 0, val serial: String? = null)
 data class SaleReq(
     val lines: List<SaleLineReq> = emptyList(), val tender: String = "cash", val tenderRef: String? = null,
-    val idempotencyKey: String = "", val cashReceived: Long? = null
+    val idempotencyKey: String = "", val cashReceived: Long? = null, val paymentId: String? = null
 )
 
 @Service
 class SalesService(
     val jdbc: JdbcTemplate, val tx: TransactionTemplate, val products: ProductService,
-    val activity: ActivityService, val access: Access
+    val activity: ActivityService, val access: Access, val router: PaymentRouter
 ) {
-    fun record(shop: Shop, user: AuthUser, req: SaleReq, device: String, at: Long = now(), silent: Boolean = false): Map<String, Any?> {
+    /** Total for a cart at today's prices, without touching stock. Used to size a payment request. */
+    fun price(shop: Shop, lines: List<SaleLineReq>): Long {
+        if (lines.isEmpty()) bad("EMPTY_SALE", "Add at least one item")
+        val byId = products.list(shop.id).associateBy { it.id }
+        var total = 0L
+        for (l in lines) {
+            if (l.qty <= 0) bad("INVALID_QTY", "Quantity must be at least 1")
+            val p = byId[l.productId] ?: notFound("PRODUCT_NOT_FOUND", "Product not found in this shop")
+            total += p.price * l.qty
+        }
+        return total
+    }
+
+    fun record(shop: Shop, user: AuthUser, req: SaleReq, device: String, at: Long = now(), silent: Boolean = false, force: Boolean = false): Map<String, Any?> {
         val region = Regions.get(shop.country)
         if (req.tender !in region.tenders) bad("INVALID_TENDER", "Payment method not available in this region")
         if (req.lines.isEmpty()) bad("EMPTY_SALE", "Add at least one item")
         if (req.idempotencyKey.isBlank()) bad("MISSING_KEY", "idempotencyKey is required")
         findByKey(shop.id, req.idempotencyKey)?.let { return it + ("duplicate" to true) }
+        // A payment can become exactly one sale. A retry, or the server's own auto-settlement, gets the same sale back.
+        if (req.paymentId != null) {
+            jdbc.queryForList("select id from sales where payment_id=?", String::class.java, req.paymentId).firstOrNull()?.let { return view(it) + ("duplicate" to true) }
+        }
+        // Where a live integration exists, "paid by mobile money" must be backed by a confirmed payment, not a cashier's word.
+        if (!silent && req.tender in LIVE_TENDERS && req.paymentId == null && router.providerFor(shop.country, req.tenderRef ?: "") != null)
+            bad("PAYMENT_REQUIRED", "Request the payment from the customer's phone first")
         val saleId = try {
-            tx.execute { _ -> insertSale(shop, user, req, device, at, silent, region) }!!
+            tx.execute { _ -> insertSale(shop, user, req, device, at, silent, region, force) }!!
         } catch (e: DuplicateKeyException) {
             return findByKey(shop.id, req.idempotencyKey)!! + ("duplicate" to true)
         }
@@ -45,7 +65,7 @@ class SalesService(
         return if (change != null) view + ("change" to change) else view
     }
 
-    private fun insertSale(shop: Shop, user: AuthUser, req: SaleReq, device: String, at: Long, silent: Boolean, region: Region): String {
+    private fun insertSale(shop: Shop, user: AuthUser, req: SaleReq, device: String, at: Long, silent: Boolean, region: Region, force: Boolean): String {
         // Serialise sales per shop so receipt numbers stay gapless and stock checks are exact.
         jdbc.queryForObject("select id from shops where id=? for update", String::class.java, shop.id)
         data class Row(val id: String, val name: String, val price: Long, val stock: Int, val lowAt: Int)
@@ -63,19 +83,30 @@ class SalesService(
             }
             val qty = (used[l.productId] ?: 0) + l.qty
             used[l.productId] = qty
-            if (!silent && row.stock < qty) conflict("OUT_OF_STOCK", "Only ${row.stock} of ${row.name} left")
+            if (!silent && !force && row.stock < qty) conflict("OUT_OF_STOCK", "Only ${row.stock} of ${row.name} left")
             total += row.price * l.qty
             items += l.qty
         }
         if (req.tender == "cash" && req.cashReceived != null && req.cashReceived < total) bad("CASH_SHORT", "Cash received is less than the total")
+        if (req.paymentId != null) {
+            data class Pay(val status: String, val saleId: String?, val amount: Long, val shopId: String)
+            val pay = jdbc.query("select status,sale_id,amount,shop_id from payment_intents where id=? for update",
+                RowMapper { rs, _ -> Pay(rs.getString(1), rs.getString(2), rs.getLong(3), rs.getString(4)) }, req.paymentId).firstOrNull()
+                ?: notFound("PAYMENT_NOT_FOUND", "Payment not found")
+            if (pay.shopId != shop.id) notFound("PAYMENT_NOT_FOUND", "Payment not found")
+            if (pay.status != "succeeded") conflict("NOT_PAID", "This payment has not been confirmed")
+            if (pay.saleId != null) conflict("PAYMENT_USED", "This payment already belongs to a sale")
+            if (pay.amount != total) conflict("AMOUNT_MISMATCH", "The cart no longer matches the amount that was paid")
+        }
         val bps = region.taxBps.toLong()
         val vat = if (bps > 0) (total * bps + (10000 + bps) / 2) / (10000 + bps) else 0L
         val number = jdbc.queryForObject("select coalesce(max(number),0)+1 from sales where shop_id=?", Int::class.java, shop.id)!!
         val saleId = newId()
         jdbc.update(
-            "insert into sales(id,shop_id,number,user_id,tender,tender_ref,total,vat,currency,status,idem_key,created_at) values(?,?,?,?,?,?,?,?,?,?,?,?)",
-            saleId, shop.id, number, user.id, req.tender, req.tenderRef, total, vat, shop.currency, "completed", req.idempotencyKey, at
+            "insert into sales(id,shop_id,number,user_id,tender,tender_ref,total,vat,currency,status,idem_key,created_at,payment_id) values(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            saleId, shop.id, number, user.id, req.tender, req.tenderRef, total, vat, shop.currency, "completed", req.idempotencyKey, at, req.paymentId
         )
+        if (req.paymentId != null) jdbc.update("update payment_intents set sale_id=?,updated_at=? where id=?", saleId, now(), req.paymentId)
         var serial: String? = null
         for (l in req.lines) {
             val r = rows[l.productId]!!
@@ -84,7 +115,7 @@ class SalesService(
                 newId(), saleId, r.id, r.name, l.qty, r.price, l.serial?.trim()?.ifBlank { null }
             )
             if (serial == null) serial = l.serial?.trim()?.ifBlank { null }
-            if (!silent) jdbc.update("update products set stock=stock-?,updated_at=? where id=?", l.qty, now(), r.id)
+            if (!silent) jdbc.update("update products set stock=greatest(stock-?,0),updated_at=? where id=?", l.qty, now(), r.id)
         }
         if (!silent) {
             val first = rows[req.lines.first().productId]!!

@@ -26,6 +26,7 @@ import java.util.UUID
 
 @SpringBootApplication
 @EnableCaching
+@org.springframework.scheduling.annotation.EnableScheduling
 class Application
 
 fun main(args: Array<String>) {
@@ -119,7 +120,7 @@ class WebConfig(val interceptor: AuthInterceptor) : WebMvcConfigurer {
     override fun addInterceptors(registry: InterceptorRegistry) {
         registry.addInterceptor(interceptor)
             .addPathPatterns("/api/**")
-            .excludePathPatterns("/api/auth/signup", "/api/auth/login", "/api/i18n/**", "/api/regions", "/api/billing/plans", "/api/health")
+            .excludePathPatterns("/api/auth/signup", "/api/auth/login", "/api/i18n/**", "/api/regions", "/api/billing/plans", "/api/health", "/api/payments/callback/**")
     }
 }
 

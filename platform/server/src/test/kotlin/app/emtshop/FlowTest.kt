@@ -21,7 +21,7 @@ import java.util.UUID
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@TestPropertySource(properties = ["spring.datasource.url=jdbc:h2:mem:flow;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1"])
+@TestPropertySource(properties = ["spring.datasource.url=jdbc:h2:mem:flow;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1", "emtshop.sandbox=true"])
 class FlowTest(@Autowired val mvc: MockMvc, @Autowired val mapper: ObjectMapper, @Autowired val jdbc: JdbcTemplate) {
 
     private fun call(b: MockHttpServletRequestBuilder, token: String? = null, body: Any? = null, device: String = "Web"): Pair<Int, JsonNode> {
@@ -40,6 +40,13 @@ class FlowTest(@Autowired val mvc: MockMvc, @Autowired val mapper: ObjectMapper,
         return json["token"].asText() to email
     }
 
+    /** Move this account's clock forward by shifting its free period and renewal dates back. */
+    private fun fastForward(token: String, days: Long) {
+        val id = call(get("/api/me"), token).second["user"]["id"].asText()
+        val ms = days * 86_400_000L
+        jdbc.update("update subscriptions set trial_ends_at=trial_ends_at-?, renews_at=renews_at-? where user_id=?", ms, ms, id)
+    }
+
     private fun shop(token: String, type: String = "retail", country: String = "TZ"): String {
         val (s, j) = call(post("/api/shops"), token, mapOf("name" to "Test $type", "type" to type, "country" to country, "till" to "5123 4567"))
         assertEquals(201, s, j.toString())
@@ -56,23 +63,30 @@ class FlowTest(@Autowired val mvc: MockMvc, @Autowired val mapper: ObjectMapper,
         assertEquals(400, call(post("/api/auth/signup"), body = mapOf("email" to "nope", "password" to "password123", "name" to "X")).first)
     }
 
-    @Test fun `plans are priced per region and shops need a subscription`() {
+    @Test fun `new accounts get the whole platform free for 90 days and plans open late`() {
         val (_, tz) = call(get("/api/billing/plans?country=TZ"))
         assertEquals("TZS", tz["currency"].asText())
         assertEquals(49900, tz["plans"][1]["monthly"].asLong())
         assertEquals(49900L * 12 * 80 / 100, tz["plans"][1]["yearly"].asLong())
+        assertEquals(90, tz["trialDays"].asInt())
         val (token, _) = signup()
-        assertEquals(402, call(post("/api/shops"), token, mapOf("name" to "A", "type" to "retail", "country" to "TZ")).first)
-        val (s, sub) = call(post("/api/billing/subscribe"), token, mapOf("plan" to "business", "period" to "monthly", "channel" to "appstore"))
-        assertEquals(200, s)
-        assertEquals("trialing", sub["subscription"]["status"].asText())
-        assertTrue(sub["subscription"]["active"].asBoolean())
-        shop(token)
+        val sub = call(get("/api/billing/subscription"), token).second["subscription"]
+        assertEquals("trialing", sub["status"].asText()); assertTrue(sub["free"].asBoolean()); assertFalse(sub["plansOpen"].asBoolean())
+        assertTrue(sub["freeDaysLeft"].asLong() in 89..90)
+        assertEquals(null, sub["limits"]["shops"].let { if (it.isNull) null else it.asInt() }, "free period is unlimited")
+        shop(token)                       // no plan needed to start
+        val (early, err) = call(post("/api/billing/subscribe"), token, mapOf("plan" to "business"))
+        assertEquals(409, early); assertEquals("PLANS_NOT_OPEN", err["error"]["code"].asText())
+        fastForward(token, 80)            // last two weeks: payments now show up
+        val open = call(post("/api/billing/subscribe"), token, mapOf("plan" to "business", "period" to "monthly", "channel" to "appstore"))
+        assertEquals(200, open.first)
+        val after = open.second["subscription"]
+        assertEquals("business", after["plan"].asText()); assertTrue(after["free"].asBoolean(), "still free until day 90")
+        assertTrue(after["renewsAt"].asLong() > after["trialEndsAt"].asLong(), "billing starts after the free period")
     }
 
     @Test fun `full retail flow sells, decrements stock, computes VAT and reports it`() {
         val (token, _) = signup()
-        call(post("/api/billing/subscribe"), token, mapOf("plan" to "business"))
         val shopId = shop(token)
         val cfg = call(get("/api/shops/$shopId/config"), token).second
         assertEquals("sw-TZ", cfg["locale"].asText())
@@ -84,7 +98,7 @@ class FlowTest(@Autowired val mvc: MockMvc, @Autowired val mapper: ObjectMapper,
         val oil = call(post("/api/shops/$shopId/products"), token, mapOf("name" to "Oil", "category" to "Food", "price" to 7500, "stock" to 12)).second["product"]["id"].asText()
 
         val key = UUID.randomUUID().toString()
-        val body = mapOf("lines" to listOf(mapOf("productId" to rice, "qty" to 2), mapOf("productId" to oil, "qty" to 1)), "tender" to "lipa_namba", "tenderRef" to "mpesa", "idempotencyKey" to key)
+        val body = mapOf("lines" to listOf(mapOf("productId" to rice, "qty" to 2), mapOf("productId" to oil, "qty" to 1)), "tender" to "card", "idempotencyKey" to key)
         val (s1, sale) = call(post("/api/shops/$shopId/sales"), token, body)
         assertEquals(201, s1, sale.toString())
         assertEquals(43500, sale["sale"]["total"].asLong())
@@ -120,36 +134,39 @@ class FlowTest(@Autowired val mvc: MockMvc, @Autowired val mapper: ObjectMapper,
         assertTrue(feed.containsAll(listOf("shop_created", "product_added", "sale", "void")), feed.toString())
     }
 
-    @Test fun `plan limits are enforced`() {
+    @Test fun `plan limits apply only after the free period`() {
         val (token, _) = signup()
-        call(post("/api/billing/subscribe"), token, mapOf("plan" to "starter"))
         val shopId = shop(token)
-        val (s, e) = call(post("/api/shops"), token, mapOf("name" to "Second", "type" to "retail", "country" to "TZ"))
+        // Free period: everything is unlocked, including a second shop and staff.
+        assertEquals(201, call(post("/api/shops"), token, mapOf("name" to "Second", "type" to "retail", "country" to "TZ")).first)
+        fastForward(token, 80)
+        call(post("/api/billing/subscribe"), token, mapOf("plan" to "starter"))
+        fastForward(token, 12)           // free period is over, starter is now in force
+        val (s, e) = call(post("/api/shops"), token, mapOf("name" to "Third", "type" to "retail", "country" to "TZ"))
         assertEquals(402, s); assertEquals("PLAN_LIMIT_SHOPS", e["error"]["code"].asText())
         val (s2, e2) = call(post("/api/shops/$shopId/members"), token, mapOf("name" to "Asha", "email" to "a-${UUID.randomUUID()}@example.com", "password" to "password123", "role" to "cashier"))
         assertEquals(402, s2); assertEquals("PLAN_LIMIT_STAFF", e2["error"]["code"].asText())
-        // Upgrading lifts the limit.
         call(post("/api/billing/subscribe"), token, mapOf("plan" to "multi"))
-        assertEquals(201, call(post("/api/shops"), token, mapOf("name" to "Second", "type" to "phones", "country" to "KE")).first)
+        assertEquals(201, call(post("/api/shops"), token, mapOf("name" to "Third", "type" to "phones", "country" to "KE")).first)
         assertEquals(201, call(post("/api/shops/$shopId/members"), token, mapOf("name" to "Asha", "email" to "b-${UUID.randomUUID()}@example.com", "password" to "password123", "role" to "manager")).first)
     }
 
     @Test fun `expired subscriptions block selling and cancel keeps access until the period ends`() {
         val (token, _) = signup()
         val me = call(get("/api/me"), token).second["user"]["id"].asText()
-        call(post("/api/billing/subscribe"), token, mapOf("plan" to "business"))
         val shopId = shop(token)
         val p = call(post("/api/shops/$shopId/products"), token, mapOf("name" to "Pen", "price" to 500, "stock" to 10)).second["product"]["id"].asText()
+        fastForward(token, 80)
+        call(post("/api/billing/subscribe"), token, mapOf("plan" to "business"))
         val canceled = call(post("/api/billing/cancel"), token).second["subscription"]
         assertEquals("canceled", canceled["status"].asText()); assertTrue(canceled["active"].asBoolean())
-        jdbc.update("update subscriptions set renews_at=? where user_id=?", now() - 1000, me)
+        jdbc.update("update subscriptions set renews_at=? where user_id=?", now() - 8 * 86_400_000L, me)   // past the 7-day grace
         val (s, e) = call(post("/api/shops/$shopId/sales"), token, mapOf("lines" to listOf(mapOf("productId" to p, "qty" to 1)), "tender" to "cash", "idempotencyKey" to "x"))
         assertEquals(402, s); assertEquals("SUBSCRIPTION_EXPIRED", e["error"]["code"].asText())
     }
 
     @Test fun `roles and tenancy are enforced`() {
         val (owner, _) = signup("owner")
-        call(post("/api/billing/subscribe"), owner, mapOf("plan" to "business"))
         val shopId = shop(owner)
         val staffEmail = "staff-${UUID.randomUUID().toString().take(8)}@example.com"
         assertEquals(201, call(post("/api/shops/$shopId/members"), owner, mapOf("name" to "Asha", "email" to staffEmail, "password" to "password123", "role" to "cashier")).first)
@@ -175,7 +192,6 @@ class FlowTest(@Autowired val mvc: MockMvc, @Autowired val mapper: ObjectMapper,
 
     @Test fun `mobile money agents manage float with commission and low alerts`() {
         val (token, _) = signup()
-        call(post("/api/billing/subscribe"), token, mapOf("plan" to "business"))
         val shopId = shop(token, "mobile_money")
         call(post("/api/shops/$shopId/float/adjust"), token, mapOf("network" to "cash", "delta" to 1_000_000))
         call(post("/api/shops/$shopId/float/adjust"), token, mapOf("network" to "mpesa", "delta" to 2_000_000))
@@ -194,7 +210,6 @@ class FlowTest(@Autowired val mvc: MockMvc, @Autowired val mapper: ObjectMapper,
 
     @Test fun `demo data, overview and multi-currency totals`() {
         val (token, _) = signup()
-        call(post("/api/billing/subscribe"), token, mapOf("plan" to "multi"))
         val a = shop(token, "retail", "TZ"); val b = shop(token, "retail", "KE")
         call(post("/api/shops/$a/demo-data"), token); call(post("/api/shops/$b/demo-data"), token)
         val week = call(get("/api/shops/$a/insights?range=week"), token).second
@@ -204,7 +219,9 @@ class FlowTest(@Autowired val mvc: MockMvc, @Autowired val mapper: ObjectMapper,
         assertEquals(2, ov["shops"].size()); assertEquals(setOf("TZS", "KES"), ov["totals"].map { it["currency"].asText() }.toSet())
         // Recommended actions: the demo catalogue has low-stock items, and a new plan is still on trial.
         val kinds = call(get("/api/overview"), token).second["actions"].map { it["kind"].asText() }
-        assertTrue("restock" in kinds && "trial" in kinds, kinds.toString())
+        assertTrue("restock" in kinds && "trial" !in kinds, kinds.toString())   // payments are not mentioned in the first 76 days
+        fastForward(token, 80)
+        assertTrue("trial" in call(get("/api/overview"), token).second["actions"].map { it["kind"].asText() })
         assertEquals(2, call(get("/api/me"), token).second["shops"][0]["members"].asInt() + 1)
         // Product availability across shops with the same currency is rejected; other currency copies are not allowed.
         val rice = call(get("/api/shops/$a/products"), token).second["products"][0]["id"].asText()

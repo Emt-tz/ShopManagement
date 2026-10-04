@@ -47,7 +47,7 @@ object ShopTypes {
 }
 
 @Service
-class ShopConfigCache(val access: Access) {
+class ShopConfigCache(val access: Access, val router: PaymentRouter) {
     /** Static per-shop configuration. Cached (Caffeine) and evicted whenever the shop changes. */
     @Cacheable("shopConfig", key = "#shopId")
     fun get(shopId: String): Map<String, Any?> {
@@ -55,7 +55,7 @@ class ShopConfigCache(val access: Access) {
         val r = Regions.get(s.country)
         val t = ShopTypes.find(s.type)!!
         val tenders = r.tenders.map { id ->
-            mapOf("id" to id, "networks" to if (id == "lipa_namba" || id == "mpesa_till") r.networks.map { mapOf("id" to it.id, "name" to it.name) } else emptyList<Any>())
+            mapOf("id" to id, "networks" to if (id in LIVE_TENDERS) r.networks.map { mapOf("id" to it.id, "name" to it.name, "live" to (router.providerFor(s.country, it.id) != null)) } else emptyList<Any>())
         }
         val body = mapOf(
             "shop" to mapOf("id" to s.id, "name" to s.name, "type" to s.type, "country" to s.country, "till" to s.till),
@@ -77,10 +77,11 @@ class ShopConfigCache(val access: Access) {
 }
 
 @Service
-class ConfigService(val cache: ShopConfigCache, val access: Access, val billing: BillingService) {
+class ConfigService(val cache: ShopConfigCache, val access: Access, val billing: BillingService, val assistant: AssistantService, val claude: ClaudeAssistant) {
     fun full(shopId: String): Map<String, Any?> {
         val ownerId = access.shop(shopId).ownerId
-        return cache.get(shopId) + ("plan" to billing.current(ownerId)?.let { billing.view(it) })
+        return cache.get(shopId) + ("plan" to billing.current(ownerId)?.let { billing.view(it) }) +
+            ("ai" to mapOf("available" to claude.available, "external" to assistant.externalEnabled(shopId)))
     }
 }
 
@@ -103,7 +104,7 @@ class I18n(val mapper: ObjectMapper) {
 
 @RestController
 @RequestMapping("/api")
-class ConfigController(val i18n: I18n, val config: ConfigService, val access: Access) {
+class ConfigController(val i18n: I18n, val config: ConfigService, val access: Access, @org.springframework.beans.factory.annotation.Value("\${emtshop.sandbox:false}") val sandbox: Boolean) {
     @GetMapping("/i18n/{locale}")
     fun catalog(@PathVariable locale: String) = mapOf("locale" to locale, "strings" to i18n.catalog(locale))
 
@@ -122,5 +123,5 @@ class ConfigController(val i18n: I18n, val config: ConfigService, val access: Ac
     }
 
     @GetMapping("/health")
-    fun health() = mapOf("status" to "ok")
+    fun health() = mapOf("status" to "ok", "sandbox" to sandbox)
 }

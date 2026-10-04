@@ -199,7 +199,7 @@ VIEWS.insights = async () => {
       <div class="grp" style="margin-top:12px"><div class="row"><span>${t('kpi.sales')}</span><span class="val">${d.count} ${delta(d.count, d.previousCount)}</span></div><div class="row"><span>${t('kpi.average')}</span><span class="val">${money(d.average, d.currency)}</span></div><div class="row"><span>${t('kpi.refunds')}</span><span class="val">${money(d.refunds, d.currency)}</span></div></div>
       <div class="sh">${t('insights.top')}</div><div class="grp">${top}</div>
       <div class="sh">${t('insights.payments')}</div><div class="grp" style="padding:14px 16px">${mix}</div>
-      <div class="sh"></div><div class="grp"><a class="row" href="#/history" style="color:inherit">${ic('history', 22, 1.7)}<span class="grow">${t('nav.receipts')}</span>${chev}</a></div>`
+      <div class="sh"></div><div class="grp"><a class="row" href="#/history" style="color:inherit">${ic('history', 22, 1.7)}<span class="grow">${t('nav.receipts')}</span>${chev}</a><a class="row" href="#/payments" style="color:inherit">${ic('payments', 22, 1.7)}<span class="grow">${t('nav.payments')}</span>${chev}</a><a class="row" href="#/assistant" style="color:inherit"><span class="tint">${ic('sparkle', 22, 1.7)}</span><span class="grow">${t('assistant.ask.row')}</span>${chev}</a></div>`
   });
 };
 ACT.setRange = el => { S.range = el.dataset.id; render(true); };
@@ -217,16 +217,18 @@ function shopAlerts(s) {
   return out.length ? out.join(' · ') : `<span class="green b">${t('alert.clear')}</span>`;
 }
 const netNameFor = () => id => (id === 'cash' ? t('float.cash') : ({ mpesa: 'M-Pesa', mixx: 'Mixx by Yas', airtel: 'Airtel Money', halopesa: 'HaloPesa' }[id] || id));
-const ACTION_ICON = { topup: 'float', restock: 'products', limit: 'shield', trial: 'account' };
+const ACTION_ICON = { topup: 'float', restock: 'products', limit: 'shield', trial: 'account', trial_over: 'account', payments: 'payments' };
 function actionCard(a) {
   const nets = (a.networks || []).map(netNameFor()).join(', ');
   const c = {
     topup: [t('action.topup.title', { shop: a.shopName }), t('action.topup.d', { networks: nets }), t('action.topup.cta'), '#/float'],
-    restock: [tn('action.restock.title', a.count, { shop: a.shopName }), t('action.restock.d', { items: (a.items || []).join(', ') }), t('action.restock.cta'), '#/products'],
+    restock: [tn('action.restock.title', a.count, { shop: a.shopName }), t('action.restock.d', { items: (a.items || []).map(i => (i.daysLeft != null ? i.name + ' (' + t('unit.days', { n: i.daysLeft }) + ')' : i.name)).join(', ') }), t('action.restock.cta'), '#/products'],
+    payments: [tn('action.payments.title', a.count), t('action.payments.d'), t('action.payments.cta'), '#/payments'],
+    trial_over: [t('action.trial_over.title'), t('action.trial_over.d'), t('action.trial_over.cta'), '#/plans'],
     limit: [t('action.limit.title'), t('action.limit.d', { shop: a.shopName, used: a.used, max: a.max }), t('action.limit.cta'), '#/plans'],
     trial: [tn('action.trial.title', a.days), t('action.trial.d'), t('action.trial.cta'), '#/plans']
   }[a.kind];
-  return `<button class="act ${a.kind === 'topup' || a.kind === 'restock' ? 'warn' : ''}" data-act="doAction" data-shop="${a.shopId || ''}" data-route="${c[3]}"><span class="act-ic">${ic(ACTION_ICON[a.kind], 20, 1.8)}</span><span class="grow"><b>${c[0]}</b><span>${c[1]}</span></span><span class="act-cta">${c[2]}</span></button>`;
+  return `<button class="act ${['topup', 'restock', 'payments', 'trial_over'].includes(a.kind) ? 'warn' : ''}" data-act="doAction" data-shop="${a.shopId || ''}" data-route="${c[3]}"><span class="act-ic">${ic(ACTION_ICON[a.kind], 20, 1.8)}</span><span class="grow"><b>${c[0]}</b><span>${c[1]}</span></span><span class="act-cta">${c[2]}</span></button>`;
 }
 ACT.doAction = async el => {
   const id = el.dataset.shop;
@@ -238,6 +240,17 @@ ACT.setDashFilter = el => { S.dashFilter = el.dataset.id; render(true); };
 VIEWS.shops = async () => {
   const [ov, fd] = await Promise.all([api('/overview'), api('/activity?limit=30')]);
   S.feed = fd.activity; S.actions = ov.actions;
+  let insight = '';
+  if (S.cfg && !isAgent()) {
+    try {
+      const f = await api('/shops/' + S.shopId + '/forecast');
+      const v = f.versusTypical;
+      if (v) {
+        const wd = new Intl.DateTimeFormat(S.locale, { weekday: 'long', timeZone: tz() }).format(Date.now());
+        insight = `<a class="act" href="#/assistant" style="margin-bottom:14px;color:inherit"><span class="act-ic">${ic('sparkle', 20, 1.8)}</span><span class="grow"><b>${t('insight.title')}</b><span>${t(v.percent >= 0 ? 'ai.typical.up' : 'ai.typical.down', { pct: Math.abs(v.percent), weekday: wd })}</span></span><span class="act-cta">${t('assistant.ask.row')}</span></a>`;
+      }
+    } catch (e) { /* the insight is optional */ }
+  }
   const agents = ov.shops.filter(s => s.type === 'mobile_money').length, stores = ov.shops.length - agents;
   const filter = agents && stores ? S.dashFilter : 'all';
   const shown = ov.shops.filter(s => filter === 'all' || (filter === 'agent') === (s.type === 'mobile_money'));
@@ -256,7 +269,7 @@ VIEWS.shops = async () => {
     return desk({
       active: 'shops', title: t('nav.overview'), sub: `<span class="green">● ${t('live')}</span> · ${tn('shops.count', ov.shops.length)}`,
       tools: `<button class="tbtn" data-act="addShop">${ic('plus', 14, 2.4)}${t('shops.add')}</button>`,
-      body: `<div class="card" style="flex-direction:row;gap:24px;margin-bottom:14px">${totals}</div>
+      body: `<div class="card" style="flex-direction:row;gap:24px;margin-bottom:14px">${totals}</div>${insight}
         <div class="sectitle">${t('dash.actions')}</div>${actions ? `<div class="acts">${actions}</div>` : `<p class="sec sm" style="margin-bottom:14px">${t('dash.none')}</p>`}
         <div class="sectitle">${t('dash.shops')}</div>${chips}<div class="cards2">${shown.map(cardHtml).join('')}</div>`,
       insp: `<div class="b" style="font-size:15px;margin-bottom:6px">${t('feed.title')}</div><div id="feed" class="grp" style="background:transparent">${feed}</div>`
@@ -265,6 +278,7 @@ VIEWS.shops = async () => {
   return phone({
     active: 'shops', title: t('nav.shops'), right: `<button data-act="addShop" aria-label="${t('shops.add')}">${ic('plus', 24, 2)}</button>`,
     body: `<div class="grp" style="padding:14px 16px;display:flex;gap:16px">${totals}</div>
+      <div class="grp" style="margin-top:12px"><a class="row" href="#/assistant" style="color:inherit"><span class="tint">${ic('sparkle', 22, 1.7)}</span><span class="grow">${t('assistant.ask.row')}</span>${chev}</a></div>
       ${actions ? `<div class="sh">${t('dash.actions')}</div><div class="acts" style="padding:0 16px;grid-template-columns:1fr">${actions}</div>` : ''}
       <div class="sh">${t('nav.shops')}</div>${chips}<div class="grp">${shown.map(rowHtml).join('')}</div>
       <div class="sh" style="display:flex;justify-content:space-between"><span>${t('feed.title')}</span><span class="green">● ${t('live')}</span></div><div class="grp" id="feed">${feed}</div>
@@ -383,24 +397,37 @@ ACT.voidSale = async el => {
 /* ---------- Account: subscription, language, shop settings ---------- */
 VIEWS.account = async () => {
   await api('/me').then(me => { S.sub = me.subscription; });
+  if (S.shopId) await loadCfg();
   const sub = S.sub;
-  const statusText = !sub ? t('account.staff') : t('sub.' + sub.status, { date: fmtDate(sub.status === 'trialing' ? sub.trialEndsAt : sub.renewsAt) });
-  const subGroup = sub ? `<div class="sh">${t('account.subscription')}</div><div class="grp">
+  const date = sub ? fmtDate(sub.free ? sub.trialEndsAt : sub.renewsAt) : '';
+  const statusText = !sub ? t('account.staff') : sub.free ? t('sub.free', { date }) : t('sub.' + sub.status, { date });
+  const freeCard = sub && sub.free ? `<div class="sh">${t('account.subscription')}</div><div class="grp">
+      <div class="row" style="align-items:flex-start"><span class="tint" style="padding-top:2px">${ic('sparkle', 22, 1.7)}</span><span class="grow"><div class="b">${t('account.free')}</div><div class="sm green b">${t('account.free.until', { date, n: sub.freeDaysLeft })}</div><div class="sm sec" style="margin-top:4px">${t('account.free.d')}</div></span></div>
+      ${sub.status === 'active' ? `<div class="row"><span>${t('account.plan.chosen', { plan: t('plan.' + sub.plan) })}</span></div>` : ''}
+      ${sub.plansOpen ? `<a class="row" href="#/plans" style="color:inherit"><span class="tint grow">${t('plans.choose')}</span>${chev}</a>` : ''}</div>
+      <div class="sf">${t('account.pay.later')}</div>` : '';
+  const subGroup = !sub ? `<div class="sh">${t('account.subscription')}</div><div class="grp"><div class="row sec">${statusText}</div></div>` : (sub.free ? freeCard : `<div class="sh">${t('account.subscription')}</div><div class="grp">
       <div class="row"><span>${t('account.plan')}</span><span class="val b" style="color:var(--label)">${t('plan.' + sub.plan)} · ${t('plans.' + sub.period)}</span></div>
       <div class="row"><span>${t('account.status')}</span><span class="val ${sub.active ? 'green' : 'red'}">${statusText}</span></div>
       <div class="row"><span>${t('account.billedvia')}</span><span class="val">${t('channel.' + sub.channel)}</span></div>
       <a class="row" href="#/plans" style="color:inherit"><span class="tint grow">${t('account.change')}</span>${chev}</a>
       ${sub.status !== 'canceled' ? `<button class="row" data-act="cancelSub" data-label="${t('account.cancel')}"><span class="red grow">${t('account.cancel')}</span></button>` : ''}</div>
-      <div class="sf">${t('account.sub.foot')}</div>` : `<div class="sh">${t('account.subscription')}</div><div class="grp"><div class="row sec">${statusText}</div></div>`;
+      <div class="sf">${t('account.sub.foot')}</div>`);
   const shopGroup = S.cfg && canManage() ? `<div class="sh">${t('account.shop')}</div><div class="grp" data-enter="saveShop"><label class="row"><span>${t('field.name')}</span><input id="a-name" value="${esc(S.cfg.shop.name)}"></label>
       ${['TZ', 'KE'].includes(S.cfg.shop.country) ? `<label class="row"><span>${t(S.cfg.shop.country === 'TZ' ? 'field.lipa' : 'field.till')}</span><input id="a-till" value="${esc(S.cfg.shop.till || '')}" inputmode="numeric"></label>` : ''}</div>
       <div id="err"></div><div class="pad" style="margin-top:12px"><button class="btn sec2" data-act="saveShop">${t('save')}</button></div>` : '';
+  const ai = S.cfg ? S.cfg.ai : null;
+  const aiGroup = ai ? `<div class="sh">${t('account.ai')}</div><div class="grp"><button class="row" data-act="toggleAi" role="switch" aria-checked="${ai.external}" ${!ai.available || myRole() !== 'owner' ? 'disabled' : ''}><span class="grow"><div>${t('account.ai.toggle')}</div><div class="sm sec">${!ai.available ? t('assistant.cloud.na') : myRole() !== 'owner' ? t('assistant.cloud.owner') : t('assistant.cloud.d')}</div></span>${sw(ai.external)}</button></div>` : '';
   const body = `<div class="grp"><div class="row"><div class="avatar" style="background:${hue(S.user.name)}">${initial(S.user.name)}</div><div class="grow"><div class="b">${esc(S.user.name)}</div><div class="sm sec">${esc(S.user.email)}</div></div></div></div>
-    ${subGroup}${shopGroup}
+    ${subGroup}${shopGroup}${aiGroup}
     <div class="sh">${t('account.language')}</div><div class="grp"><label class="row"><span>${t('field.language')}</span><select id="a-lang" data-change="pickLang">${Object.entries(LANGS).map(([k, v]) => `<option value="${k}" ${k === S.lang ? 'selected' : ''}>${v}</option>`).join('')}</select></label></div><div class="sf">${t('account.language.foot')}</div>
     <div class="grp" style="margin-top:22px"><button class="row" data-act="signOut"><span class="red grow" style="text-align:center">${t('account.signout')}</span></button></div>`;
   if (isDesk()) return desk({ active: 'account', title: t('nav.account'), body: `<div style="max-width:560px">${body}</div>` });
   return phone({ active: 'account', title: t('nav.account'), body });
+};
+ACT.toggleAi = async () => {
+  try { S.cfg = await api('/shops/' + S.shopId, { method: 'PUT', body: { aiExternal: !S.cfg.ai.external } }); render(true); }
+  catch (e) { showErr(errMsg(e)); }
 };
 ACT.pickLang = async el => { S.lang = el.value; ls.set('lang', S.lang); await loadStrings(); render(true); };
 ACT.cancelSub = async el => {

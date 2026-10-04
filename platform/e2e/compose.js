@@ -25,7 +25,7 @@ visible.forEach((s, i) => {
   const num = m ? `Flow ${m[1]}.${m[2]}` : '';
   const txt = (m ? m[3] : s.name).replace(/[{}\\]/g, '');
   lines.push(`Dialogue: 1,${ts(a)},${ts(b)},Cap,,0,0,0,,{\\pos(1180,1000)\\c&HFFAA33&\\fs34}${num}`);
-  lines.push(`Dialogue: 1,${ts(a)},${ts(b)},Cap,,0,0,0,,{\\pos(1180,1050)\\fs46\\q2}${txt}`);
+  lines.push(`Dialogue: 1,${ts(a)},${ts(b)},Cap,,0,0,0,,{\\pos(1180,1050)\\fs46}${txt}`);
 });
 label('Emt Shop', 60, 40, 60, '&HFFFFFF');
 label('One server, every device, live. Recorded from the real running product.', 330, 62, 34, '&HBBBBBB');

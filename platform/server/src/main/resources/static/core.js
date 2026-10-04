@@ -15,7 +15,7 @@ const S = {
   token: ls.get('token'), user: null, sub: null, shops: [], shopId: ls.get('shopId'), cfg: null,
   products: [], cart: {}, strings: {}, lang: ls.get('lang'), locale: 'en', feed: [], regions: null,
   range: 'week', period: 'monthly', selPlan: 'business', offline: false, route: { name: '', params: [] },
-  pay: null, lastSale: null, selProduct: null, search: '', plansData: null, after: null, country: null,
+  pay: null, lastSale: null, sandbox: false, chat: [], selProduct: null, search: '', plansData: null, after: null, country: null,
   cat: '', sort: { key: 'name', dir: 1 }, sel: new Set(), actions: [], menuOpen: false, dashFilter: 'all'
 };
 const LANGS = { en: 'English', sw: 'Kiswahili' };
@@ -42,7 +42,10 @@ const ICON = {
   down: 'M12 5v14M5 12l7 7 7-7',
   up: 'M12 19V5M5 12l7-7 7 7',
   phone: 'M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM11 18h2',
-  bell: 'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21a2 2 0 0 0 4 0'
+  sparkle: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z',
+  bell: 'M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21a2 2 0 0 0 4 0',
+  payments: 'M3 7h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 7l13-3v3M17 14h.01',
+  assistant: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z'
 };
 const ic = (n, size, sw) => `<svg width="${size || 24}" height="${size || 24}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw || 1.7}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ICON[n]}"/></svg>`;
 const chev = '<i class="chev"></i>';
@@ -165,6 +168,7 @@ async function bootstrap() {
   if (S.shops.length && !S.shops.find(s => s.id === S.shopId)) S.shopId = S.shops[0].id;
   if (S.shopId) { ls.set('shopId', S.shopId); await loadCfg(); } else { S.cfg = null; }
   await loadStrings();
+  fetch('/api/health').then(r => r.json()).then(h => { S.sandbox = !!h.sandbox; }).catch(() => {});
   connectWS();
   flushOutbox();
   if (S.shops.length) refreshActions();
@@ -191,6 +195,7 @@ function connectWS() {
   ws.onmessage = ev => {
     const m = JSON.parse(ev.data);
     if (m.type === 'activity') onActivity(m.activity);
+    if (m.type === 'payment' && typeof onPayment === 'function') onPayment(m.payment);
   };
   ws.onclose = () => { if (S.ws === ws) { S.ws = null; if (S.token) setTimeout(connectWS, 2000); } };
 }
@@ -206,6 +211,8 @@ function activityText(a) {
     case 'product_removed': return t('act.product_removed', v);
     case 'member_added': return t('act.member_added', Object.assign(v, { member: d.name, role: t('role.' + d.role) }));
     case 'shop_created': return t('act.shop_created', v);
+    case 'payment_received': return t('act.payment_received', { amount: money(d.amount, d.currency), network: netName(d.network), receipt: d.receipt || '' });
+    case 'payment_mismatch': return t('act.payment_mismatch', { receipt: d.receipt || '' });
     case 'low_stock': return t('act.low_stock', { item: d.name, n: d.stock });
     case 'low_float': return t('act.low_float', { network: netName(d.network) });
     case 'float_tx': return t('act.float_tx.' + d.kind, Object.assign(v, { network: netName(d.network), amount: money(d.amount, d.currency) }));
@@ -266,8 +273,8 @@ const tabLinks = () => (isAgent()
   ? [['float', '#/float', 'nav.float'], ['history', '#/history', 'nav.history'], ['shops', '#/shops', 'nav.shops'], ['account', '#/account', 'nav.account']]
   : [['sell', '#/sell', 'nav.sell'], ['products', '#/products', 'nav.products'], ['insights', '#/insights', 'nav.insights'], ['shops', '#/shops', 'nav.shops'], ['account', '#/account', 'nav.account']]);
 const sideLinks = () => (isAgent()
-  ? [['float', '#/float', 'nav.float'], ['history', '#/history', 'nav.history']]
-  : [['sell', '#/sell', 'nav.sell'], ['products', '#/products', 'nav.products'], ['insights', '#/insights', 'nav.insights'], ['history', '#/history', 'nav.receipts']]);
+  ? [['float', '#/float', 'nav.float'], ['history', '#/history', 'nav.history'], ['assistant', '#/assistant', 'nav.assistant']]
+  : [['sell', '#/sell', 'nav.sell'], ['products', '#/products', 'nav.products'], ['insights', '#/insights', 'nav.insights'], ['history', '#/history', 'nav.receipts'], ['payments', '#/payments', 'nav.payments'], ['assistant', '#/assistant', 'nav.assistant']]);
 const offlineBar = () => `<div class="offline" role="status">${t('offline.banner')}</div>`;
 
 function phone(o) {
@@ -282,7 +289,7 @@ function phone(o) {
 function switcher() {
   if (!S.cfg) return '<div class="brand">Emt Shop</div>';
   const cur = S.shops.find(s => s.id === S.shopId);
-  const sub = (S.sub ? t('plan.' + S.sub.plan) : t('role.' + myRole())) + ' · ' + tn('team.count', cur ? cur.members : 1);
+  const sub = (S.sub ? (S.sub.free ? t('account.free') : t('plan.' + S.sub.plan)) : t('role.' + myRole())) + ' · ' + tn('team.count', cur ? cur.members : 1);
   const menu = S.menuOpen ? `<div class="menu" role="menu" aria-label="${t('switch.menu')}">${S.shops.map(s => `<button class="si ${s.id === S.shopId ? 'cur' : ''}" role="menuitem" data-act="switchShop" data-id="${s.id}"><span class="dot ${s.id === S.shopId ? '' : 'off'}"></span>${esc(s.name)}</button>`).join('')}
     <button class="si tint" role="menuitem" data-act="addShop">${ic('plus', 14, 2.4)}${t('shops.add')}</button></div>` : '';
   return `<button class="switch" data-act="toggleSwitch" aria-haspopup="menu" aria-expanded="${S.menuOpen}"><span class="sw-av" style="background:${hue(S.cfg.shop.name)}">${initial(S.cfg.shop.name)}</span><span class="grow"><b>${esc(S.cfg.shop.name)}</b><span>${sub}</span></span><svg width="10" height="14" viewBox="0 0 10 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5l3-3 3 3M2 9l3 3 3-3"/></svg></button>${menu}`;
@@ -305,7 +312,7 @@ function desk(o) {
     <a href="#/shops" class="${o.active === 'shops' ? 'on' : ''}">${ic('overview', 16, 1.8)}${t('nav.overview')}</a>
     <a href="#/team" class="${o.active === 'team' ? 'on' : ''}">${ic('team', 16, 1.8)}${t('nav.team')}</a>
     <div class="foot"><a href="#/account" class="${o.active === 'account' ? 'on' : ''}" style="margin-bottom:8px">${ic('account', 16, 1.8)}${t('nav.account')}</a>
-      ${S.user ? esc(S.user.name) : ''}<br>${S.sub ? t('plan.' + S.sub.plan) : ''}</div></aside>
+      ${S.user ? esc(S.user.name) : ''}<br>${S.sub ? (S.sub.free ? t('account.free') : t('plan.' + S.sub.plan)) : ''}${S.sandbox ? '<br><b style="color:#FF9F0A">Sandbox</b>' : ''}</div></aside>
     <div class="mainw">${offlineBar()}
       <header class="tbar"><div><h1>${o.title}</h1>${o.sub ? `<div class="sub">${o.sub}</div>` : ''}</div><div class="grow"></div>${o.tools || ''}<div class="hdr">${langSel}${bellHtml()}</div></header>
       <div class="content"><main class="pane" id="body">${o.body}</main>${o.insp ? `<aside class="insp" id="insp">${o.insp}</aside>` : ''}</div>

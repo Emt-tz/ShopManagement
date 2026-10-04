@@ -76,8 +76,9 @@ class DemoService(
         val off = region.utcOffsetMinutes * 60_000L
         val dayStart = Math.floorDiv(now() + off, DAY_MS) * DAY_MS - off
         var key = 0
-        for (d in 6 downTo 0) {
-            val count = 12 + rnd.nextInt(14) + if (d == 1) 12 else 0
+        // A full last week, plus a lighter sample of the same weekday in each of the three weeks before (for the "typical day" comparison).
+        for (d in listOf(28, 21, 14, 7, 6, 5, 4, 3, 2, 1, 0)) {
+            val count = if (d >= 7) 8 + rnd.nextInt(8) else 12 + rnd.nextInt(14) + if (d == 1) 12 else 0
             repeat(count) {
                 val hour = (if (rnd.nextInt(100) < 35) 12 else 8 + rnd.nextInt(12)).toLong()
                 val at = dayStart - d * DAY_MS + hour * 3_600_000L + rnd.nextInt(3_600_000)

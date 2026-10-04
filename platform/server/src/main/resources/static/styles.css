@@ -215,3 +215,12 @@ h1,h2,h3,p{margin:0}
 .bulk input{width:70px;height:28px;border:1px solid var(--sep);border-radius:6px;background:var(--bg);padding:0 8px}
 .bulk button{height:28px;padding:0 12px;border-radius:7px;background:var(--fill);font-size:13px}
 .bulk button.p{background:var(--tint);color:#fff;font-weight:600}.bulk button.d{color:var(--red)}
+
+/* ---------- Assistant chat ---------- */
+.chat{display:flex;flex-direction:column;gap:10px;max-height:calc(100vh - 260px);overflow:auto;padding:4px 2px}
+.bubble{max-width:92%;padding:10px 14px;border-radius:18px;font-size:15px;line-height:20px}
+.bubble.me{align-self:flex-end;background:var(--tint);color:#fff}.bubble.me .sec{color:rgba(255,255,255,.8)}
+.bubble.bot{align-self:flex-start;background:var(--surface);border:1px solid var(--sep);display:flex;gap:8px}
+.bubble ul{margin:6px 0 0;padding-left:18px}.bubble li{margin:3px 0}
+.askbar{display:flex;gap:8px;margin-top:8px}
+.askbar input{flex:1;height:36px;border-radius:10px;border:1px solid var(--sep);background:var(--surface);padding:0 12px;min-width:0}

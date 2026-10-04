@@ -106,3 +106,42 @@ create table if not exists float_tx (
   created_at bigint not null
 );
 create index if not exists idx_float_tx_shop on float_tx(shop_id, created_at);
+
+alter table sales add column if not exists payment_id varchar(32);
+create unique index if not exists ux_sales_payment on sales(payment_id);
+alter table shops add column if not exists ai_external boolean default false;
+create table if not exists payment_intents (
+  id varchar(32) primary key,
+  shop_id varchar(32) not null,
+  user_id varchar(32) not null,
+  provider varchar(20) not null,
+  network varchar(20) not null,
+  phone varchar(20) not null,
+  amount bigint not null,
+  currency varchar(3) not null,
+  lines_json varchar(4000) not null,
+  status varchar(12) not null,
+  provider_ref varchar(80),
+  callback_token varchar(40) not null,
+  receipt varchar(40),
+  result_code varchar(20),
+  result_desc varchar(200),
+  late boolean not null default false,
+  acked boolean not null default false,
+  sale_id varchar(32),
+  created_at bigint not null,
+  updated_at bigint not null,
+  expires_at bigint not null
+);
+create index if not exists idx_intents_shop on payment_intents(shop_id, created_at);
+create unique index if not exists ux_intent_receipt on payment_intents(receipt);
+create unique index if not exists ux_intent_token on payment_intents(callback_token);
+create table if not exists payment_events (
+  id varchar(32) primary key,
+  intent_id varchar(32),
+  provider varchar(20) not null,
+  kind varchar(20) not null,
+  payload varchar(4000) not null,
+  created_at bigint not null
+);
+create index if not exists idx_pevents_intent on payment_events(intent_id);

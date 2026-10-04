@@ -1,0 +1,21 @@
+spring:
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    # Dev default is an embedded file database. Production uses PostgreSQL:
+    #   SPRING_DATASOURCE_URL=jdbc:postgresql://host/emtshop
+    url: jdbc:h2:file:./data/emtshop;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+  sql:
+    init:
+      mode: always
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=10000,expireAfterWrite=300s
+server:
+  port: 8080
+  compression:
+    enabled: true

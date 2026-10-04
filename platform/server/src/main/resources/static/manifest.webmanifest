@@ -1,0 +1,10 @@
+{
+  "name": "Emt Shop",
+  "short_name": "Emt Shop",
+  "description": "Sell, manage stock and watch every shop live.",
+  "start_url": "/#/sell",
+  "display": "standalone",
+  "background_color": "#F2F2F7",
+  "theme_color": "#F2F2F7",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

@@ -201,6 +201,7 @@ class PaymentRouter(val daraja: DarajaProvider, val sim: SimulatedProvider, @Val
 
 data class PaymentReq(val lines: List<SaleLineReq> = emptyList(), val network: String = "", val phone: String = "")
 data class ResolveReq(val action: String = "")
+data class SubscribePayReq(val plan: String = "", val period: String = "monthly", val country: String = "", val network: String = "", val phone: String = "")
 
 val DIAL = mapOf("TZ" to "255", "KE" to "254", "IN" to "91", "BR" to "55", "US" to "1")
 const val INTENT_TTL_MS = 3 * 60_000L
@@ -209,7 +210,7 @@ val LIVE_TENDERS = setOf("lipa_namba", "mpesa_till")
 @Service
 class PaymentService(
     val jdbc: JdbcTemplate, val tx: TransactionTemplate, val router: PaymentRouter, val access: Access, val products: ProductService,
-    val sales: SalesService, val activity: ActivityService, val hub: Hub, val json: Json, val mapper: ObjectMapper,
+    val sales: SalesService, val activity: ActivityService, val hub: Hub, val billing: BillingService, val json: Json, val mapper: ObjectMapper,
     @Value("\${emtshop.public-url:http://localhost:8080}") val publicUrl: String
 ) {
     private data class Intent(
@@ -245,6 +246,7 @@ class PaymentService(
     fun create(shop: Shop, user: AuthUser, req: PaymentReq, device: String): Map<String, Any?> {
         val region = Regions.get(shop.country)
         if (region.networks.none { it.id == req.network }) bad("INVALID_NETWORK", "Unknown network")
+        if (acceptedTenders(jdbc, shop.id, region).none { it in LIVE_TENDERS }) bad("TENDER_NOT_ACCEPTED", "This shop does not accept mobile money")
         val provider = router.providerFor(shop.country, req.network) ?: throw ApiException(HttpStatus.SERVICE_UNAVAILABLE, "PAYMENTS_NOT_CONFIGURED", "Live payments are not set up for this network")
         val phone = normalizePhone(shop.country, req.phone)
         val total = sales.price(shop, req.lines)
@@ -267,6 +269,36 @@ class PaymentService(
         }
         return view(load(id))
     }
+
+    /** Ask the owner's phone for the plan price. The subscription turns on only when the money is confirmed, by callback or by query. */
+    fun createSubscription(user: AuthUser, req: SubscribePayReq): Map<String, Any?> {
+        if (req.plan !in Plans.ids) bad("INVALID_PLAN", "Unknown plan")
+        if (req.period !in listOf("monthly", "yearly")) bad("INVALID_PERIOD", "Unknown billing period")
+        val ent = billing.current(user.id) ?: notFound("NO_SUBSCRIPTION", "No account period found")
+        if (!ent.plansOpen) throw ApiException(HttpStatus.CONFLICT, "PLANS_NOT_OPEN", "Plans open ${PLANS_OPEN_DAYS} days before your free period ends")
+        val country = req.country.uppercase()
+        val region = Regions.find(country) ?: bad("INVALID_COUNTRY", "Unsupported country")
+        if (region.networks.none { it.id == req.network }) bad("INVALID_NETWORK", "Unknown network")
+        val provider = router.providerFor(country, req.network) ?: throw ApiException(HttpStatus.SERVICE_UNAVAILABLE, "PAYMENTS_NOT_CONFIGURED", "Live payments are not set up for this network")
+        val phone = normalizePhone(country, req.phone)
+        val amount = if (req.period == "yearly") Plans.yearly(req.plan, region.currency) else Plans.monthly(req.plan, region.currency)
+        val id = newId(); val token = newId(); val t = now()
+        jdbc.update(
+            "insert into payment_intents(id,shop_id,user_id,provider,network,phone,amount,currency,lines_json,status,callback_token,created_at,updated_at,expires_at,purpose,plan,period) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            id, "billing", user.id, provider.id, req.network, phone, amount, region.currency, "[]", "created", token, t, t, t + INTENT_TTL_MS, "subscription", req.plan, req.period
+        )
+        try {
+            val res = provider.request(PushRequest(id, amount, region.currency, phone, req.network, "EMTPLAN", "Emt Shop plan", "$publicUrl/api/payments/callback/${provider.id}/$token", null))
+            jdbc.update("update payment_intents set status='pending',provider_ref=?,updated_at=? where id=?", res.providerRef, now(), id)
+            event(id, provider.id, "pushed", mapOf("providerRef" to res.providerRef, "amount" to amount, "purpose" to "subscription"))
+        } catch (e: ProviderException) {
+            jdbc.update("update payment_intents set status='failed',result_desc=?,updated_at=? where id=?", (e.message ?: "").take(190), now(), id)
+            throw ApiException(HttpStatus.BAD_GATEWAY, "PROVIDER_ERROR", e.message ?: "The mobile money provider rejected the request")
+        }
+        return view(load(id))
+    }
+
+    fun ownerOf(id: String): String = load(id).userId
 
     private fun event(intentId: String?, provider: String, kind: String, payload: Any) {
         jdbc.update("insert into payment_events(id,intent_id,provider,kind,payload,created_at) values(?,?,?,?,?,?)", newId(), intentId, provider, kind, json.write(payload).take(3900), now())
@@ -304,6 +336,9 @@ class PaymentService(
                     } else {
                         try {
                             jdbc.update("update payment_intents set status='succeeded',receipt=?,result_desc=?,late=?,updated_at=? where id=?", r.receipt, r.desc, late, now(), i.id)
+                            val sub = jdbc.queryForMap("select purpose,plan,period from payment_intents where id=?", i.id)
+                            // Money for a plan switches the plan on in the same transaction, even if it arrived after the request expired.
+                            if (sub["purpose"] == "subscription") billing.activate(i.userId, sub["plan"] as String, sub["period"] as String, "mobile_money", gate = false)
                         } catch (e: DuplicateKeyException) {
                             jdbc.update("update payment_intents set status='mismatch',result_desc=?,updated_at=? where id=?", "Receipt ${r.receipt} was already used", now(), i.id)
                             event(i.id, i.provider, "duplicate_receipt", mapOf("receipt" to r.receipt))
@@ -323,6 +358,7 @@ class PaymentService(
         val v = changed ?: return
         val shopId = v["shopId"] as String
         hub.broadcastShop(shopId, mapOf("type" to "payment", "payment" to v))
+        if (shopId == "billing") return
         if (v["status"] == "succeeded") {
             val owner = access.shop(shopId)
             activity.log(shopId, null, "payment_received", mapOf("amount" to v["amount"], "network" to v["network"], "receipt" to v["receipt"], "currency" to owner.currency, "late" to v["late"]), "Mobile money")
@@ -353,7 +389,7 @@ class PaymentService(
                 if (t > i.expiresAt) expire(i.id)
             }
         }
-        for (i in jdbc.query("select $cols from payment_intents where status='succeeded' and sale_id is null and updated_at<?", mapperRow, t - 20_000)) {
+        for (i in jdbc.query("select $cols from payment_intents where status='succeeded' and sale_id is null and purpose='sale' and updated_at<?", mapperRow, t - 20_000)) {
             runCatching { complete(i.id) }
         }
     }
@@ -476,6 +512,18 @@ class PaymentController(val access: Access, val billing: BillingService, val pay
     fun resolve(@PathVariable id: String, @RequestAttribute("user") user: AuthUser, @RequestBody req: ResolveReq): Map<String, Any?> {
         access.need(payments.shopOf(id), user, "owner", "manager")
         return mapOf("payment" to payments.resolve(id, req.action))
+    }
+
+    /** Pay for a plan by mobile money. Poll GET /billing/payments/{id}; the plan switches on when the status is succeeded. */
+    @PostMapping("/billing/pay")
+    @ResponseStatus(HttpStatus.CREATED)
+    fun pay(@RequestAttribute("user") user: AuthUser, @RequestBody req: SubscribePayReq): Map<String, Any?> =
+        mapOf("payment" to payments.createSubscription(user, req))
+
+    @GetMapping("/billing/payments/{id}")
+    fun billingPayment(@PathVariable id: String, @RequestAttribute("user") user: AuthUser): Map<String, Any?> {
+        if (payments.ownerOf(id) != user.id) throw ApiException(HttpStatus.NOT_FOUND, "PAYMENT_NOT_FOUND", "Payment not found")
+        return mapOf("payment" to payments.view(id), "subscription" to billing.current(user.id)?.let { billing.view(it) })
     }
 
     /** Called by the mobile money network, not by a signed-in user. The secret is the random token in the URL. */

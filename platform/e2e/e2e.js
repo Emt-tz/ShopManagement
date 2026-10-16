@@ -84,6 +84,15 @@ const api = async (token, method, url, data) => {
   const r = await fetch(BASE + '/api' + url, { method, headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }, body: data ? JSON.stringify(data) : undefined });
   return { status: r.status, json: await r.json().catch(() => ({})) };
 };
+// Plans are paid by mobile money: ask for the phone, request the payment, play the customer's PIN, wait for the plan to switch on.
+const payPlan = async (D, plan) => {
+  await tap(D, '[data-act=subscribe]'); await waitText(D, /Pay by mobile money/); await fill(D, '#pp-phone', '0712 345 678'); await shot(D, '24c-plan-pay');
+  await tap(D, '[data-act=subscribe]'); await waitText(D, /enter your PIN/); await shot(D, '24d-plan-wait');
+  await tap(D, '[data-act=planSimApprove]');
+  for (let i = 0; i < 80; i++) { const sub = (await api(await tokenOf(D), 'GET', '/billing/subscription')).json.subscription; if (sub.status === 'active' && sub.plan === plan) break; await D.waitForTimeout(150); }
+  await D.waitForFunction(() => !S.planPay, null, { timeout: 12000 });
+  await waitText(D, /Subscription|Free until|free period/i, 12000); await beat(600);
+};
 const tokenOf = p => p.evaluate(() => localStorage.getItem('token'));
 const addItems = async (p, items, desktop) => {
   for (const [name, n] of items) {
@@ -337,7 +346,7 @@ const addItems = async (p, items, desktop) => {
       await D.goto(BASE + '/#/shops'); const t = await waitText(D, /Free trial ends in 10 days/); await shot(D, '24a-trial-action'); await beat(1500);
       await tap(D, '.act:has-text("See plans")'); await waitText(D, /Choose your plan/);
       await tap(D, '[data-act=selPlan][data-id=starter]'); const p = await body(D); ok(/Your plan starts after your free period ends/.test(p), 'nothing is charged before the free period ends'); await shot(D, '24b-plans-open'); await beat(1500);
-      await tap(D, '[data-act=subscribe]'); await waitText(D, /Choose Plan|Free until|free period/i);
+      await payPlan(D, 'starter');
       const sub = (await api(token, 'GET', '/billing/subscription')).json.subscription; ok(sub.plan === 'starter' && sub.free && sub.status === 'active', 'starter chosen, still free until day 90');
       await api(token, 'POST', '/dev/billing/fast-forward', { days: 12 });
     });
@@ -348,7 +357,7 @@ const addItems = async (p, items, desktop) => {
     });
     await step('10.2 Upgrade to Multi-shop', async () => {
       await D.goto(BASE + '/#/plans'); await waitText(D, /Choose your plan/);
-      await tap(D, '[data-act=selPlan][data-id=multi]'); await tap(D, '[data-act=subscribe]'); await waitText(D, /Subscription/);
+      await tap(D, '[data-act=selPlan][data-id=multi]'); await payPlan(D, 'multi'); await waitText(D, /Subscription/);
       const t = await body(D); ok(/Multi-shop/.test(t), 'plan switched'); await shot(D, '22-account-multi'); await beat(900);
     });
     await step('10.3 Create the mobile money shop and manage float', async () => {
@@ -378,6 +387,16 @@ const addItems = async (p, items, desktop) => {
     });
 
     /* ---------- Flow 10: subscription management ---------- */
+    await step('10.4 A shop can accept cash only: the owner switches methods off in Account', async () => {
+      await D.goto(BASE + '/#/account'); await waitText(D, /Accepted payments/);
+      const ids = async () => (await api(await tokenOf(D), 'GET', '/shops/' + (await D.evaluate(() => S.shopId)) + '/config')).json.tenders.map(x => x.id);
+      const before = (await ids()).filter(x => x !== 'credit'); ok(before.includes('card'), 'card accepted by default');
+      for (const id of before.filter(x => x !== 'cash')) { await tap(D, `[data-act=toggleTender][data-id=${id}]`); await D.waitForTimeout(300); }
+      await shot(D, '25-cash-only'); const after = await ids(); ok(after.length === 1 && after[0] === 'cash', 'only cash left: ' + after);
+      await tap(D, '[data-act=toggleTender][data-id=cash]'); await waitText(D, /at least one/i, 4000);
+      for (const id of before.filter(x => x !== 'cash')) { await tap(D, `[data-act=toggleTender][data-id=${id}]`); await D.waitForTimeout(300); }
+      ok((await ids()).filter(x => x !== 'credit').length === before.length, 'methods restored');
+    });
     await step('11.1 Cancel the subscription: access stays until the period ends', async () => {
       await tap(D, 'a[href="#/account"]'); await waitText(D, /Cancel Subscription/);
       await tap(D, '[data-act=cancelSub]'); await tap(D, '[data-act=cancelSub]'); const t = await waitText(D, /Ends /);

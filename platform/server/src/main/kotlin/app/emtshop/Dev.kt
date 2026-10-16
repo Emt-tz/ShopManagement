@@ -24,6 +24,11 @@ class DevController(val jdbc: JdbcTemplate, val access: Access, val payments: Pa
         return mapOf("ok" to true)
     }
 
+    /** Shop payments need shop membership; plan payments belong to the person who started them. */
+    private fun mine(id: String, user: AuthUser) {
+        if (payments.shopOf(id) == "billing") { if (payments.ownerOf(id) != user.id) notFound("PAYMENT_NOT_FOUND", "Payment not found") } else access.member(payments.shopOf(id), user)
+    }
+
     private fun intentRef(id: String): String {
         val shop = payments.shopOf(id)
         return jdbc.queryForObject("select provider_ref from payment_intents where id=?", String::class.java, id) ?: bad("NO_REF", "Payment has no provider reference for $shop")
@@ -33,14 +38,14 @@ class DevController(val jdbc: JdbcTemplate, val access: Access, val payments: Pa
     /** The customer approves on their phone: the network then calls our webhook, exactly as in production. */
     @PostMapping("/payments/{id}/approve")
     fun approve(@PathVariable id: String, @RequestAttribute("user") user: AuthUser, @RequestBody(required = false) req: ApproveReq?): Map<String, Any?> {
-        access.member(payments.shopOf(id), user)
+        mine(id, user)
         payments.handleCallback("simulator", token(id), sim.approve(intentRef(id), req?.amount))
         return mapOf("payment" to payments.view(id))
     }
 
     @PostMapping("/payments/{id}/decline")
     fun decline(@PathVariable id: String, @RequestAttribute("user") user: AuthUser): Map<String, Any?> {
-        access.member(payments.shopOf(id), user)
+        mine(id, user)
         payments.handleCallback("simulator", token(id), sim.decline(intentRef(id)))
         return mapOf("payment" to payments.view(id))
     }

@@ -16,8 +16,8 @@ import org.springframework.web.bind.annotation.RestController
 
 data class SignupReq(val email: String = "", val password: String = "", val name: String = "")
 data class LoginReq(val email: String = "", val password: String = "")
-data class CreateShopReq(val name: String = "", val type: String = "", val country: String = "", val till: String? = null, val locale: String? = null)
-data class UpdateShopReq(val name: String? = null, val till: String? = null, val locale: String? = null, val aiExternal: Boolean? = null)
+data class CreateShopReq(val name: String = "", val type: String = "", val country: String = "", val till: String? = null, val locale: String? = null, val tenders: List<String>? = null)
+data class UpdateShopReq(val name: String? = null, val till: String? = null, val locale: String? = null, val aiExternal: Boolean? = null, val tenders: List<String>? = null)
 data class InviteReq(val name: String = "", val email: String = "", val password: String = "", val role: String = "cashier")
 
 @RestController
@@ -85,6 +85,7 @@ class ShopController(
             id, user.id, req.name.trim(), req.type, region.code, region.currency, locale, req.till?.trim()?.ifBlank { null }, now()
         )
         jdbc.update("insert into members(shop_id,user_id,role) values(?,?,?)", id, user.id, "owner")
+        req.tenders?.let { jdbc.update("update shops set tenders=? where id=?", checkTenders(it, region), id) }
         if (req.type == "mobile_money") {
             val low = (if (region.currency == "TZS") 1_500_000L else 10_000L) * pow10(region.decimals)
             jdbc.update("insert into float_accounts(shop_id,network,balance,low_at) values(?,?,?,?)", id, "cash", 0L, 0L)
@@ -110,10 +111,19 @@ class ShopController(
             if (role != "owner") throw ApiException(HttpStatus.FORBIDDEN, "FORBIDDEN", "Only the owner can change this")
             jdbc.update("update shops set ai_external=? where id=?", it, id)
         }
+        req.tenders?.let { jdbc.update("update shops set tenders=? where id=?", checkTenders(it, region), id); activity.log(id, user, "tenders_changed", mapOf("tenders" to it), "Web") }
         req.locale?.let { if (it !in region.locales) bad("INVALID_LOCALE", "Language not available in this region"); jdbc.update("update shops set locale=? where id=?", it, id) }
         configCache.evict(id)
         return config.full(id)
     }
+}
+
+/** Stored as a comma list. A shop must accept at least one method, and only ones its region offers. */
+fun checkTenders(list: List<String>, region: Region): String {
+    val clean = list.map { it.trim() }.filter { it.isNotEmpty() }.distinct()
+    if (clean.isEmpty()) bad("INVALID_TENDERS", "Choose at least one way to get paid")
+    if (clean.any { it !in region.tenders }) bad("INVALID_TENDERS", "That payment method is not available in this region")
+    return clean.joinToString(",")
 }
 
 fun pow10(n: Int): Long { var r = 1L; repeat(n) { r *= 10 }; return r }

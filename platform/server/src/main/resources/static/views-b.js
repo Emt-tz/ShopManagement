@@ -416,14 +416,23 @@ VIEWS.account = async () => {
   const shopGroup = S.cfg && canManage() ? `<div class="sh">${t('account.shop')}</div><div class="grp" data-enter="saveShop"><label class="row"><span>${t('field.name')}</span><input id="a-name" value="${esc(S.cfg.shop.name)}"></label>
       ${['TZ', 'KE'].includes(S.cfg.shop.country) ? `<label class="row"><span>${t(S.cfg.shop.country === 'TZ' ? 'field.lipa' : 'field.till')}</span><input id="a-till" value="${esc(S.cfg.shop.till || '')}" inputmode="numeric"></label>` : ''}</div>
       <div id="err"></div><div class="pad" style="margin-top:12px"><button class="btn sec2" data-act="saveShop">${t('save')}</button></div>` : '';
+  const allT = S.cfg && S.cfg.allTenders ? S.cfg.allTenders : [];
+  const acc = S.cfg ? S.cfg.tenders.map(x => x.id) : [];
+  const payGroup = S.cfg && canManage() && allT.length ? `<div class="sh">${t('account.accepts')}</div><div class="grp">${allT.map(id => `<button class="row" data-act="toggleTender" data-id="${id}" role="switch" aria-checked="${acc.includes(id)}"><span class="grow">${t('tender.' + id)}</span>${sw(acc.includes(id))}</button>`).join('')}</div><div class="sf">${t('account.accepts.foot')}</div><div id="err"></div>` : '';
   const ai = S.cfg ? S.cfg.ai : null;
   const aiGroup = ai ? `<div class="sh">${t('account.ai')}</div><div class="grp"><button class="row" data-act="toggleAi" role="switch" aria-checked="${ai.external}" ${!ai.available || myRole() !== 'owner' ? 'disabled' : ''}><span class="grow"><div>${t('account.ai.toggle')}</div><div class="sm sec">${!ai.available ? t('assistant.cloud.na') : myRole() !== 'owner' ? t('assistant.cloud.owner') : t('assistant.cloud.d')}</div></span>${sw(ai.external)}</button></div>` : '';
   const body = `<div class="grp"><div class="row"><div class="avatar" style="background:${hue(S.user.name)}">${initial(S.user.name)}</div><div class="grow"><div class="b">${esc(S.user.name)}</div><div class="sm sec">${esc(S.user.email)}</div></div></div></div>
-    ${subGroup}${shopGroup}${aiGroup}
+    ${subGroup}${shopGroup}${payGroup}${aiGroup}
     <div class="sh">${t('account.language')}</div><div class="grp"><label class="row"><span>${t('field.language')}</span><select id="a-lang" data-change="pickLang">${Object.entries(LANGS).map(([k, v]) => `<option value="${k}" ${k === S.lang ? 'selected' : ''}>${v}</option>`).join('')}</select></label></div><div class="sf">${t('account.language.foot')}</div>
     <div class="grp" style="margin-top:22px"><button class="row" data-act="signOut"><span class="red grow" style="text-align:center">${t('account.signout')}</span></button></div>`;
   if (isDesk()) return desk({ active: 'account', title: t('nav.account'), body: `<div style="max-width:560px">${body}</div>` });
   return phone({ active: 'account', title: t('nav.account'), body });
+};
+ACT.toggleTender = async el => {
+  const id = el.dataset.id, cur = S.cfg.tenders.map(x => x.id);
+  const next = cur.includes(id) ? cur.filter(x => x !== id && S.cfg.allTenders.includes(x)) : S.cfg.allTenders.filter(x => x === id || cur.includes(x));
+  try { S.cfg = await api('/shops/' + S.shopId, { method: 'PUT', body: { tenders: next } }); S.cart = {}; render(true); }
+  catch (e) { showErr(errMsg(e)); }
 };
 ACT.toggleAi = async () => {
   try { S.cfg = await api('/shops/' + S.shopId, { method: 'PUT', body: { aiExternal: !S.cfg.ai.external } }); render(true); }

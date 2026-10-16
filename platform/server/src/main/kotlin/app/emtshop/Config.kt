@@ -46,15 +46,21 @@ object ShopTypes {
     fun find(id: String): ShopType? = all.firstOrNull { it.id == id }
 }
 
+/** The payment methods a shop accepts: what its owner chose, limited to what the region offers. Unset means everything the region offers. */
+fun acceptedTenders(jdbc: org.springframework.jdbc.core.JdbcTemplate, shopId: String, region: Region): List<String> {
+    val stored = jdbc.queryForList("select tenders from shops where id=?", String::class.java, shopId).firstOrNull()?.split(",")?.map { it.trim() }?.filter { it.isNotEmpty() }
+    return if (stored.isNullOrEmpty()) region.tenders else region.tenders.filter { it in stored }
+}
+
 @Service
-class ShopConfigCache(val access: Access, val router: PaymentRouter) {
+class ShopConfigCache(val access: Access, val router: PaymentRouter, val jdbc: org.springframework.jdbc.core.JdbcTemplate) {
     /** Static per-shop configuration. Cached (Caffeine) and evicted whenever the shop changes. */
     @Cacheable("shopConfig", key = "#shopId")
     fun get(shopId: String): Map<String, Any?> {
         val s = access.shop(shopId)
         val r = Regions.get(s.country)
         val t = ShopTypes.find(s.type)!!
-        val tenders = r.tenders.map { id ->
+        val tenders = acceptedTenders(jdbc, s.id, r).map { id ->
             mapOf("id" to id, "networks" to if (id in LIVE_TENDERS) r.networks.map { mapOf("id" to it.id, "name" to it.name, "live" to (router.providerFor(s.country, it.id) != null)) } else emptyList<Any>())
         }
         val body = mapOf(
@@ -65,6 +71,7 @@ class ShopConfigCache(val access: Access, val router: PaymentRouter) {
             "currency" to mapOf("code" to r.currency, "decimals" to r.decimals),
             "tax" to mapOf("name" to r.taxName, "bps" to r.taxBps, "inclusive" to true),
             "tenders" to tenders,
+            "allTenders" to r.tenders.filter { it != "credit" },
             "networks" to r.networks.map { mapOf("id" to it.id, "name" to it.name) },
             "tools" to t.tools,
             "categories" to t.categories

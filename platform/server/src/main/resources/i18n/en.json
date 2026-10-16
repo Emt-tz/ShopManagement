@@ -484,5 +484,19 @@
  "account.ai.toggle": "Answer open questions with Claude",
  "insight.title": "Today",
  "assistant.ask.row": "Ask your shop",
- "assistant.you": "You"
+ "assistant.you": "You",
+ "setup.cash": "I only accept cash",
+ "setup.cash.d": "Hides mobile money and card at the till. Change it any time in Account.",
+ "account.accepts": "Accepted payments",
+ "account.accepts.foot": "Only the methods switched on appear at the till. At least one must stay on.",
+ "plans.pay.title": "Pay by mobile money",
+ "plans.pay.network": "Network",
+ "plans.pay.phone": "Your phone number",
+ "plans.pay.go": "Pay {amount}",
+ "plans.pay.wait": "Check your phone and enter your PIN to approve {amount}.",
+ "plans.pay.failed": "The payment did not go through. Nothing was charged.",
+ "plans.pay.timeout": "No answer yet. If money left your account, your plan switches on by itself once we hear from the network.",
+ "plans.pay.cancel": "Back",
+ "plans.pay.none": "Mobile money payment is not available in this country yet.",
+ "plans.pay.foot": "You are charged now for the plan. It starts when your free period ends."
 }

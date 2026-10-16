@@ -484,5 +484,19 @@
  "account.ai.toggle": "Jibu maswali huru kwa kutumia Claude",
  "insight.title": "Leo",
  "assistant.ask.row": "Uliza duka lako",
- "assistant.you": "Wewe"
+ "assistant.you": "Wewe",
+ "setup.cash": "Napokea pesa taslimu tu",
+ "setup.cash.d": "Huficha pesa ya simu na kadi kwenye kaunta. Unaweza kubadilisha wakati wowote kwenye Akaunti.",
+ "account.accepts": "Njia za malipo",
+ "account.accepts.foot": "Njia zilizowashwa tu ndizo zinazoonekana kwenye kaunta. Angalau moja ibaki imewashwa.",
+ "plans.pay.title": "Lipa kwa pesa ya simu",
+ "plans.pay.network": "Mtandao",
+ "plans.pay.phone": "Namba yako ya simu",
+ "plans.pay.go": "Lipa {amount}",
+ "plans.pay.wait": "Angalia simu yako na weka PIN kuthibitisha {amount}.",
+ "plans.pay.failed": "Malipo hayakukamilika. Hakuna kilichokatwa.",
+ "plans.pay.timeout": "Bado hakuna jibu. Ikiwa pesa ilitoka, mpango wako utawashwa wenyewe tutakapopata jibu kutoka mtandaoni.",
+ "plans.pay.cancel": "Rudi",
+ "plans.pay.none": "Malipo ya pesa ya simu bado hayapatikani nchini humu.",
+ "plans.pay.foot": "Unalipia mpango sasa. Unaanza muda wa bure ukiisha."
 }

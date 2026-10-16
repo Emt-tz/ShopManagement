@@ -48,7 +48,7 @@ const val GRACE_DAYS = 7L
 const val DAY_MS = 86_400_000L
 
 @Service
-class BillingService(val jdbc: JdbcTemplate) {
+class BillingService(val jdbc: JdbcTemplate, @org.springframework.beans.factory.annotation.Value("\${emtshop.sandbox:false}") val sandbox: Boolean) {
     private val mapper = RowMapper<Entitlement> { rs, _ ->
         val plan = rs.getString(1)
         val status = rs.getString(3)
@@ -86,15 +86,22 @@ class BillingService(val jdbc: JdbcTemplate) {
         if (req.plan !in Plans.ids) bad("INVALID_PLAN", "Unknown plan")
         if (req.period !in listOf("monthly", "yearly")) bad("INVALID_PERIOD", "Unknown billing period")
         if (req.channel !in listOf("web", "appstore", "play")) bad("INVALID_CHANNEL", "Unknown billing channel")
+        // A web subscription is only real once money has arrived (see PaymentService.createSubscription). Sandbox keeps the shortcut for demos and tests.
+        if (req.channel == "web" && !sandbox) throw ApiException(HttpStatus.PAYMENT_REQUIRED, "PAYMENT_REQUIRED", "Pay by mobile money to subscribe")
+        return activate(userId, req.plan, req.period, req.channel)
+    }
+
+    /** Make a plan active. Billing starts when the free period ends, never earlier, so paying early loses nothing. */
+    fun activate(userId: String, plan: String, period: String, channel: String, gate: Boolean = true): Entitlement {
         val existing = current(userId) ?: notFound("NO_SUBSCRIPTION", "No account period found")
-        if (!existing.plansOpen) throw ApiException(HttpStatus.CONFLICT, "PLANS_NOT_OPEN", "Plans open ${PLANS_OPEN_DAYS} days before your free period ends")
+        if (gate && !existing.plansOpen) throw ApiException(HttpStatus.CONFLICT, "PLANS_NOT_OPEN", "Plans open ${PLANS_OPEN_DAYS} days before your free period ends")
         val t = now()
-        val periodMs = if (req.period == "yearly") 365 * DAY_MS else 30 * DAY_MS
-        // Billing starts when the free period ends, never earlier.
-        val renews = maxOf(t, existing.trialEndsAt) + periodMs
+        val periodMs = if (period == "yearly") 365 * DAY_MS else 30 * DAY_MS
+        // Renewing early extends from the current end, so nobody loses days they paid for.
+        val renews = maxOf(t, existing.trialEndsAt, if (existing.status == "active") existing.renewsAt else 0L) + periodMs
         jdbc.update(
             "update subscriptions set plan=?,period=?,status='active',channel=?,renews_at=? where user_id=?",
-            req.plan, req.period, req.channel, renews, userId
+            plan, period, channel, renews, userId
         )
         return current(userId)!!
     }
@@ -116,12 +123,12 @@ class BillingService(val jdbc: JdbcTemplate) {
 
 @RestController
 @RequestMapping("/api/billing")
-class BillingController(val billing: BillingService) {
+class BillingController(val billing: BillingService, val router: PaymentRouter) {
     @GetMapping("/plans")
     fun plans(@RequestParam(defaultValue = "US") country: String): Map<String, Any?> {
         val r = Regions.get(country.uppercase())
         return mapOf(
-            "currency" to r.currency, "decimals" to r.decimals, "trialDays" to TRIAL_DAYS, "plansOpenDays" to PLANS_OPEN_DAYS,
+            "currency" to r.currency, "decimals" to r.decimals, "payWith" to r.networks.filter { router.providerFor(r.code, it.id) != null }.map { mapOf("id" to it.id, "name" to it.name) }, "trialDays" to TRIAL_DAYS, "plansOpenDays" to PLANS_OPEN_DAYS,
             "plans" to Plans.ids.map { id ->
                 val l = Plans.limits[id]!!
                 mapOf(

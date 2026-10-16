@@ -44,6 +44,7 @@ class SalesService(
     fun record(shop: Shop, user: AuthUser, req: SaleReq, device: String, at: Long = now(), silent: Boolean = false, force: Boolean = false): Map<String, Any?> {
         val region = Regions.get(shop.country)
         if (req.tender !in region.tenders) bad("INVALID_TENDER", "Payment method not available in this region")
+        if (!silent && !force && req.tender !in acceptedTenders(jdbc, shop.id, region)) bad("TENDER_NOT_ACCEPTED", "This shop does not accept that payment method")
         if (req.lines.isEmpty()) bad("EMPTY_SALE", "Add at least one item")
         if (req.idempotencyKey.isBlank()) bad("MISSING_KEY", "idempotencyKey is required")
         findByKey(shop.id, req.idempotencyKey)?.let { return it + ("duplicate" to true) }

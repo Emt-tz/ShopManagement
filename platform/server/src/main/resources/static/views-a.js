@@ -110,14 +110,64 @@ VIEWS.plans = async () => {
     <div style="max-width:320px;margin:0 auto 4px;width:calc(100% - 32px)">${segHtml([['monthly', t('plans.monthly')], ['yearly', t('plans.yearly') + ' · ' + t('plans.save')]], S.period, 'setPeriod')}</div>
     <div class="cards" role="radiogroup">${cards}</div>
     <div id="err"></div>
+    ${planPayPanel(d, sel)}
     <div class="pad" style="max-width:420px;margin:20px auto 0;width:100%"><button class="btn" data-act="subscribe" ${active && S.sub.plan === S.selPlan && S.sub.period === S.period ? 'disabled' : ''}>${cta}</button>
     <p class="sm sec" style="text-align:center;margin-top:10px">${S.sub && S.sub.free ? t('plans.free.note', { date: fmtDate(S.sub.trialEndsAt) }) : t('plans.legal')}</p></div></div>`;
   return `<div style="height:100%;overflow:auto;background:var(--bg)"><div style="padding:max(env(safe-area-inset-top),10px) 16px 0">${backLink(S.shops.length ? '#/account' : '#/welcome', t('back'))}</div>${body}</div>`;
 };
+const planAmount = (d, p) => money(S.period === 'yearly' ? p.yearly : p.monthly, d.currency);
+function planPayPanel(d, sel) {
+  const pp = S.planPay;
+  if (!pp) return '';
+  if (!d.payWith.length) return `<div class="pad" style="max-width:420px;margin:12px auto 0;width:100%"><div class="sf">${t('plans.pay.none')}</div></div>`;
+  const amount = planAmount(d, sel);
+  const sand = S.sandbox && pp.payment && pp.payment.status === 'pending' ? `<div class="grp"><div class="row" style="gap:10px"><button class="btn" style="height:40px" data-act="planSimApprove">${t('pay.sandbox.approve')}</button><button class="btn sec2" style="height:40px" data-act="planSimDecline">${t('pay.sandbox.decline')}</button></div></div>` : '';
+  const inner = pp.payment && pp.payment.status === 'pending'
+    ? `<div class="grp"><div class="row"><span class="grow">${t('plans.pay.wait', { amount })}</span></div></div>${sand}`
+    : `<div class="grp"><label class="row"><span>${t('plans.pay.network')}</span><select id="pp-net" data-change="planPayNet">${d.payWith.map(n => `<option value="${n.id}" ${n.id === pp.network ? 'selected' : ''}>${esc(n.name)}</option>`).join('')}</select></label>
+      <label class="row"><span>${t('plans.pay.phone')}</span><input id="pp-phone" data-input="planPay.phone" value="${esc(pp.phone)}" inputmode="tel" placeholder="0712 345 678"></label></div>
+      ${pp.msg ? `<div class="sf red">${pp.msg}</div>` : ''}<div class="sf">${t('plans.pay.foot')}</div>`;
+  return `<div style="max-width:420px;margin:16px auto 0;width:calc(100% - 32px)"><div class="sh">${t('plans.pay.title')}</div>${inner}</div>`;
+}
+INPUT['planPay.phone'] = v => { S.planPay.phone = v; };
+ACT.planPayNet = el => { S.planPay.network = el.value; };
+const planPayDone = async r => {
+  S.sub = r.subscription; S.planPay = null; clearTimeout(S.planPoll);
+  toast(t('plans.done', { plan: t('plan.' + S.sub.plan) }));
+  location.hash = S.shops.length ? '#/account' : '#/setup';
+};
+const pollPlanPay = (id, started) => {
+  clearTimeout(S.planPoll);
+  S.planPoll = setTimeout(async () => {
+    if (!S.planPay || !S.planPay.payment) return;
+    try {
+      const r = await api('/billing/payments/' + id);
+      const st = r.payment.status;
+      if (st === 'succeeded') return planPayDone(r);
+      if (st === 'failed' || st === 'expired' || st === 'mismatch') { S.planPay.payment = null; S.planPay.msg = st === 'expired' ? t('plans.pay.timeout') : t('plans.pay.failed'); return render(true); }
+    } catch (e) { /* keep polling */ }
+    pollPlanPay(id, started);
+  }, 1500);
+};
+ACT.planSimApprove = async () => { try { await api('/dev/payments/' + S.planPay.payment.id + '/approve', { method: 'POST', body: {} }); } catch (e) { showErr(errMsg(e)); } };
+ACT.planSimDecline = async () => { try { await api('/dev/payments/' + S.planPay.payment.id + '/decline', { method: 'POST' }); } catch (e) { showErr(errMsg(e)); } };
 ACT.planCountry = el => { S.country = el.value; render(true); };
 ACT.selPlan = el => { S.selPlan = el.dataset.id; render(true); };
 ACT.setPeriod = el => { S.period = el.dataset.id; render(true); };
 ACT.subscribe = async () => {
+  const d = S.plansData;
+  if (d.payWith.length || S.planPay) {
+    // Mobile money first: the plan switches on only when the money is confirmed.
+    if (!S.planPay) { S.planPay = { network: d.payWith.length ? d.payWith[0].id : '', phone: '', payment: null, msg: '' }; return render(true); }
+    if (!d.payWith.length) return;
+    if (S.planPay.payment) return;
+    try {
+      const country = (S.cfg && S.cfg.shop.country) || S.country || guessCountry();
+      const r = await api('/billing/pay', { method: 'POST', body: { plan: S.selPlan, period: S.period, country, network: S.planPay.network, phone: S.planPay.phone } });
+      S.planPay.payment = r.payment; S.planPay.msg = ''; render(true); pollPlanPay(r.payment.id, Date.now());
+    } catch (e) { S.planPay.msg = errMsg(e); render(true); }
+    return;
+  }
   try {
     const r = await api('/billing/subscribe', { method: 'POST', body: { plan: S.selPlan, period: S.period, channel: 'web' } });
     S.sub = r.subscription;
@@ -148,6 +198,7 @@ VIEWS.setup = async () => {
       ${['TZ', 'KE'].includes(st.country) ? `<label class="row"><span>${t(st.country === 'TZ' ? 'field.lipa' : 'field.till')}</span><input id="s-till" data-input="setup.till" value="${esc(st.till)}" placeholder="5123 4567" inputmode="numeric"></label>` : ''}
     </div>
     <div class="sf">${t('setup.region.foot')}</div>
+    <div class="grp" style="margin-top:20px"><button class="row" data-act="toggleCash" role="switch" aria-checked="${!!st.cash}"><span class="grow"><div>${t('setup.cash')}</div><div class="sm sec">${t('setup.cash.d')}</div></span>${sw(!!st.cash)}</button></div>
     <div class="grp" style="margin-top:20px"><button class="row" data-act="toggleDemo" role="switch" aria-checked="${st.demo}"><span class="grow"><div>${t('setup.demo')}</div><div class="sm sec">${t('setup.demo.d')}</div></span>${sw(st.demo)}</button></div>
     <div id="err"></div>
     <div class="pad" style="margin-top:20px;max-width:420px"><button class="btn" data-act="createShop">${t('setup.create')}</button></div></div>`;
@@ -157,13 +208,14 @@ VIEWS.setup = async () => {
 INPUT['setup.name'] = v => { S.setup.name = v; };
 INPUT['setup.till'] = v => { S.setup.till = v; };
 ACT.setType = el => { S.setup.type = el.dataset.id; render(true); };
+ACT.toggleCash = () => { S.setup.cash = !S.setup.cash; render(true); };
 ACT.toggleDemo = () => { S.setup.demo = !S.setup.demo; render(true); };
 ACT.setupCountry = el => { S.setup.country = el.value; S.country = el.value; render(true); };
 ACT.createShop = async () => {
   const st = S.setup;
   st.name = val('s-name') || st.name;
   try {
-    const cfg = await api('/shops', { method: 'POST', body: { name: st.name, type: st.type, country: st.country, till: st.till } });
+    const cfg = await api('/shops', { method: 'POST', body: { name: st.name, type: st.type, country: st.country, till: st.till, ...(st.cash ? { tenders: ['cash'] } : {}) } });
     if (st.demo) await api('/shops/' + cfg.shop.id + '/demo-data', { method: 'POST' });
     S.shopId = cfg.shop.id; ls.set('shopId', S.shopId);
     S.setup = null; S.user = null;

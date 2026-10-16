@@ -137,3 +137,10 @@ Products, Insights, Receipts for stores, and Float, History for mobile money age
 Status: written but **not compiled or run** (this build environment has no Xcode or Android SDK). Not yet in the native apps: the live Lipa Namba / M-Pesa
 payment request flow (the server rejects an unconfirmed mobile-money sale with `PAYMENT_REQUIRED`, so only cash and card complete today), offline queue,
 live activity feed, team management, push notifications, and sign-in storage in Keychain/EncryptedSharedPreferences (the token is in UserDefaults / SharedPreferences for now).
+
+## Cash-only shops and mobile money billing
+
+- **Accepted payments:** `shops.tenders` (set on `POST /api/shops` or `PUT /api/shops/{id}` with `{"tenders":["cash"]}`; the setup screen has "I only accept cash", Account has per-method switches). Config, sales and payment requests all honour it; a refused method returns `TENDER_NOT_ACCEPTED`. An already-paid mobile money sale is still recorded if the setting changes mid-payment.
+- **Pay for a plan:** `POST /api/billing/pay {plan, period, country, network, phone}` sends a prompt to the owner's phone, `GET /api/billing/payments/{id}` follows it. The plan switches on only when the payment is confirmed (callback or query), inside the same transaction, once, even if the confirmation arrives late. It reuses the same intent, audit-event and reconciliation machinery as sales. `GET /api/billing/plans` lists `payWith` (networks that have a live provider in that country).
+- Outside sandbox, `POST /api/billing/subscribe` with channel `web` is refused (`PAYMENT_REQUIRED`); app-store channels are unchanged and still unverified.
+- **Live coverage today:** Safaricom M-Pesa (Kenya) via Daraja. Tanzanian networks have no live provider yet, so in production `payWith` is empty there and web subscription is unavailable until one is integrated. Sandbox simulates every network.

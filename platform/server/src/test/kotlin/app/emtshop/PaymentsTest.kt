@@ -18,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import java.util.UUID
 
 @SpringBootTest
@@ -160,4 +161,60 @@ class PaymentsTest(@Autowired val mvc: MockMvc, @Autowired val mapper: ObjectMap
         assertEquals("254712345678", payments.normalizePhone("KE", "+254 712 345 678"))
         assertEquals(400, call(post("/api/shops/${c.shopId}/payments"), c.token, mapOf("lines" to cart(c), "network" to "mpesa", "phone" to "12")).first)
     }
+
+    @Test fun `a cash-only shop accepts cash and nothing else`() {
+        val c = setup()
+        val (s0, up) = call(put("/api/shops/${c.shopId}"), c.token, mapOf("tenders" to listOf("cash")))
+        assertEquals(200, s0, up.toString())
+        assertEquals(listOf("cash"), up["tenders"].map { it["id"].asText() })
+        assertEquals(listOf("cash"), call(get("/api/shops/${c.shopId}/config"), c.token).second["tenders"].map { it["id"].asText() })
+        val lines = cart(c)
+        fun sellWith(t: String) = call(post("/api/shops/${c.shopId}/sales"), c.token, mapOf("lines" to lines, "tender" to t, "idempotencyKey" to UUID.randomUUID().toString()))
+        assertEquals(201, sellWith("cash").first)
+        for (t in listOf("card", "lipa_namba")) { val (s, e) = sellWith(t); assertEquals(400, s); assertEquals("TENDER_NOT_ACCEPTED", e["error"]["code"].asText()) }
+        assertEquals(400, call(post("/api/shops/${c.shopId}/payments"), c.token, mapOf("lines" to lines, "network" to "mpesa", "phone" to "0712345678")).first)
+        assertEquals("INVALID_TENDERS", call(put("/api/shops/${c.shopId}"), c.token, mapOf("tenders" to listOf<String>())).second["error"]["code"].asText())
+        assertEquals("INVALID_TENDERS", call(put("/api/shops/${c.shopId}"), c.token, mapOf("tenders" to listOf("bitcoin"))).second["error"]["code"].asText())
+        // Turning mobile money back on works again.
+        call(put("/api/shops/${c.shopId}"), c.token, mapOf("tenders" to listOf("cash", "lipa_namba", "card")))
+        assertEquals(201, sale(c, request(c).also { approve(c, it["id"].asText()) }["id"].asText()).first)
+    }
+
+    @Test fun `a shop can be created cash-only from the start`() {
+        val (_, j) = call(post("/api/auth/signup"), body = mapOf("email" to "c-${UUID.randomUUID().toString().take(8)}@example.com", "password" to "password123", "name" to "O"))
+        val r = call(post("/api/shops"), j["token"].asText(), mapOf("name" to "Duka", "type" to "retail", "country" to "TZ", "tenders" to listOf("cash"))).second
+        assertEquals(listOf("cash"), r["tenders"].map { it["id"].asText() })
+    }
+
+    @Test fun `a plan is only switched on once the mobile money payment is confirmed`() {
+        val (_, j) = call(post("/api/auth/signup"), body = mapOf("email" to "b-${UUID.randomUUID().toString().take(8)}@example.com", "password" to "password123", "name" to "O"))
+        val token = j["token"].asText()
+        val body = mapOf("plan" to "business", "period" to "monthly", "country" to "TZ", "network" to "mpesa", "phone" to "0712 345 678")
+        assertEquals(409, call(post("/api/billing/pay"), token, body).first)                    // still in the free period, plans closed
+        call(post("/api/dev/billing/fast-forward"), token, mapOf("days" to 80))
+        val (s, p) = call(post("/api/billing/pay"), token, body)
+        assertEquals(201, s, p.toString()); val id = p["payment"]["id"].asText()
+        assertEquals(49900, p["payment"]["amount"].asLong()); assertEquals("pending", p["payment"]["status"].asText())
+        assertEquals("trialing", call(get("/api/billing/subscription"), token).second["subscription"]["status"].asText())
+        assertEquals("succeeded", call(post("/api/dev/payments/$id/approve"), token, mapOf<String, Any>()).second["payment"]["status"].asText())
+        val sub = call(get("/api/billing/payments/$id"), token).second["subscription"]
+        assertEquals("business", sub["plan"].asText()); assertEquals("active", sub["status"].asText()); assertEquals("mobile_money", sub["channel"].asText())
+        // Approving again changes nothing and does not extend the plan twice.
+        val renews = sub["renewsAt"].asLong()
+        call(post("/api/dev/payments/$id/approve"), token, mapOf<String, Any>())
+        assertEquals(renews, call(get("/api/billing/subscription"), token).second["subscription"]["renewsAt"].asLong())
+        // Another person cannot read this payment.
+        val (_, o) = call(post("/api/auth/signup"), body = mapOf("email" to "o-${UUID.randomUUID().toString().take(8)}@example.com", "password" to "password123", "name" to "X"))
+        assertEquals(404, call(get("/api/billing/payments/$id"), o["token"].asText()).first)
+    }
+
+    @Test fun `a declined plan payment changes nothing`() {
+        val (_, j) = call(post("/api/auth/signup"), body = mapOf("email" to "d-${UUID.randomUUID().toString().take(8)}@example.com", "password" to "password123", "name" to "O"))
+        val token = j["token"].asText()
+        call(post("/api/dev/billing/fast-forward"), token, mapOf("days" to 80))
+        val id = call(post("/api/billing/pay"), token, mapOf("plan" to "starter", "country" to "TZ", "network" to "mixx", "phone" to "0654 111 222")).second["payment"]["id"].asText()
+        assertEquals("failed", call(post("/api/dev/payments/$id/decline"), token).second["payment"]["status"].asText())
+        assertEquals("trialing", call(get("/api/billing/subscription"), token).second["subscription"]["status"].asText())
+    }
 }
+

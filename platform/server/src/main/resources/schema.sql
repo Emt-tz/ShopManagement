@@ -145,3 +145,8 @@ create table if not exists payment_events (
   created_at bigint not null
 );
 create index if not exists idx_pevents_intent on payment_events(intent_id);
+
+alter table shops add column if not exists tenders varchar(100);
+alter table payment_intents add column if not exists purpose varchar(12) default 'sale';
+alter table payment_intents add column if not exists plan varchar(12);
+alter table payment_intents add column if not exists period varchar(10);

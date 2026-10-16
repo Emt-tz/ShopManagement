@@ -264,7 +264,7 @@ function stepper(p) {
 const noProducts = () => !S.products.length && canManage() ? `<div class="empty"><div class="okmark">${ic('products', 30, 2)}</div><h2 class="b" style="font-size:20px">${t('sell.none.title')}</h2><p class="sec">${t('sell.none.d')}</p><button class="btn" style="width:auto;padding:0 22px" data-act="firstProduct">${t('sell.none.cta')}</button></div>` : '';
 ACT.firstProduct = () => { S.selProduct = 'new'; location.hash = isDesk() ? '#/products' : '#/product/new'; };
 const sellRows = () => noProducts() || filtered().map(p => `<div class="row thumbs"><div class="thumb" style="background:${hue(p.name)}">${initial(p.name)}</div><div class="grow"><div>${esc(p.name)}</div><div class="sm"><span class="sec">${money(p.price)}</span> · ${stockLine(p)}</div></div>${stepper(p)}</div>`).join('');
-const sellTiles = () => noProducts() || filtered().map(p => `<button class="tile" data-act="inc" data-id="${p.id}" ${p.stock <= 0 || (S.cart[p.id] || 0) >= p.stock ? 'disabled' : ''}><div class="big" style="background:${hue(p.name)}">${initial(p.name)}</div><b>${esc(p.name)}</b><div style="display:flex;justify-content:space-between"><span class="sec">${money(p.price)}</span>${stockLine(p)}</div>${S.cart[p.id] ? `<span class="tint b">× ${S.cart[p.id]}</span>` : ''}</button>`).join('');
+const sellTiles = () => noProducts() || filtered().map(p => `<button class="tile" data-act="inc" data-id="${p.id}" ${p.stock <= 0 || (S.cart[p.id] || 0) >= p.stock ? 'disabled' : ''}><div class="big" style="background:${hue(p.name)}">${initial(p.name)}</div><b>${esc(p.name)}</b><div style="display:flex;justify-content:space-between"><span class="sec">${money(p.price)}</span>${stockLine(p)}</div><span class="tint b" style="min-height:16px">${S.cart[p.id] ? '× ' + S.cart[p.id] : ''}</span></button>`).join('');
 function orderPanel() {
   const lines = cartLines();
   const flash = S.flash; setTimeout(() => { if (S.flash === flash) S.flash = null; }, 0);
@@ -482,7 +482,7 @@ function doneBody() {
 }
 VIEWS.done = async () => {
   if (!S.lastSale) { location.hash = '#/sell'; return undefined; }
-  if (isDesk()) { const base = await VIEWS.sell(); return base + payShell(doneBody(), t('done.title')).replace(`<a href="#/sell">${t('cancel')}</a>`, '<span style="width:60px"></span>'); }
+  if (isDesk()) { const base = await VIEWS.sell(); return base + payShell(doneBody(), S.lastSale.number ? t('receipt.no', { n: S.lastSale.number }) : t('receipt')).replace(`<a href="#/sell">${t('cancel')}</a>`, '<span style="width:60px"></span>'); }
   return `<div class="scr">${offlineBar()}<div class="nav"><span></span><span></span></div><div class="body">${doneBody()}</div></div>`;
 };
 ACT.shareReceipt = async () => {

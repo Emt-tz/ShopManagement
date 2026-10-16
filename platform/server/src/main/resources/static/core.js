@@ -344,6 +344,7 @@ async function render(soft) {
   }
   if (seq !== renderSeq || html === undefined) return;
   $('#app').innerHTML = html;
+  if (!soft) { const a = $('#app'); a.classList.remove('route-in'); void a.offsetWidth; a.classList.add('route-in'); }
   if (soft && $('#body')) $('#body').scrollTop = scroll;
   syncOfflineBanner();
   const after = S.after; S.after = null;

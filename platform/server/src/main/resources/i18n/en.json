@@ -498,5 +498,8 @@
  "plans.pay.timeout": "No answer yet. If money left your account, your plan switches on by itself once we hear from the network.",
  "plans.pay.cancel": "Back",
  "plans.pay.none": "Mobile money payment is not available in this country yet.",
- "plans.pay.foot": "You are charged now for the plan. It starts when your free period ends."
+ "plans.pay.foot": "You are charged now for the plan. It starts when your free period ends.",
+ "sell.none.title": "Add your first product",
+ "sell.none.d": "Your shelf is empty. Add what you sell, with its price and how many you have, and it appears here ready to sell.",
+ "sell.none.cta": "Add a product"
 }

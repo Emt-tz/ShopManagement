@@ -224,3 +224,22 @@ h1,h2,h3,p{margin:0}
 .bubble ul{margin:6px 0 0;padding-left:18px}.bubble li{margin:3px 0}
 .askbar{display:flex;gap:8px;margin-top:8px}
 .askbar input{flex:1;height:36px;border-radius:10px;border:1px solid var(--sep);background:var(--surface);padding:0 12px;min-width:0}
+
+/* Motion: small, physical, and switched off by the reduced-motion rule above. */
+@keyframes rise{from{opacity:0;transform:translateY(8px)}}
+.route-in>*{animation:rise .34s cubic-bezier(.2,.8,.2,1) both}
+.tile{transition:transform .14s cubic-bezier(.2,.9,.3,1.2),box-shadow .2s,border-color .2s}
+@media (hover:hover){.tile:not([disabled]):hover{box-shadow:0 6px 18px rgba(0,0,0,.09);border-color:rgba(0,113,227,.35)}}
+.tile:not([disabled]):active{transform:scale(.95)}
+@keyframes lnIn{from{opacity:0;transform:translateX(14px);background:rgba(0,113,227,.16)}60%{background:rgba(0,113,227,.10)}to{background:transparent}}
+.ln-new{animation:lnIn .5s cubic-bezier(.2,.9,.3,1.05)}
+@keyframes okpop{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.12);opacity:1}100%{transform:scale(1)}}
+@keyframes okdraw{to{stroke-dashoffset:0}}
+@keyframes okring{from{transform:scale(1);opacity:.45}to{transform:scale(1.9);opacity:0}}
+.okmark{position:relative;animation:okpop .55s cubic-bezier(.2,.9,.3,1.1) both}
+.okmark::after{content:"";position:absolute;inset:0;border-radius:50%;border:3px solid currentColor;color:var(--green);animation:okring .9s .25s ease-out both}
+.okmark svg path{stroke-dasharray:32;stroke-dashoffset:32;animation:okdraw .45s .3s cubic-bezier(.4,.1,.2,1) forwards}
+.empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;padding:56px 24px;max-width:360px;margin:0 auto}
+.empty .okmark{background:var(--tint);animation:none}
+.empty .okmark::after,.empty .okmark svg path{animation:none;stroke-dashoffset:0}
+.tiles .empty{grid-column:1/-1}

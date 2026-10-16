@@ -261,13 +261,16 @@ function stepper(p) {
   if (!q) return `<button class="add" data-act="inc" data-id="${p.id}" aria-label="${t('sell.add')} ${esc(p.name)}" ${p.stock <= 0 ? 'disabled' : ''}>+</button>`;
   return `<div class="step"><button data-act="dec" data-id="${p.id}" aria-label="${t('sell.remove')}">−</button><span aria-live="polite">${q}</span><button data-act="inc" data-id="${p.id}" aria-label="${t('sell.add')}" ${q >= p.stock ? 'disabled' : ''}>+</button></div>`;
 }
-const sellRows = () => filtered().map(p => `<div class="row thumbs"><div class="thumb" style="background:${hue(p.name)}">${initial(p.name)}</div><div class="grow"><div>${esc(p.name)}</div><div class="sm"><span class="sec">${money(p.price)}</span> · ${stockLine(p)}</div></div>${stepper(p)}</div>`).join('');
-const sellTiles = () => filtered().map(p => `<button class="tile" data-act="inc" data-id="${p.id}" ${p.stock <= 0 || (S.cart[p.id] || 0) >= p.stock ? 'disabled' : ''}><div class="big" style="background:${hue(p.name)}">${initial(p.name)}</div><b>${esc(p.name)}</b><div style="display:flex;justify-content:space-between"><span class="sec">${money(p.price)}</span>${stockLine(p)}</div>${S.cart[p.id] ? `<span class="tint b">× ${S.cart[p.id]}</span>` : ''}</button>`).join('');
+const noProducts = () => !S.products.length && canManage() ? `<div class="empty"><div class="okmark">${ic('products', 30, 2)}</div><h2 class="b" style="font-size:20px">${t('sell.none.title')}</h2><p class="sec">${t('sell.none.d')}</p><button class="btn" style="width:auto;padding:0 22px" data-act="firstProduct">${t('sell.none.cta')}</button></div>` : '';
+ACT.firstProduct = () => { S.selProduct = 'new'; location.hash = isDesk() ? '#/products' : '#/product/new'; };
+const sellRows = () => noProducts() || filtered().map(p => `<div class="row thumbs"><div class="thumb" style="background:${hue(p.name)}">${initial(p.name)}</div><div class="grow"><div>${esc(p.name)}</div><div class="sm"><span class="sec">${money(p.price)}</span> · ${stockLine(p)}</div></div>${stepper(p)}</div>`).join('');
+const sellTiles = () => noProducts() || filtered().map(p => `<button class="tile" data-act="inc" data-id="${p.id}" ${p.stock <= 0 || (S.cart[p.id] || 0) >= p.stock ? 'disabled' : ''}><div class="big" style="background:${hue(p.name)}">${initial(p.name)}</div><b>${esc(p.name)}</b><div style="display:flex;justify-content:space-between"><span class="sec">${money(p.price)}</span>${stockLine(p)}</div>${S.cart[p.id] ? `<span class="tint b">× ${S.cart[p.id]}</span>` : ''}</button>`).join('');
 function orderPanel() {
   const lines = cartLines();
+  const flash = S.flash; setTimeout(() => { if (S.flash === flash) S.flash = null; }, 0);
   const total = cartTotal();
   return `<div class="b" style="font-size:15px;margin-bottom:8px">${t('sell.order')}</div>
-    ${lines.length ? lines.map(l => `<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--sep)"><div class="grow"><div>${esc(l.p.name)}</div><div class="xs sec">${l.qty} × ${money(l.p.price)}</div></div><b>${money(l.qty * l.p.price)}</b>${stepper(l.p)}</div>`).join('') : `<p class="sec sm" style="padding:12px 0">${t('sell.empty')}</p>`}
+    ${lines.length ? lines.map(l => `<div class="${l.p.id === S.flash ? 'ln-new' : ''}" style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--sep)"><div class="grow"><div>${esc(l.p.name)}</div><div class="xs sec">${l.qty} × ${money(l.p.price)}</div></div><b>${money(l.qty * l.p.price)}</b>${stepper(l.p)}</div>`).join('') : `<p class="sec sm" style="padding:12px 0">${t('sell.empty')}</p>`}
     <div style="margin-top:16px" class="stack"><div class="sm sec" style="display:flex;justify-content:space-between"><span>${t('tax.included', { name: S.cfg.tax.name, rate: S.cfg.tax.bps / 100 })}</span><span>${money(vatOf(total))}</span></div>
     <div style="display:flex;justify-content:space-between;font-size:22px;line-height:28px;font-weight:700"><span>${t('total')}</span><span>${money(total)}</span></div>
     <button class="btn" style="height:44px" data-act="checkout" ${lines.length ? '' : 'disabled'}>${t('sell.charge', { total: money(total) })}</button></div>`;
@@ -313,7 +316,7 @@ INPUT.search = v => {
     refreshSell();
   } else if (S.route.name === 'products') refreshProducts();
 };
-ACT.inc = el => { const p = S.products.find(x => x.id === el.dataset.id); if (!p) return; S.cart[p.id] = Math.min((S.cart[p.id] || 0) + 1, p.stock); refreshSell(); };
+ACT.inc = el => { const p = S.products.find(x => x.id === el.dataset.id); if (!p) return; S.flash = p.id; S.cart[p.id] = Math.min((S.cart[p.id] || 0) + 1, p.stock); refreshSell(); };
 ACT.dec = el => { const id = el.dataset.id; if (S.cart[id] > 1) S.cart[id]--; else delete S.cart[id]; refreshSell(); };
 ACT.checkout = () => {
   if (!cartCount()) return;

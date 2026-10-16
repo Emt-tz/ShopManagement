@@ -498,5 +498,8 @@
  "plans.pay.timeout": "Bado hakuna jibu. Ikiwa pesa ilitoka, mpango wako utawashwa wenyewe tutakapopata jibu kutoka mtandaoni.",
  "plans.pay.cancel": "Rudi",
  "plans.pay.none": "Malipo ya pesa ya simu bado hayapatikani nchini humu.",
- "plans.pay.foot": "Unalipia mpango sasa. Unaanza muda wa bure ukiisha."
+ "plans.pay.foot": "Unalipia mpango sasa. Unaanza muda wa bure ukiisha.",
+ "sell.none.title": "Ongeza bidhaa yako ya kwanza",
+ "sell.none.d": "Rafu yako ni tupu. Ongeza unachouza, bei yake na idadi uliyonayo, nacho kitaonekana hapa tayari kuuzwa.",
+ "sell.none.cta": "Ongeza bidhaa"
 }

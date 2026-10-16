@@ -82,6 +82,7 @@ const OVERLAY = `(() => {
     await p.locator(sel).first().fill('');
     for (const ch of text) { await p.keyboard.type(ch); await sleep(delay + (ch === ' ' ? 40 : Math.round(Math.random() * 28))); }
     await sleep(280);
+    await glide(mx - 300, my + 8, 420);                // park over the label, never on the value
   };
   const choose = async (sel, value) => { const { loc, x, y } = await pointAt(sel); await glide(x, y, 650); await sleep(220); await loc.selectOption(value); await sleep(700); };
   const scrollTo = async y => { await p.evaluate(yy => document.querySelectorAll('*').forEach(e => { if (e.scrollHeight > e.clientHeight + 10 && getComputedStyle(e).overflowY !== 'visible') e.scrollTo({ top: yy, behavior: 'smooth' }); }), y); await sleep(1000); };
@@ -102,13 +103,13 @@ const OVERLAY = `(() => {
   say('Give your shop a name'); await sleep(500);
   await type('#s-name', 'Mama Neema Stationery');
   await click('[data-act=setType][data-id=retail]', { ms: 700, after: 500 });
-  say('Choose what you sell: stationery and retail'); await sleep(1700);
+  say('Choose what you sell: stationery and retail'); await sleep(2000);
   await choose('#s-country', 'TZ');
-  say('Tanzania sets the currency (TSh), VAT and Lipa Namba for you'); await sleep(900);
+  say('Tanzania sets the currency, the language and a Lipa Namba field for you'); await sleep(2200);
   await type('#s-till', '5123 4567'); await sleep(900);
   await scrollTo(700);
   await click('[data-act=toggleCash]', { ms: 700, after: 600 });
-  say('This shop takes cash only: one switch hides mobile money and card at the till'); await sleep(2600);
+  say('This shop takes cash only: one switch hides mobile money and card at the till'); await sleep(3200);
   await click('[data-act=toggleDemo]', { ms: 500, after: 600 });
   say('Start with an empty shelf. We will add the real stock next.'); await sleep(1800);
   await click('[data-act=createShop]', { ms: 700, after: 400 }); await waitText(/Add your first product/); await sleep(900);
@@ -125,9 +126,11 @@ const OVERLAY = `(() => {
     if (i) await click('[data-act=newProduct]', { ms: 600, after: 500 });
     if (i === 3) say('Faster now: each product is saved the moment you press Save');
     await type('#pf-name', n, fast ? 30 : 58); await type('#pf-cat', c, fast ? 26 : 50); await type('#pf-price', pr, fast ? 36 : 70); await type('#pf-stock', st, fast ? 36 : 70);
-    await click('[data-act=saveProduct]', { ms: 650, after: 900 });
+    await click('[data-act=saveProduct]', { ms: 650, after: 500 });
+    await glide(760, 560, 450); await sleep(300);
     await waitText(new RegExp(`${i + 1} items?`), 6000);
   }
+  await click('[data-act=newProduct]', { ms: 600, after: 300 }); await glide(780, 620, 500);
   say('Eight products on the shelf, each with its price and stock'); await sleep(3600);
 
   /* ---- 3. Sell ---- */
@@ -160,7 +163,8 @@ const OVERLAY = `(() => {
   say('Open any receipt: the items, the VAT and who sold it'); await sleep(3600);
   if (await p.locator('.modal a[href="#/history"]').count()) await click('.modal a[href="#/history"]', { ms: 500, after: 700 }); else { await p.keyboard.press('Escape'); await sleep(600); }
   await click('a[href="#/products"]', { ms: 800, after: 600 }); await waitText(/In stock/);
-  say('Stock went down by exactly what was sold'); await sleep(3800);
+  await click('.tr:has-text("Calculator scientific")', { ms: 700, after: 500 }); await waitText(/Details/);
+  say('Calculator scientific: 12 on the shelf, 1 sold, 11 left'); await sleep(4200);
   await click('a[href="#/shops"]', { ms: 800, after: 600 }); await waitText(/Live Activity/); await sleep(500);
   say("The dashboard shows today's sales, what to do next, and who sold what"); await sleep(5200);
   say('That is the whole journey: add stock, sell, see how you are doing'); await sleep(3600);

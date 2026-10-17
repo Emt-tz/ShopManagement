@@ -1,0 +1,7 @@
+server/build/
+server/.gradle/
+server/data/
+server/.kotlin/
+e2e/out/
+node_modules/
+emtshop-demo.mp4

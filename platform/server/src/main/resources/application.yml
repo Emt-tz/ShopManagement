@@ -1,0 +1,39 @@
+spring:
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    # Dev default is an embedded file database. Production uses PostgreSQL:
+    #   SPRING_DATASOURCE_URL=jdbc:postgresql://host/emtshop
+    url: jdbc:h2:file:./data/emtshop;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+  sql:
+    init:
+      mode: always
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=10000,expireAfterWrite=300s
+server:
+  port: 8080
+  compression:
+    enabled: true
+emtshop:
+  # Sandbox mode enables the simulated mobile money network and the /api/dev helpers. Keep false in production.
+  sandbox: ${EMTSHOP_SANDBOX:false}
+  public-url: ${EMTSHOP_PUBLIC_URL:http://localhost:8080}
+  payments:
+    daraja:
+      consumer-key: ${DARAJA_CONSUMER_KEY:}
+      consumer-secret: ${DARAJA_CONSUMER_SECRET:}
+      shortcode: ${DARAJA_SHORTCODE:}
+      passkey: ${DARAJA_PASSKEY:}
+      base-url: ${DARAJA_BASE_URL:https://sandbox.safaricom.co.ke}
+      till-type: ${DARAJA_TILL_TYPE:paybill}
+  ai:
+    # Open questions can optionally go to Claude. Needs a key AND the shop owner's opt-in. Without them the built-in assistant answers.
+    anthropic-key: ${ANTHROPIC_API_KEY:}
+    anthropic-base-url: ${ANTHROPIC_BASE_URL:}
+    # Set to claude-sonnet-5-5 or claude-haiku-4-5 for lower cost per question.
+    model: ${EMTSHOP_AI_MODEL:claude-opus-5-5}
